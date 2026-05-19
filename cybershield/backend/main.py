@@ -1,18 +1,34 @@
-import uvicorn
-from app.config.settings import settings
-
-if __name__ == "__main__":
-    print(f"Starting {settings.APP_NAME} in {settings.APP_ENV} mode...")
-    uvicorn.run(
-        "app.main:app",
-        host=settings.HOST,
-        port=settings.PORT,
-        reload=settings.DEBUG,
-    )
 from fastapi import FastAPI
+from app.database.db import database
 
 app = FastAPI()
 
 @app.get("/")
 def home():
     return {"message": "CyberShield Backend Running"}
+
+@app.get("/test-db")
+async def test_db():
+
+    collections = await database.list_collection_names()
+
+    return {
+        "status": "connected",
+        "database": "cybershield",
+        "collections": collections
+    }
+
+@app.get("/create-test")
+async def create_test():
+
+    test_collection = database["test_collection"]
+
+    data = {
+        "message": "MongoDB Working"
+    }
+
+    result = await test_collection.insert_one(data)
+
+    return {
+        "inserted_id": str(result.inserted_id)
+    }
