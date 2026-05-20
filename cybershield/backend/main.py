@@ -1,6 +1,8 @@
 from fastapi import FastAPI
 from app.database.db import database
 from app.routes.auth_routes import router as auth_router
+from app.routes.user_routes import router as user_router
+from app.routes.scan_routes import router as scan_router
 
 app = FastAPI()
 
@@ -8,6 +10,18 @@ app.include_router(
     auth_router,
     prefix="/api/auth",
     tags=["Authentication"]
+)
+
+app.include_router(
+    user_router,
+    prefix="/api/users",
+    tags=["User Management"]
+)
+
+app.include_router(
+    scan_router,
+    prefix="/api/scans",
+    tags=["Security Scans"]
 )
 
 @app.get("/")
