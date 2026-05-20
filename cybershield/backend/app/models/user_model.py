@@ -17,3 +17,9 @@ class UserResponse(BaseModel):
     name: str
     email: EmailStr
     created_at: datetime
+
+
+class UserUpdate(BaseModel):
+    name: str | None = None
+    email: EmailStr | None = None
+
