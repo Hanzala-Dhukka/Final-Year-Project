@@ -2,11 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.config.settings import settings
-from app.database.session import Base, engine
-from app.routes import auth, users
-
-# ── Create all DB tables on startup ──────────────────────────────────────────
-Base.metadata.create_all(bind=engine)
+from app.routes.auth_routes import router as auth_router
 
 # ── App instance ─────────────────────────────────────────────────────────────
 app = FastAPI(
@@ -20,15 +16,14 @@ app = FastAPI(
 # ── CORS ─────────────────────────────────────────────────────────────────────
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173"],  # Vite dev server
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
 # ── Routers ───────────────────────────────────────────────────────────────────
-app.include_router(auth.router,  prefix="/api/v1")
-app.include_router(users.router, prefix="/api/v1")
+app.include_router(auth_router, prefix="/api/v1/auth", tags=["Authentication"])
 
 
 # ── Health check ──────────────────────────────────────────────────────────────
