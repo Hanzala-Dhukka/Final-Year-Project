@@ -3,6 +3,8 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.config.settings import settings
 from app.routes.auth_routes import router as auth_router
+from app.routes.security_routes import router as security_router
+from app.routes.scan_routes import router as scan_router
 
 # ── App instance ─────────────────────────────────────────────────────────────
 app = FastAPI(
@@ -24,6 +26,8 @@ app.add_middleware(
 
 # ── Routers ───────────────────────────────────────────────────────────────────
 app.include_router(auth_router, prefix="/api/v1/auth", tags=["Authentication"])
+app.include_router(security_router, prefix="/api/v1/security", tags=["Security Analyzer"])
+app.include_router(scan_router, prefix="/api/v1/scan", tags=["Scan"])
 
 
 # ── Health check ──────────────────────────────────────────────────────────────
