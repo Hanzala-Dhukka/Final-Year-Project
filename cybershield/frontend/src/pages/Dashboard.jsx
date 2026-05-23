@@ -30,6 +30,13 @@ import ProfileTest from "../components/ProfileTest"
        > 
          Go to Security Analyzer 
        </Link> 
+
+       <Link 
+         to="/scan-history" 
+         className="bg-gray-800 text-white px-4 py-2" 
+       > 
+         View Scan History 
+       </Link> 
  
        <button 
          onClick={handleLogout} 
