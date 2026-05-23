@@ -3,6 +3,7 @@ from pydantic import BaseModel
 from bson import ObjectId
 from datetime import datetime
 import random
+import requests
 
 from app.database.db import database
 

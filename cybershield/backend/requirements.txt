@@ -10,3 +10,4 @@ python-jose[cryptography]
 httpx
 pymongo
 motor
+requests

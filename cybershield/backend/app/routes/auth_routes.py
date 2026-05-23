@@ -4,11 +4,15 @@ from datetime import datetime
 from app.database.db import database
 from app.models.user_model import UserRegister
 from app.utils.security import hash_password
+from app.models.user_model import UserLogin
+from app.utils.security import (
+    verify_password,
+    create_access_token
+)
+from app.utils.dependencies import verify_token
 
 router = APIRouter()
-
 users_collection = database["users"]
-
 
 @router.post("/register")
 async def register_user(user: UserRegister):
@@ -38,14 +42,6 @@ async def register_user(user: UserRegister):
         "message": "User registered successfully",
         "user_id": str(result.inserted_id)
     }
-
-
-from app.models.user_model import UserLogin
-from app.utils.security import (
-    verify_password,
-    create_access_token
-)
-
 
 @router.post("/login")
 async def login_user(user: UserLogin):
@@ -84,10 +80,6 @@ async def login_user(user: UserLogin):
         "token_type": "bearer"
     }
 
-
-from app.utils.dependencies import verify_token
-
-
 @router.get("/profile")
 async def get_profile(
     user_data: dict = Depends(verify_token)
@@ -97,5 +89,3 @@ async def get_profile(
         "message": "Protected route accessed",
         "user": user_data
     }
-
-
