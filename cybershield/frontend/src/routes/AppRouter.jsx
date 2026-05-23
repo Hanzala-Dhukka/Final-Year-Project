@@ -8,6 +8,7 @@ import Register from "../pages/Register"
 import Login from "../pages/Login" 
 import Dashboard from "../pages/Dashboard" 
 import SecurityAnalyzer from "../pages/SecurityAnalyzer" 
+import ScanHistory from "../pages/ScanHistory"
 import NotFound from "../pages/NotFound"
  
 import ProtectedRoute from "./ProtectedRoute" 
@@ -46,6 +47,17 @@ import ProtectedRoute from "./ProtectedRoute"
              <ProtectedRoute> 
  
                <SecurityAnalyzer /> 
+ 
+             </ProtectedRoute> 
+           } 
+         /> 
+ 
+         <Route 
+           path="/scan-history" 
+           element={ 
+             <ProtectedRoute> 
+ 
+               <ScanHistory /> 
  
              </ProtectedRoute> 
            } 
