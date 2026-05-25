@@ -94,80 +94,99 @@ function GitHubScanner() {
           </div> 
 
           <div> 
-
-            <h2 className="text-2xl font-bold mb-6"> 
-              Vulnerability Findings 
-            </h2> 
-
-            <div className="grid gap-6"> 
-
-              {result.findings.map((finding, index) => ( 
-
-                <div 
-                  key={index} 
-                  className="bg-white p-6 rounded shadow" 
-                > 
-
-                  <h3 className="text-xl font-bold mb-4"> 
-                    {finding.file} 
-                  </h3> 
-
-                  <div className="space-y-4"> 
-
-                    {finding.issues.map((issue, issueIndex) => ( 
-
-                      <div 
-                        key={issueIndex} 
-                        className="border p-4 rounded" 
-                      > 
-
-                        <p> 
-                          Type: 
-                          <span className="font-bold ml-2"> 
-                            {issue.type} 
-                          </span> 
-                        </p> 
-
-                        <p className="mt-2"> 
  
-                          Severity: 
+            {result.vulnerabilities_found === 0 && ( 
  
-                          <span 
-                            className={` 
-                              ml-2 font-bold 
-                              ${ 
-                                issue.severity === "Critical" 
-                                  ? "text-red-600" 
-                                  : issue.severity === "High" 
-                                  ? "text-orange-500" 
-                                  : "text-yellow-500" 
-                              } 
-                            `} 
+              <div className="bg-green-100 border border-green-400 p-6 rounded"> 
+ 
+                <h2 className="text-2xl font-bold text-green-700"> 
+                  No Vulnerabilities Found 
+                </h2> 
+ 
+                <p className="mt-2"> 
+                  Repository appears secure based on current scans. 
+                </p> 
+ 
+              </div> 
+            )} 
+ 
+            {result.vulnerabilities_found > 0 && ( 
+              <> 
+                <h2 className="text-2xl font-bold mb-6"> 
+                  Vulnerability Findings 
+                </h2> 
+ 
+                <div className="grid gap-6"> 
+ 
+                  {result.findings.map((finding, index) => ( 
+ 
+                    <div 
+                      key={index} 
+                      className="bg-white p-6 rounded shadow" 
+                    > 
+ 
+                      <h3 className="text-xl font-bold mb-4"> 
+                        {finding.file} 
+                      </h3> 
+ 
+                      <div className="space-y-4"> 
+ 
+                        {finding.issues.map((issue, issueIndex) => ( 
+ 
+                          <div 
+                            key={issueIndex} 
+                            className="border p-4 rounded" 
                           > 
-                            {issue.severity} 
-                          </span> 
  
-                        </p> 
-
-                        <p className="mt-2"> 
-                          Matches Found: 
-                          <span className="ml-2"> 
-                            {issue.matches_found} 
-                          </span> 
-                        </p> 
-
+                            <p> 
+                              Type: 
+                              <span className="font-bold ml-2"> 
+                                {issue.type} 
+                              </span> 
+                            </p> 
+ 
+                            <p className="mt-2"> 
+ 
+                              Severity: 
+ 
+                              <span 
+                                className={` 
+                                  ml-2 font-bold 
+                                  ${ 
+                                    issue.severity === "Critical" 
+                                      ? "text-red-600" 
+                                      : issue.severity === "High" 
+                                      ? "text-orange-500" 
+                                      : "text-yellow-500" 
+                                  } 
+                                `} 
+                              > 
+                                {issue.severity} 
+                              </span> 
+ 
+                            </p> 
+ 
+                            <p className="mt-2"> 
+                              Matches Found: 
+                              <span className="ml-2"> 
+                                {issue.matches_found} 
+                              </span> 
+                            </p> 
+ 
+                          </div> 
+ 
+                        ))} 
+ 
                       </div> 
-
-                    ))} 
-
-                  </div> 
-
+ 
+                    </div> 
+ 
+                  ))} 
+ 
                 </div> 
-
-              ))} 
-
-            </div> 
-
+              </> 
+            )} 
+ 
           </div> 
 
         </div> 
