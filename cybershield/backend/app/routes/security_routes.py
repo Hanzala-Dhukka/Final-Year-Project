@@ -69,21 +69,6 @@ async def analyze_headers(
         )
 
 
-@router.get("/scan-history")
-async def get_scan_history():
-
-    scan_collection = database["security_scans"]
-
-    scans = await scan_collection.find().to_list(100)
-
-    for scan in scans:
-        scan["_id"] = str(scan["_id"])
-        if "created_at" in scan and isinstance(scan["created_at"], datetime):
-            scan["created_at"] = scan["created_at"].isoformat()
-
-    return scans
-
-
 @router.get("/status")
 async def get_security_status(user_data: dict = Depends(verify_token)):
     """
