@@ -11,3 +11,4 @@ httpx
 pymongo
 motor
 requests
+PyGithub
