@@ -158,3 +158,23 @@ async def scan_repository(data: dict):
             detail=error_msg
         )
 
+
+@router.get("/scan-history")
+async def get_scan_history():
+    try:
+        scan_collection = database["github_scans"]
+        
+        # Fetch scans sorted by newest first
+        scans = await scan_collection.find().sort("created_at", -1).to_list(length=100)
+        
+        # Convert MongoDB _id to string for JSON serialization
+        for scan in scans:
+            scan["_id"] = str(scan["_id"])
+            
+        return scans
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=str(e)
+        )
+

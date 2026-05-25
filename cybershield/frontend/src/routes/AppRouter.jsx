@@ -8,7 +8,8 @@ import Register from "../pages/Register"
 import Login from "../pages/Login" 
 import Dashboard from "../pages/Dashboard" 
 import SecurityAnalyzer from "../pages/SecurityAnalyzer" 
-import GitHubScanner from "../pages/GitHubScanner"
+import GitHubScanner from "../pages/GitHubScanner" 
+import GitHubScanHistory from "../pages/GitHubScanHistory"
 import NotFound from "../pages/NotFound"
  
 import ProtectedRoute from "./ProtectedRoute" 
@@ -58,6 +59,17 @@ import ProtectedRoute from "./ProtectedRoute"
              <ProtectedRoute> 
  
                <GitHubScanner /> 
+ 
+             </ProtectedRoute> 
+           } 
+         /> 
+ 
+         <Route 
+           path="/github-history" 
+           element={ 
+             <ProtectedRoute> 
+ 
+               <GitHubScanHistory /> 
  
              </ProtectedRoute> 
            } 
