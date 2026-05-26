@@ -1,7 +1,6 @@
 from fastapi import APIRouter, HTTPException, status
 from bson import ObjectId
 from datetime import datetime
-
 from app.database.db import database
 from app.models.user_model import UserUpdate
 
