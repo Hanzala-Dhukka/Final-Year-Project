@@ -35,6 +35,43 @@ function GitHubScanner() {
     } 
   } 
 
+  const downloadReport = async () => { 
+ 
+    try { 
+ 
+      const response = await API.post( 
+        "/github/generate-report", 
+        { 
+          report: result.report 
+        }, 
+        { 
+          responseType: "blob" 
+        } 
+      ) 
+ 
+      const url = window.URL.createObjectURL( 
+        new Blob([response.data]) 
+      ) 
+ 
+      const link = document.createElement("a") 
+ 
+      link.href = url 
+ 
+      link.setAttribute( 
+        "download", 
+        "CyberShield_Report.pdf" 
+      ) 
+ 
+      document.body.appendChild(link) 
+ 
+      link.click() 
+ 
+    } catch (error) { 
+ 
+      console.log(error) 
+    } 
+  } 
+
   return ( 
     <div className="min-h-screen bg-gray-100 p-10"> 
 
@@ -64,8 +101,56 @@ function GitHubScanner() {
       </div> 
 
       {result && ( 
-
+ 
         <div className="space-y-8"> 
+ 
+          <div className="bg-white p-6 rounded shadow"> 
+ 
+            <h2 className="text-3xl font-bold mb-4"> 
+              AI Security Report 
+            </h2> 
+ 
+            <p className="mt-2"> 
+              Risk Level: 
+              <span className="font-bold ml-2"> 
+                {result.report.risk_level} 
+              </span> 
+            </p> 
+ 
+            <p className="mt-4"> 
+              {result.report.summary} 
+            </p> 
+ 
+            <div className="mt-6"> 
+ 
+              <h3 className="text-xl font-bold mb-3"> 
+                Recommendations 
+              </h3> 
+ 
+              <ul className="list-disc ml-6 space-y-2"> 
+ 
+                {result.report.recommendations.map( 
+                  (rec, index) => ( 
+ 
+                    <li key={index}> 
+                      {rec} 
+                    </li> 
+                  ) 
+                )} 
+ 
+              </ul> 
+ 
+            </div> 
+
+            <button 
+              onClick={downloadReport} 
+              disabled={loading} 
+              className="bg-black text-white px-6 py-2 rounded mt-6 disabled:opacity-50" 
+            > 
+              Download PDF Report 
+            </button>
+ 
+          </div>
 
           <div className="bg-white p-6 rounded shadow"> 
 

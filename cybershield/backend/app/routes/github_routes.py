@@ -1,5 +1,6 @@
 from fastapi import APIRouter, HTTPException 
-from github import Github 
+from fastapi.responses import FileResponse 
+from github import Github, GithubException 
 import concurrent.futures
 import time
 import requests
@@ -9,6 +10,12 @@ from app.database.db import database
 from app.config.settings import settings
 from app.services.github_scanner import ( 
     scan_file_content 
+) 
+from app.services.report_generator import ( 
+    generate_security_report 
+) 
+from app.services.pdf_generator import ( 
+    generate_pdf_report 
 ) 
  
 router = APIRouter() 
@@ -53,20 +60,36 @@ def scan_single_file(repo_full_name, branch, file_path):
     return None
 
 
+import traceback
+
 @router.post("/scan-repository") 
 async def scan_repository(data: dict): 
+    global github_client
  
     repo_url = data.get("repo_url") 
- 
     if not repo_url: 
-        raise HTTPException( 
-            status_code=400, 
-            detail="Repository URL is required" 
-        ) 
+        raise HTTPException(status_code=400, detail="Repository URL is required") 
  
     try: 
         # Check current rate limit status before starting
-        remaining, limit = github_client.rate_limiting
+        try:
+            remaining, limit = github_client.rate_limiting
+        except GithubException.BadCredentialsException:
+            # If credentials are bad, fallback to unauthenticated client if possible
+            # or raise a clear error
+            if GITHUB_TOKEN:
+                print("ERROR: GitHub Token is invalid. Falling back to unauthenticated mode.")
+                github_client = Github()
+                remaining, limit = github_client.rate_limiting
+            else:
+                raise HTTPException(
+                    status_code=401,
+                    detail="Invalid GitHub credentials. Please check your GITHUB_TOKEN."
+                )
+        except Exception as e:
+            print(f"DEBUG: Unexpected error checking rate limit: {str(e)}")
+            # Continue anyway, let subsequent calls fail if it's a real issue
+            remaining, limit = 60, 60 # Default for unauthenticated
         if remaining == 0:
             reset_timestamp = github_client.rate_limiting_resettime
             reset_time = datetime.fromtimestamp(reset_timestamp)
@@ -136,14 +159,21 @@ async def scan_repository(data: dict):
  
         await scan_collection.insert_one(scan_data)
 
+        report = generate_security_report({ 
+            "findings": findings 
+        }) 
+
         return { 
             "repository": repo.full_name, 
             "scanned_files": scanned_files, 
             "vulnerabilities_found": len(findings), 
-            "findings": findings 
+            "findings": findings, 
+            "report": report 
         } 
  
     except Exception as e: 
+        print(f"ERROR in scan_repository: {str(e)}")
+        traceback.print_exc()
         error_msg = str(e)
         
         # Handle Network/DNS issues
@@ -157,6 +187,32 @@ async def scan_repository(data: dict):
             status_code=500, 
             detail=error_msg
         )
+
+
+@router.post("/generate-report") 
+async def generate_report(data: dict): 
+ 
+    report = data.get("report") 
+ 
+    if not report: 
+ 
+        raise HTTPException( 
+            status_code=400, 
+            detail="Report data required" 
+        ) 
+ 
+    output_path = "security_report.pdf" 
+ 
+    generate_pdf_report( 
+        report, 
+        output_path 
+    ) 
+ 
+    return FileResponse( 
+        output_path, 
+        media_type="application/pdf", 
+        filename="CyberShield_Report.pdf" 
+    )
 
 
 @router.get("/scan-history")
