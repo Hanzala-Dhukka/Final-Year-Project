@@ -63,6 +63,13 @@ function GitHubScanHistory() {
                 </span> 
               </p> 
 
+              <p>
+                Risk Score:
+                <span className="ml-2 font-bold">
+                  {scan.risk_score}
+                </span>
+              </p>
+
               <p className="text-gray-500 text-sm mt-4">
                 Scanned on: {new Date(scan.created_at).toLocaleString()}
               </p>

@@ -10,6 +10,7 @@ import Dashboard from "../pages/Dashboard"
 import SecurityAnalyzer from "../pages/SecurityAnalyzer" 
 import GitHubScanner from "../pages/GitHubScanner" 
 import GitHubScanHistory from "../pages/GitHubScanHistory"
+import AnalyticsDashboard from "../pages/AnalyticsDashboard"
 import NotFound from "../pages/NotFound"
  
 import ProtectedRoute from "./ProtectedRoute" 
@@ -70,6 +71,17 @@ import ProtectedRoute from "./ProtectedRoute"
              <ProtectedRoute> 
  
                <GitHubScanHistory /> 
+ 
+             </ProtectedRoute> 
+           } 
+         /> 
+ 
+         <Route 
+           path="/analytics" 
+           element={ 
+             <ProtectedRoute> 
+ 
+               <AnalyticsDashboard /> 
  
              </ProtectedRoute> 
            } 

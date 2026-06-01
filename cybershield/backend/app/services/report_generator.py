@@ -34,19 +34,13 @@ def generate_security_report(data):
     else:
         risk_level = "Safe"
         
-    recommendations = []
-    if total_files_with_issues > 0:
-        recommendations.append("Review the findings and rotate any leaked secrets immediately if necessary.")
-        recommendations.append("Update environment variables and remove hardcoded credentials from the repository.")
-        if severity_counts["Critical"] > 0 or severity_counts["High"] > 0:
-            recommendations.append("Immediately invalidate any compromised access keys or tokens found.")
-    else:
-        recommendations.append("Continue following best security practices and avoid committing secrets.")
-
     return {
         "summary": summary,
         "total_files_with_issues": total_files_with_issues,
         "severity_counts": severity_counts,
         "risk_level": risk_level,
-        "recommendations": recommendations
+        "recommendation": "Review the findings and rotate any leaked secrets immediately if necessary.",
+        "recommendations": [
+            "Review the findings and rotate any leaked secrets immediately if necessary."
+        ]
     }

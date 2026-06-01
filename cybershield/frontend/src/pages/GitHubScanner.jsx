@@ -174,6 +174,29 @@ function GitHubScanner() {
                 </span> 
               </p> 
 
+              <p className="mt-2">
+
+                Risk Score:
+
+                <span
+                  className={`
+                    ml-2 font-bold
+                    ${
+                      result.risk_score >= 90
+                        ? "text-green-600"
+                        : result.risk_score >= 70
+                        ? "text-blue-600"
+                        : result.risk_score >= 50
+                        ? "text-yellow-600"
+                        : "text-red-600"
+                    }
+                  `}
+                >
+                  {result.risk_score}/100
+                </span>
+
+              </p>
+
             </div> 
 
           </div> 
