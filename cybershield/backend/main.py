@@ -3,6 +3,7 @@ from app.database.db import database
 from app.routes.auth_routes import router as auth_router
 from app.routes.user_routes import router as user_router
 from app.routes.scan_routes import router as scan_router
+from app.routes.analytics_routes import router as analytics_router
 
 app = FastAPI()
 
@@ -22,6 +23,12 @@ app.include_router(
     scan_router,
     prefix="/api/scans",
     tags=["Security Scans"]
+)
+
+app.include_router(
+    analytics_router,
+    prefix="/api/analytics",
+    tags=["Analytics"]
 )
 
 @app.get("/")

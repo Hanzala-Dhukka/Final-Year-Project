@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException 
 from fastapi.responses import FileResponse 
-from github import Github, GithubException 
+from github import Github, GithubException, BadCredentialsException
 import concurrent.futures
 import time
 import requests
@@ -9,7 +9,9 @@ from app.database.db import database
  
 from app.config.settings import settings
 from app.services.github_scanner import ( 
-    scan_file_content 
+    scan_file_content,
+    detect_technology,
+    scan_dangerous_code
 ) 
 from app.services.report_generator import ( 
     generate_security_report 
@@ -17,6 +19,9 @@ from app.services.report_generator import (
 from app.services.pdf_generator import ( 
     generate_pdf_report 
 ) 
+from app.services.risk_engine import (
+    calculate_risk_score
+)
  
 router = APIRouter() 
  
@@ -48,7 +53,18 @@ def scan_single_file(repo_full_name, branch, file_path):
 
         decoded_content = response.text
         
-        result = scan_file_content(decoded_content) 
+        secret_findings = scan_file_content(
+            decoded_content
+        )
+
+        code_findings = scan_dangerous_code(
+            decoded_content
+        )
+
+        result = (
+            secret_findings +
+            code_findings
+        )
         
         if result: 
             return { 
@@ -67,14 +83,18 @@ async def scan_repository(data: dict):
     global github_client
  
     repo_url = data.get("repo_url") 
+ 
     if not repo_url: 
-        raise HTTPException(status_code=400, detail="Repository URL is required") 
+        raise HTTPException( 
+            status_code=400, 
+            detail="Repository URL is required" 
+        ) 
  
     try: 
         # Check current rate limit status before starting
         try:
             remaining, limit = github_client.rate_limiting
-        except GithubException.BadCredentialsException:
+        except BadCredentialsException:
             # If credentials are bad, fallback to unauthenticated client if possible
             # or raise a clear error
             if GITHUB_TOKEN:
@@ -114,6 +134,12 @@ async def scan_repository(data: dict):
         excluded_extensions = {'.png', '.jpg', '.jpeg', '.gif', '.ico', '.pdf', '.bin', '.exe', '.zip', '.tar', '.gz', '.svg', '.woff', '.woff2', '.ttf', '.eot'}
         excluded_dirs = {'node_modules', '.git', '__pycache__', 'dist', 'build', 'vendor'}
         
+        detected_technologies = set()
+
+        class FileContent:
+            def __init__(self, name):
+                self.name = name
+
         for item in tree.tree:
             if item.type == "blob": # It's a file
                 if any(part in excluded_dirs for part in item.path.split('/')):
@@ -121,6 +147,15 @@ async def scan_repository(data: dict):
                 if any(item.path.lower().endswith(ext) for ext in excluded_extensions):
                     continue
                 file_paths.append(item.path)
+
+                file_content = FileContent(item.path.split('/')[-1])
+                technology = detect_technology(
+                    file_content.name
+                )
+                if technology:
+                    detected_technologies.add(
+                        technology
+                    )
 
         # 3. Increase limit since raw fetches don't count towards API quota
         MAX_FILES_TO_SCAN = 2000
@@ -147,13 +182,21 @@ async def scan_repository(data: dict):
                 except Exception:
                     continue
  
-        scan_collection = database["github_scans"] 
- 
+        risk_score = calculate_risk_score(
+            findings
+        )
+
+        scan_collection = database["github_scans"]
+
         scan_data = { 
             "repository": repo.full_name, 
             "scanned_files": scanned_files, 
             "vulnerabilities_found": len(findings), 
             "findings": findings, 
+            "technologies": list(
+                detected_technologies
+            ),
+            "risk_score": risk_score,
             "created_at": datetime.utcnow() 
         } 
  
@@ -168,6 +211,10 @@ async def scan_repository(data: dict):
             "scanned_files": scanned_files, 
             "vulnerabilities_found": len(findings), 
             "findings": findings, 
+            "technologies": list(
+                detected_technologies
+            ),
+            "risk_score": risk_score,
             "report": report 
         } 
  
