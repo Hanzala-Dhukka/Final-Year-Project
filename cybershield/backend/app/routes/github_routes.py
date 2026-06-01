@@ -273,6 +273,8 @@ async def get_scan_history():
         # Convert MongoDB _id to string for JSON serialization
         for scan in scans:
             scan["_id"] = str(scan["_id"])
+            if "user_id" in scan:
+                scan["user_id"] = str(scan["user_id"])
             
         return scans
     except Exception as e:
@@ -280,4 +282,26 @@ async def get_scan_history():
             status_code=500,
             detail=str(e)
         )
+
+
+@router.get("/reports")
+async def get_reports():
+
+    reports_collection = database[
+        "security_reports"
+    ]
+
+    reports = await reports_collection.find().sort(
+        "created_at",
+        -1
+    ).to_list(100)
+
+    for report in reports:
+        report["_id"] = str(
+            report["_id"]
+        )
+        if "user_id" in report:
+            report["user_id"] = str(report["user_id"])
+
+    return reports
 

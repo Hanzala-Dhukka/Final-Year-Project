@@ -7,6 +7,7 @@ from app.routes.security_routes import router as security_router
 from app.routes.scan_routes import router as scan_router
 from app.routes.github_routes import router as github_router
 from app.routes.analytics_routes import router as analytics_router
+from app.routes.report_routes import router as report_router
 
 # ── App instance ─────────────────────────────────────────────────────────────
 app = FastAPI(
@@ -32,6 +33,7 @@ app.include_router(security_router, prefix="/api/v1/security", tags=["Security A
 app.include_router(scan_router, prefix="/api/v1/scan", tags=["Scan"])
 app.include_router(github_router, prefix="/api/v1/github", tags=["GitHub Scanner"])
 app.include_router(analytics_router, prefix="/api/v1/analytics", tags=["Analytics"])
+app.include_router(report_router, prefix="/api/v1/reports", tags=["Reports"])
 
 
 # ── Health check ──────────────────────────────────────────────────────────────

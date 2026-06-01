@@ -60,7 +60,7 @@ function Dashboard() {
 
         </Link>
 
-        <Link to="/github-scan-history">
+        <Link to="/github-history">
 
           <div className="bg-white p-8 rounded shadow hover:shadow-xl transition">
 
@@ -86,6 +86,22 @@ function Dashboard() {
 
             <p className="mt-4 text-gray-600">
               View security analytics and charts
+            </p>
+
+          </div>
+
+        </Link>
+
+        <Link to="/report-center">
+
+          <div className="bg-white p-8 rounded shadow hover:shadow-xl transition">
+
+            <h2 className="text-2xl font-bold">
+              Report Center
+            </h2>
+
+            <p className="mt-4 text-gray-600">
+              View all security reports
             </p>
 
           </div>
