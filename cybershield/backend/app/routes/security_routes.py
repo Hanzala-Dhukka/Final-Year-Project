@@ -69,6 +69,32 @@ async def analyze_headers(
         )
 
 
+@router.get("/history")
+async def get_history(user_data: dict = Depends(verify_token)):
+    try:
+        # Fetch scans for this user OR legacy scans with no user_id
+        history = await scans_collection.find({
+            "$or": [
+                {"user_id": ObjectId(user_data["user_id"])},
+                {"user_id": {"$exists": False}},
+                {"user_id": None},
+                {"user_id": ""}
+            ]
+        }).sort("created_at", -1).to_list(100)
+
+        for scan in history:
+            scan["_id"] = str(scan["_id"])
+            if "user_id" in scan:
+                scan["user_id"] = str(scan["user_id"])
+        
+        return history
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=str(e)
+        )
+
+
 @router.get("/status")
 async def get_security_status(user_data: dict = Depends(verify_token)):
     """
