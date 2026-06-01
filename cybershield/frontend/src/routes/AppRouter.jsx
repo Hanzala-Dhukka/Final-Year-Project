@@ -8,6 +8,7 @@ import Register from "../pages/Register"
 import Login from "../pages/Login" 
 import Dashboard from "../pages/Dashboard" 
 import SecurityAnalyzer from "../pages/SecurityAnalyzer" 
+import ScanHistory from "../pages/ScanHistory"
 import GitHubScanner from "../pages/GitHubScanner" 
 import GitHubScanHistory from "../pages/GitHubScanHistory"
 import AnalyticsDashboard from "../pages/AnalyticsDashboard"
@@ -50,6 +51,17 @@ import ProtectedRoute from "./ProtectedRoute"
              <ProtectedRoute> 
  
                <SecurityAnalyzer /> 
+ 
+             </ProtectedRoute> 
+           } 
+         /> 
+ 
+         <Route 
+           path="/scan-history" 
+           element={ 
+             <ProtectedRoute> 
+ 
+               <ScanHistory /> 
  
              </ProtectedRoute> 
            } 

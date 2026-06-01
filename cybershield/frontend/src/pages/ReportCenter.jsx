@@ -20,8 +20,8 @@ import { useEffect, useState } from "react"
      const fetchReports = async () => { 
  
        const response = await API.get( 
-         "/github/reports" 
-       ) 
+        "github/reports" 
+      ) 
  
        setReports(response.data) 
      } 

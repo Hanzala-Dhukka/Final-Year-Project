@@ -26,13 +26,13 @@ function AnalyticsDashboard() {
       try {
 
         const response = await API.get(
-          "/analytics/dashboard-stats"
+          "analytics/dashboard-stats"
         )
 
         setStats(response.data)
 
         const recentResponse = await API.get(
-          "/analytics/recent-scans"
+          "analytics/recent-scans"
         )
 
         setRecentScans(recentResponse.data)

@@ -1,10 +1,11 @@
-from fastapi import APIRouter, HTTPException 
+from fastapi import APIRouter, HTTPException, Depends
 from fastapi.responses import FileResponse 
 from github import Github, GithubException, BadCredentialsException
 import concurrent.futures
 import time
 import requests
 from datetime import datetime 
+from bson import ObjectId
 from app.database.db import database 
  
 from app.config.settings import settings
@@ -22,6 +23,7 @@ from app.services.pdf_generator import (
 from app.services.risk_engine import (
     calculate_risk_score
 )
+from app.utils.dependencies import verify_token
  
 router = APIRouter() 
  
@@ -79,7 +81,10 @@ def scan_single_file(repo_full_name, branch, file_path):
 import traceback
 
 @router.post("/scan-repository") 
-async def scan_repository(data: dict): 
+async def scan_repository(
+    data: dict,
+    user_data: dict = Depends(verify_token)
+): 
     global github_client
  
     repo_url = data.get("repo_url") 
@@ -189,6 +194,7 @@ async def scan_repository(data: dict):
         scan_collection = database["github_scans"]
 
         scan_data = { 
+            "user_id": ObjectId(user_data["user_id"]),
             "repository": repo.full_name, 
             "scanned_files": scanned_files, 
             "vulnerabilities_found": len(findings), 
@@ -237,9 +243,13 @@ async def scan_repository(data: dict):
 
 
 @router.post("/generate-report") 
-async def generate_report(data: dict): 
+async def generate_report(
+    data: dict,
+    user_data: dict = Depends(verify_token)
+): 
  
     report = data.get("report") 
+    title = data.get("title", "GitHub Security Report")
  
     if not report: 
  
@@ -248,6 +258,20 @@ async def generate_report(data: dict):
             detail="Report data required" 
         ) 
  
+    # Save to database
+    reports_collection = database["security_reports"]
+    report_document = {
+        "user_id": ObjectId(user_data["user_id"]),
+        "report_data": report,
+        "title": title,
+        "risk_level": report.get("risk_level", "Unknown"),
+        "summary": report.get("summary", ""),
+        "report_type": "github_scan",
+        "created_at": datetime.utcnow()
+    }
+    
+    await reports_collection.insert_one(report_document)
+
     output_path = "security_report.pdf" 
  
     generate_pdf_report( 
@@ -258,17 +282,24 @@ async def generate_report(data: dict):
     return FileResponse( 
         output_path, 
         media_type="application/pdf", 
-        filename="CyberShield_Report.pdf" 
+        filename=f"{title.replace(' ', '_')}.pdf" 
     )
 
 
 @router.get("/scan-history")
-async def get_scan_history():
+async def get_scan_history(user_data: dict = Depends(verify_token)):
     try:
         scan_collection = database["github_scans"]
         
-        # Fetch scans sorted by newest first
-        scans = await scan_collection.find().sort("created_at", -1).to_list(length=100)
+        # Fetch scans for this user OR legacy scans with no valid user_id
+        scans = await scan_collection.find({
+            "$or": [
+                {"user_id": ObjectId(user_data["user_id"])},
+                {"user_id": {"$exists": False}},
+                {"user_id": None},
+                {"user_id": ""}
+            ]
+        }).sort("created_at", -1).to_list(length=100)
         
         # Convert MongoDB _id to string for JSON serialization
         for scan in scans:
@@ -285,13 +316,20 @@ async def get_scan_history():
 
 
 @router.get("/reports")
-async def get_reports():
+async def get_reports(user_data: dict = Depends(verify_token)):
 
     reports_collection = database[
         "security_reports"
     ]
 
-    reports = await reports_collection.find().sort(
+    reports = await reports_collection.find({
+        "$or": [
+            {"user_id": ObjectId(user_data["user_id"])},
+            {"user_id": {"$exists": False}},
+            {"user_id": None},
+            {"user_id": ""}
+        ]
+    }).sort(
         "created_at",
         -1
     ).to_list(100)

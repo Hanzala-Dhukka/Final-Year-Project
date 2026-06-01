@@ -44,13 +44,20 @@ async def save_report(
     }
 
 @router.get("/reports")
-async def get_reports():
+async def get_reports(user_data: dict = Depends(verify_token)):
 
     reports_collection = database[
         "security_reports"
     ]
 
-    reports = await reports_collection.find().sort(
+    reports = await reports_collection.find({
+        "$or": [
+            {"user_id": ObjectId(user_data["user_id"])},
+            {"user_id": {"$exists": False}},
+            {"user_id": None},
+            {"user_id": ""}
+        ]
+    }).sort(
         "created_at",
         -1
     ).to_list(100)

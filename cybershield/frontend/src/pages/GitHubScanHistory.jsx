@@ -12,7 +12,7 @@ function GitHubScanHistory() {
       try { 
 
         const response = await API.get( 
-          "/github/scan-history" 
+          "github/scan-history" 
         ) 
 
         setHistory(response.data) 
