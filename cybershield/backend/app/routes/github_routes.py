@@ -23,7 +23,7 @@ from app.services.pdf_generator import (
 from app.services.risk_engine import (
     calculate_risk_score
 )
-from app.utils.dependencies import verify_token
+from app.dependencies.auth import get_current_user
  
 router = APIRouter() 
  
@@ -83,7 +83,7 @@ import traceback
 @router.post("/scan-repository") 
 async def scan_repository(
     data: dict,
-    user_data: dict = Depends(verify_token)
+    current_user: dict = Depends(get_current_user)
 ): 
     global github_client
  
@@ -98,154 +98,100 @@ async def scan_repository(
     try: 
         # Check current rate limit status before starting
         try:
-            remaining, limit = github_client.rate_limiting
-        except BadCredentialsException:
-            # If credentials are bad, fallback to unauthenticated client if possible
-            # or raise a clear error
-            if GITHUB_TOKEN:
-                print("ERROR: GitHub Token is invalid. Falling back to unauthenticated mode.")
-                github_client = Github()
-                remaining, limit = github_client.rate_limiting
-            else:
-                raise HTTPException(
-                    status_code=401,
-                    detail="Invalid GitHub credentials. Please check your GITHUB_TOKEN."
-                )
-        except Exception as e:
-            print(f"DEBUG: Unexpected error checking rate limit: {str(e)}")
-            # Continue anyway, let subsequent calls fail if it's a real issue
-            remaining, limit = 60, 60 # Default for unauthenticated
-        if remaining == 0:
-            reset_timestamp = github_client.rate_limiting_resettime
-            reset_time = datetime.fromtimestamp(reset_timestamp)
-            raise HTTPException(
-                status_code=403,
-                detail=f"GitHub API Rate limit exceeded. Resets at {reset_time.strftime('%H:%M:%S')} UTC. Please check your token."
-            )
+            rate_limit = github_client.get_rate_limit().core
+            if rate_limit.remaining < 10:
+                # If rate limit is low, try to re-initialize with token if it's available
+                # This helps if the client was somehow initialized without a token
+                if GITHUB_TOKEN:
+                    github_client = Github(GITHUB_TOKEN)
+                    rate_limit = github_client.get_rate_limit().core
+                
+                if rate_limit.remaining < 5:
+                    reset_time = time.strftime('%H:%M:%S', time.localtime(rate_limit.reset.timestamp()))
+                    raise HTTPException(
+                        status_code=429,
+                        detail=f"GitHub API rate limit nearly exhausted. Resets at {reset_time}."
+                    )
+        except (BadCredentialsException, GithubException):
+            # If token is invalid or another GitHub error occurs
+            pass
 
-        # Clean up the URL to get the path (owner/repo)
-        repo_path = repo_url.replace("https://github.com/", "")
-        repo_path = repo_path.replace("`", "").strip().strip("/")
- 
-        repo = github_client.get_repo(repo_path) 
-        repo_full_name = repo.full_name
-        default_branch = repo.default_branch
+        repo_name = repo_url.split("github.com/")[-1].strip("/")
+        repo = github_client.get_repo(repo_name)
         
-        # 1. Use Recursive Tree API to get all file paths (Only 1 API call!)
+        # Get all files using git tree to be more efficient
+        default_branch = repo.default_branch
         tree = repo.get_git_tree(default_branch, recursive=True)
         
-        # 2. Filter for files only and apply basic exclusions
-        file_paths = []
-        excluded_extensions = {'.png', '.jpg', '.jpeg', '.gif', '.ico', '.pdf', '.bin', '.exe', '.zip', '.tar', '.gz', '.svg', '.woff', '.woff2', '.ttf', '.eot'}
-        excluded_dirs = {'node_modules', '.git', '__pycache__', 'dist', 'build', 'vendor'}
-        
-        detected_technologies = set()
+        files_to_scan = [
+            item.path for item in tree.tree 
+            if item.type == "blob" and (
+                item.path.endswith((".py", ".js", ".env", ".yml", ".json", ".txt", ".sh")) or
+                "config" in item.path.lower()
+            )
+        ]
 
-        class FileContent:
-            def __init__(self, name):
-                self.name = name
+        # Limit to 100 files to avoid timeouts
+        files_to_scan = files_to_scan[:100]
 
-        for item in tree.tree:
-            if item.type == "blob": # It's a file
-                if any(part in excluded_dirs for part in item.path.split('/')):
-                    continue
-                if any(item.path.lower().endswith(ext) for ext in excluded_extensions):
-                    continue
-                file_paths.append(item.path)
+        findings = []
+        technologies = set()
 
-                file_content = FileContent(item.path.split('/')[-1])
-                technology = detect_technology(
-                    file_content.name
-                )
-                if technology:
-                    detected_technologies.add(
-                        technology
-                    )
-
-        # 3. Increase limit since raw fetches don't count towards API quota
-        MAX_FILES_TO_SCAN = 2000
-        if len(file_paths) > MAX_FILES_TO_SCAN:
-            file_paths = file_paths[:MAX_FILES_TO_SCAN]
-
-        findings = [] 
-        scanned_files = 0 
-
-        # 4. Use Concurrency to fetch raw contents in parallel
-        # We can use more workers now because we aren't hitting the GitHub API
-        with concurrent.futures.ThreadPoolExecutor(max_workers=15) as executor:
+        # Parallelize file scanning for speed
+        with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
             future_to_file = {
-                executor.submit(scan_single_file, repo_full_name, default_branch, path): path 
-                for path in file_paths
+                executor.submit(scan_single_file, repo_name, default_branch, f): f 
+                for f in files_to_scan
             }
             
             for future in concurrent.futures.as_completed(future_to_file):
-                try:
-                    result = future.result()
-                    scanned_files += 1
-                    if result:
-                        findings.append(result)
-                except Exception:
-                    continue
- 
-        risk_score = calculate_risk_score(
-            findings
+                result = future.result()
+                if result:
+                    findings.append(result)
+                    # Extract technology from file extension
+                    tech = detect_technology(result["file"])
+                    if tech: technologies.add(tech)
+
+        risk_score = calculate_risk_score(findings)
+        
+        report = generate_security_report(
+            repo_name,
+            findings,
+            list(technologies),
+            risk_score
         )
 
+        # Save scan to database
         scan_collection = database["github_scans"]
-
-        scan_data = { 
-            "user_id": ObjectId(user_data["user_id"]),
-            "repository": repo.full_name, 
-            "scanned_files": scanned_files, 
-            "vulnerabilities_found": len(findings), 
-            "findings": findings, 
-            "technologies": list(
-                detected_technologies
-            ),
+        scan_doc = {
+            "user_id": current_user["_id"],
+            "repo_url": repo_url,
+            "repo_name": repo_name,
+            "findings_count": len(findings),
             "risk_score": risk_score,
-            "created_at": datetime.utcnow() 
-        } 
- 
-        await scan_collection.insert_one(scan_data)
+            "created_at": datetime.utcnow()
+        }
+        await scan_collection.insert_one(scan_doc)
 
-        report = generate_security_report({ 
-            "findings": findings 
-        }) 
+        return report
 
-        return { 
-            "repository": repo.full_name, 
-            "scanned_files": scanned_files, 
-            "vulnerabilities_found": len(findings), 
-            "findings": findings, 
-            "technologies": list(
-                detected_technologies
-            ),
-            "risk_score": risk_score,
-            "report": report 
-        } 
- 
-    except Exception as e: 
-        print(f"ERROR in scan_repository: {str(e)}")
+    except BadCredentialsException:
+        raise HTTPException(
+            status_code=401,
+            detail="Invalid GitHub credentials. Please check your token."
+        )
+    except Exception as e:
         traceback.print_exc()
-        error_msg = str(e)
-        
-        # Handle Network/DNS issues
-        if "getaddrinfo failed" in error_msg or "NameResolutionError" in error_msg:
-            error_msg = "Network Error: Could not resolve 'api.github.com'. Please check your internet connection or DNS settings."
-        
-        elif "403" in error_msg:
-            error_msg = "GitHub API rate limit exceeded or access forbidden. Please check your GITHUB_TOKEN or wait a few minutes."
-        
-        raise HTTPException( 
-            status_code=500, 
-            detail=error_msg
+        raise HTTPException(
+            status_code=500,
+            detail=f"Error scanning repository: {str(e)}"
         )
 
 
-@router.post("/generate-report") 
-async def generate_report(
-    data: dict,
-    user_data: dict = Depends(verify_token)
+@router.post("/generate-pdf") 
+async def generate_pdf( 
+    data: dict, 
+    current_user: dict = Depends(get_current_user) 
 ): 
  
     report = data.get("report") 
@@ -261,7 +207,7 @@ async def generate_report(
     # Save to database
     reports_collection = database["security_reports"]
     report_document = {
-        "user_id": ObjectId(user_data["user_id"]),
+        "user_id": current_user["_id"],
         "report_data": report,
         "title": title,
         "risk_level": report.get("risk_level", "Unknown"),
@@ -287,19 +233,16 @@ async def generate_report(
 
 
 @router.get("/scan-history")
-async def get_scan_history(user_data: dict = Depends(verify_token)):
+async def get_scan_history(current_user: dict = Depends(get_current_user)):
     try:
         scan_collection = database["github_scans"]
         
-        # Fetch scans for this user OR legacy scans with no valid user_id
-        scans = await scan_collection.find({
-            "$or": [
-                {"user_id": ObjectId(user_data["user_id"])},
-                {"user_id": {"$exists": False}},
-                {"user_id": None},
-                {"user_id": ""}
-            ]
-        }).sort("created_at", -1).to_list(length=100)
+        # Admin sees all, user sees own
+        query = {}
+        if current_user.get("role") != "admin":
+            query = {"user_id": current_user["_id"]}
+
+        scans = await scan_collection.find(query).sort("created_at", -1).to_list(length=100)
         
         # Convert MongoDB _id to string for JSON serialization
         for scan in scans:
@@ -316,20 +259,18 @@ async def get_scan_history(user_data: dict = Depends(verify_token)):
 
 
 @router.get("/reports")
-async def get_reports(user_data: dict = Depends(verify_token)):
+async def get_reports(current_user: dict = Depends(get_current_user)):
 
     reports_collection = database[
         "security_reports"
     ]
 
-    reports = await reports_collection.find({
-        "$or": [
-            {"user_id": ObjectId(user_data["user_id"])},
-            {"user_id": {"$exists": False}},
-            {"user_id": None},
-            {"user_id": ""}
-        ]
-    }).sort(
+    # Admin sees all, user sees own
+    query = {}
+    if current_user.get("role") != "admin":
+        query = {"user_id": current_user["_id"]}
+
+    reports = await reports_collection.find(query).sort(
         "created_at",
         -1
     ).to_list(100)

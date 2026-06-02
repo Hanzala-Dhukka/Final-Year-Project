@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom"
 
 function Dashboard() {
+  const role = localStorage.getItem("role");
 
   return (
 
@@ -101,17 +102,31 @@ function Dashboard() {
             </h2>
 
             <p className="mt-4 text-gray-600">
-              View all security reports
+              Generate security PDF reports
             </p>
 
           </div>
 
         </Link>
 
+        {role === "admin" && (
+          <Link to="/admin">
+            <div className="bg-white p-8 rounded shadow border-2 border-black hover:shadow-xl transition">
+              <h2 className="text-2xl font-bold text-red-600">
+                Admin Dashboard
+              </h2>
+              <p className="mt-4 text-gray-600">
+                Manage users and system settings
+              </p>
+            </div>
+          </Link>
+        )}
+
         <button
           onClick={() => {
 
             localStorage.removeItem("token")
+            localStorage.removeItem("role")
 
             window.location.href = "/login"
           }}

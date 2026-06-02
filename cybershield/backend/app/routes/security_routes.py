@@ -3,7 +3,7 @@ import requests
 from datetime import datetime
 from bson import ObjectId
 from app.database.db import database
-from app.utils.dependencies import verify_token
+from app.dependencies.auth import get_current_user
 from app.services.header_analyzer import analyze_security_headers
 
 router = APIRouter()
@@ -13,7 +13,7 @@ scans_collection = database["scans"]
 @router.post("/analyze-headers")
 async def analyze_headers(
     data: dict,
-    user_data: dict = Depends(verify_token)
+    current_user: dict = Depends(get_current_user)
 ):
     url = data.get("url")
 
@@ -43,7 +43,7 @@ async def analyze_headers(
 
         # Store scan in MongoDB
         scan_record = {
-            "user_id": ObjectId(user_data["user_id"]),
+            "user_id": current_user["_id"],
             "target_url": url,
             "scan_type": "Header Analysis",
             "status": "Completed",
@@ -70,17 +70,14 @@ async def analyze_headers(
 
 
 @router.get("/history")
-async def get_history(user_data: dict = Depends(verify_token)):
+async def get_history(current_user: dict = Depends(get_current_user)):
     try:
-        # Fetch scans for this user OR legacy scans with no user_id
-        history = await scans_collection.find({
-            "$or": [
-                {"user_id": ObjectId(user_data["user_id"])},
-                {"user_id": {"$exists": False}},
-                {"user_id": None},
-                {"user_id": ""}
-            ]
-        }).sort("created_at", -1).to_list(100)
+        # Admin sees all, user sees own
+        query = {}
+        if current_user.get("role") != "admin":
+            query = {"user_id": current_user["_id"]}
+
+        history = await scans_collection.find(query).sort("created_at", -1).to_list(100)
 
         for scan in history:
             scan["_id"] = str(scan["_id"])
@@ -96,7 +93,7 @@ async def get_history(user_data: dict = Depends(verify_token)):
 
 
 @router.get("/status")
-async def get_security_status(user_data: dict = Depends(verify_token)):
+async def get_security_status(current_user: dict = Depends(get_current_user)):
     """
     Check the overall security status of the system.
     Requires authentication.
@@ -111,7 +108,7 @@ async def get_security_status(user_data: dict = Depends(verify_token)):
 
 
 @router.post("/scan")
-async def initiate_scan(user_data: dict = Depends(verify_token)):
+async def initiate_scan(current_user: dict = Depends(get_current_user)):
     """
     Trigger a new security scan.
     Requires authentication.

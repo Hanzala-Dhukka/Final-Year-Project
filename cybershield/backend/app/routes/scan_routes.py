@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, HTTPException, status, Depends
 from pydantic import BaseModel
 from bson import ObjectId
 from datetime import datetime
@@ -6,25 +6,22 @@ import random
 import requests
 
 from app.database.db import database
+from app.dependencies.auth import get_current_user
 
 router = APIRouter()
 scans_collection = database["scans"]
 
 
 class ScanRequest(BaseModel):
-    user_id: str
     target_url: str
     scan_type: str  # e.g., "port_scan", "vulnerability_scan", "full_scan"
 
 
 @router.post("/start")
-async def start_scan(scan_req: ScanRequest):
-    if not ObjectId.is_valid(scan_req.user_id):
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Invalid user ID format"
-        )
-
+async def start_scan(
+    scan_req: ScanRequest,
+    current_user: dict = Depends(get_current_user)
+):
     # Simple mock vulnerability findings based on target url
     findings = [
         {"issue": "SQL Injection vulnerability found in login parameter", "severity": "High"},
@@ -37,7 +34,7 @@ async def start_scan(scan_req: ScanRequest):
     detected_issues = random.sample(findings, k=random.randint(1, len(findings)))
 
     new_scan = {
-        "user_id": ObjectId(scan_req.user_id),
+        "user_id": current_user["_id"],
         "target_url": scan_req.target_url,
         "scan_type": scan_req.scan_type,
         "status": "Completed",
@@ -57,15 +54,15 @@ async def start_scan(scan_req: ScanRequest):
     }
 
 
-@router.get("/history/{user_id}")
-async def get_scan_history(user_id: str):
-    if not ObjectId.is_valid(user_id):
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Invalid user ID format"
-        )
+@router.get("/history")
+async def get_scan_history(current_user: dict = Depends(get_current_user)):
+    
+    # Admin sees all, user sees own
+    query = {}
+    if current_user.get("role") != "admin":
+        query = {"user_id": current_user["_id"]}
 
-    cursor = scans_collection.find({"user_id": ObjectId(user_id)}).sort("created_at", -1)
+    cursor = scans_collection.find(query).sort("created_at", -1)
     scans = []
 
     async for scan in cursor:
@@ -80,6 +77,5 @@ async def get_scan_history(user_id: str):
         })
 
     return {
-        "user_id": user_id,
         "scans": scans
     }

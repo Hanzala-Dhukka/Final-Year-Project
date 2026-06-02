@@ -34,6 +34,10 @@ function Login() {
          "token", 
          response.data.access_token 
        ) 
+
+       // Fetch user role after login
+       const userResponse = await API.get("auth/me")
+       localStorage.setItem("role", userResponse.data.role)
  
        alert(response.data.message) 
  
