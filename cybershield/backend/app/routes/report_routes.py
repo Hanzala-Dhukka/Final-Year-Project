@@ -4,7 +4,7 @@ from datetime import datetime
 from bson import ObjectId
 from app.database.db import database
 from app.models.report_model import ReportCreate, ReportResponse
-from app.utils.dependencies import verify_token
+from app.dependencies.auth import get_current_user
 from app.services.pdf_generator import generate_pdf_report
 
 router = APIRouter()
@@ -13,7 +13,7 @@ reports_collection = database["security_reports"]
 @router.post("/save-report")
 async def save_report(
     data: dict,
-    user_data: dict = Depends(verify_token)
+    current_user: dict = Depends(get_current_user)
 ):
     # Accept both 'report_data' or 'report' for flexibility
     report_data = data.get("report_data") or data.get("report")
@@ -27,7 +27,7 @@ async def save_report(
         )
     
     report_document = {
-        "user_id": ObjectId(user_data["user_id"]),
+        "user_id": current_user["_id"],
         "report_data": report_data,
         "title": title,
         "risk_level": report_data.get("risk_level", "Unknown"),
@@ -44,20 +44,18 @@ async def save_report(
     }
 
 @router.get("/reports")
-async def get_reports(user_data: dict = Depends(verify_token)):
+async def get_reports(current_user: dict = Depends(get_current_user)):
 
     reports_collection = database[
         "security_reports"
     ]
 
-    reports = await reports_collection.find({
-        "$or": [
-            {"user_id": ObjectId(user_data["user_id"])},
-            {"user_id": {"$exists": False}},
-            {"user_id": None},
-            {"user_id": ""}
-        ]
-    }).sort(
+    # Admin sees all reports, regular users see only their own
+    query = {}
+    if current_user.get("role") != "admin":
+        query = {"user_id": current_user["_id"]}
+
+    reports = await reports_collection.find(query).sort(
         "created_at",
         -1
     ).to_list(100)
@@ -72,17 +70,19 @@ async def get_reports(user_data: dict = Depends(verify_token)):
     return reports
 
 @router.get("/reports/{report_id}")
-async def get_report(report_id: str, user_data: dict = Depends(verify_token)):
+async def get_report(report_id: str, current_user: dict = Depends(get_current_user)):
     if not ObjectId.is_valid(report_id):
         raise HTTPException(
             status_code=400,
             detail="Invalid report ID"
         )
     
-    report = await reports_collection.find_one({
-        "_id": ObjectId(report_id),
-        "user_id": ObjectId(user_data["user_id"])
-    })
+    query = {"_id": ObjectId(report_id)}
+    # If not admin, must be the owner
+    if current_user.get("role") != "admin":
+        query["user_id"] = current_user["_id"]
+
+    report = await reports_collection.find_one(query)
     
     if not report:
         raise HTTPException(
@@ -98,7 +98,7 @@ async def get_report(report_id: str, user_data: dict = Depends(verify_token)):
 @router.post("/generate-and-save-report")
 async def generate_and_save_report(
     data: dict,
-    user_data: dict = Depends(verify_token)
+    current_user: dict = Depends(get_current_user)
 ):
     report = data.get("report")
     title = data.get("title", "Security Report")
@@ -110,7 +110,7 @@ async def generate_and_save_report(
         )
     
     report_document = {
-        "user_id": ObjectId(user_data["user_id"]),
+        "user_id": current_user["_id"],
         "report_data": report,
         "title": title,
         "risk_level": report.get("risk_level", "Unknown"),

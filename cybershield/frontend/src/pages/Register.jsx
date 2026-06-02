@@ -4,7 +4,7 @@ import API from "../api/api"
 function Register() {
 
   const [formData, setFormData] = useState({
-    name: "",
+    username: "",
     email: "",
     password: "",
   })
@@ -45,8 +45,8 @@ function Register() {
 
         <input
           type="text"
-          name="name"
-          placeholder="Name"
+          name="username"
+          placeholder="Username"
           className="border p-2"
           onChange={handleChange}
         />

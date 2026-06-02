@@ -25,8 +25,9 @@ async def get_user_profile(user_id: str):
 
     return {
         "id": str(user["_id"]),
-        "name": user.get("name"),
+        "username": user.get("username") or user.get("name"),
         "email": user.get("email"),
+        "role": user.get("role", "user"),
         "created_at": user.get("created_at")
     }
 
@@ -76,8 +77,9 @@ async def update_user_profile(user_id: str, profile_data: UserUpdate):
         "message": "Profile updated successfully",
         "user": {
             "id": str(updated_user["_id"]),
-            "name": updated_user.get("name"),
+            "username": updated_user.get("username") or updated_user.get("name"),
             "email": updated_user.get("email"),
+            "role": updated_user.get("role", "user"),
             "created_at": updated_user.get("created_at")
         }
     }

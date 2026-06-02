@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 from app.database.session import get_db
 from app.models.user import User
 
-from app.models.user_model import UserRegister
+from app.models.user_model import UserCreate
 from app.utils.security import hash_password
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
@@ -30,7 +30,7 @@ def debug_bcrypt():
 
 
 @router.post("/register", status_code=status.HTTP_201_CREATED)
-def register(user: UserRegister, db: Session = Depends(get_db)):
+def register(user: UserCreate, db: Session = Depends(get_db)):
     # Check if email already registered
     existing_user = db.query(User).filter(User.email == user.email).first()
     if existing_user:
@@ -39,8 +39,8 @@ def register(user: UserRegister, db: Session = Depends(get_db)):
             detail="Email already registered"
         )
     
-    # Check if username/name already exists
-    existing_username = db.query(User).filter(User.username == user.name).first()
+    # Check if username already exists
+    existing_username = db.query(User).filter(User.username == user.username).first()
     if existing_username:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -49,9 +49,10 @@ def register(user: UserRegister, db: Session = Depends(get_db)):
 
     # Create new user
     new_user = User(
-        username=user.name,
+        username=user.username,
         email=user.email,
         hashed_password=hash_password(user.password),
+        role=user.role,
         is_active=True,
         is_admin=False
     )

@@ -1,10 +1,11 @@
 from pydantic import BaseModel, EmailStr
 from datetime import datetime
 
-class UserRegister(BaseModel):
-    name: str
+class UserCreate(BaseModel):
+    username: str
     email: EmailStr
     password: str
+    role: str = "user"
 
 
 class UserLogin(BaseModel):
@@ -14,12 +15,14 @@ class UserLogin(BaseModel):
 
 class UserResponse(BaseModel):
     id: str
-    name: str
+    username: str
     email: EmailStr
+    role: str
     created_at: datetime
 
 
 class UserUpdate(BaseModel):
-    name: str | None = None
+    username: str | None = None
     email: EmailStr | None = None
+    role: str | None = None
 

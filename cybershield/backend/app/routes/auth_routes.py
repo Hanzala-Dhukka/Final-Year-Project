@@ -2,23 +2,41 @@ from fastapi import APIRouter, HTTPException, Depends
 from datetime import datetime
 
 from app.database.db import database
-from app.models.user_model import UserRegister
+from app.models.user_model import UserCreate
 from app.utils.security import hash_password
 from app.models.user_model import UserLogin
 from app.utils.security import (
     verify_password,
     create_access_token
 )
-from app.utils.dependencies import verify_token
+from app.dependencies.auth import get_current_user
 
 router = APIRouter()
 users_collection = database["users"]
 
+
+@router.get("/me")
+async def get_me(
+    current_user=Depends(
+        get_current_user
+    )
+):
+    current_user["_id"] = str(
+        current_user["_id"]
+    )
+
+    current_user.pop(
+        "password",
+        None
+    )
+
+    return current_user
+
 @router.post("/register")
-async def register_user(user: UserRegister):
+async def register_user(user_in: UserCreate):
 
     existing_user = await users_collection.find_one({
-        "email": user.email
+        "email": user_in.email
     })
 
     if existing_user:
@@ -27,16 +45,17 @@ async def register_user(user: UserRegister):
             detail="Email already registered"
         )
 
-    hashed_password = hash_password(user.password)
+    hashed_password = hash_password(user_in.password)
 
-    new_user = {
-        "name": user.name,
-        "email": user.email,
+    user = {
+        "username": user_in.username,
+        "email": user_in.email,
         "password": hashed_password,
+        "role": user_in.role,
         "created_at": datetime.utcnow()
     }
 
-    result = await users_collection.insert_one(new_user)
+    result = await users_collection.insert_one(user)
 
     return {
         "message": "User registered successfully",
@@ -69,8 +88,9 @@ async def login_user(user: UserLogin):
 
     access_token = create_access_token(
         data={
+            "sub": existing_user["email"],
             "user_id": str(existing_user["_id"]),
-            "email": existing_user["email"]
+            "role": existing_user.get("role", "user")
         }
     )
 
@@ -82,10 +102,10 @@ async def login_user(user: UserLogin):
 
 @router.get("/profile")
 async def get_profile(
-    user_data: dict = Depends(verify_token)
+    current_user: dict = Depends(get_current_user)
 ):
 
     return {
         "message": "Protected route accessed",
-        "user": user_data
+        "user": current_user
     }
