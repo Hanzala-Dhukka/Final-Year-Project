@@ -167,8 +167,9 @@ async def scan_repository(
         scan_doc = {
             "user_id": current_user["_id"],
             "repo_url": repo_url,
-            "repo_name": repo_name,
-            "findings_count": len(findings),
+            "repository": repo_name,
+            "scanned_files": len(files_to_scan),
+            "vulnerabilities_found": len(findings),
             "risk_score": risk_score,
             "created_at": datetime.utcnow()
         }
@@ -246,17 +247,31 @@ async def get_scan_history(current_user: dict = Depends(get_current_user)):
         scan_collection = database["github_scans"]
         
         # Admin sees all, user sees own
+        # Also include legacy scans that have no user_id (saved before auth was enforced)
         query = {}
         if current_user.get("role") != "admin":
-            query = {"user_id": current_user["_id"]}
+            query = {
+                "$or": [
+                    {"user_id": current_user["_id"]},
+                    {"user_id": {"$exists": False}},
+                    {"user_id": None}
+                ]
+            }
 
         scans = await scan_collection.find(query).sort("created_at", -1).to_list(length=100)
         
-        # Convert MongoDB _id to string for JSON serialization
+        # Convert MongoDB _id to string and normalize old field names
         for scan in scans:
             scan["_id"] = str(scan["_id"])
             if "user_id" in scan:
                 scan["user_id"] = str(scan["user_id"])
+            # Normalize old field names to new ones for backward compatibility
+            if "repo_name" in scan and "repository" not in scan:
+                scan["repository"] = scan["repo_name"]
+            if "findings_count" in scan and "vulnerabilities_found" not in scan:
+                scan["vulnerabilities_found"] = scan["findings_count"]
+            if "scanned_files" not in scan:
+                scan["scanned_files"] = "N/A"
             
         return scans
     except Exception as e:

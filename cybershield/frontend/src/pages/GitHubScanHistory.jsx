@@ -1,89 +1,157 @@
-import { useEffect, useState } from "react" 
-import API from "../api/api" 
+import { useEffect, useState } from "react"
+import API from "../api/api"
 
-function GitHubScanHistory() { 
+function GitHubScanHistory() {
+  const [history, setHistory] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
 
-  const [history, setHistory] = useState([]) 
+  useEffect(() => {
+    const fetchHistory = async () => {
+      try {
+        const response = await API.get("github/scan-history")
+        setHistory(response.data)
+      } catch (err) {
+        console.error(err)
+        setError("Failed to load scan history.")
+      } finally {
+        setLoading(false)
+      }
+    }
+    fetchHistory()
+  }, [])
 
-  useEffect(() => { 
+  const getRiskColor = (score) => {
+    if (score === undefined || score === null) return "#6b7280"
+    if (score >= 7) return "#ef4444"
+    if (score >= 4) return "#f59e0b"
+    return "#22c55e"
+  }
 
-    const fetchHistory = async () => { 
+  const getRiskLabel = (score) => {
+    if (score === undefined || score === null) return "Unknown"
+    if (score >= 7) return "High"
+    if (score >= 4) return "Medium"
+    return "Low"
+  }
 
-      try { 
+  return (
+    <div style={{ minHeight: "100vh", background: "#0f172a", padding: "40px 24px" }}>
+      <div style={{ maxWidth: "900px", margin: "0 auto" }}>
 
-        const response = await API.get( 
-          "github/scan-history" 
-        ) 
+        <h1 style={{
+          fontSize: "2rem",
+          fontWeight: "700",
+          color: "#f1f5f9",
+          marginBottom: "8px"
+        }}>
+          GitHub Scan History
+        </h1>
+        <p style={{ color: "#94a3b8", marginBottom: "32px" }}>
+          All repository security scans associated with your account.
+        </p>
 
-        setHistory(response.data) 
+        {loading && (
+          <p style={{ color: "#94a3b8", textAlign: "center", marginTop: "60px" }}>
+            Loading scans...
+          </p>
+        )}
 
-      } catch (error) { 
+        {error && (
+          <p style={{ color: "#ef4444", textAlign: "center", marginTop: "60px" }}>
+            {error}
+          </p>
+        )}
 
-        console.log(error) 
-      } 
-    } 
+        {!loading && !error && history.length === 0 && (
+          <p style={{ color: "#94a3b8", textAlign: "center", marginTop: "60px" }}>
+            No scans found. Run a GitHub scan to see results here.
+          </p>
+        )}
 
-    fetchHistory() 
+        <div style={{ display: "grid", gap: "16px" }}>
+          {history.map((scan) => {
+            const riskScore = scan.risk_score
+            const color = getRiskColor(riskScore)
+            const label = getRiskLabel(riskScore)
+            const repo = scan.repository || scan.repo_name || "Unknown Repository"
+            const vulns = scan.vulnerabilities_found ?? scan.findings_count ?? "N/A"
+            const files = scan.scanned_files ?? "N/A"
 
-  }, []) 
+            return (
+              <div
+                key={scan._id}
+                style={{
+                  background: "#1e293b",
+                  border: "1px solid #334155",
+                  borderRadius: "12px",
+                  padding: "24px",
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: "12px"
+                }}
+              >
+                {/* Header */}
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+                  <div>
+                    <h2 style={{ fontSize: "1.1rem", fontWeight: "600", color: "#f1f5f9", margin: 0 }}>
+                      {repo}
+                    </h2>
+                    {scan.repo_url && (
+                      <a
+                        href={scan.repo_url}
+                        target="_blank"
+                        rel="noreferrer"
+                        style={{ fontSize: "0.8rem", color: "#60a5fa", textDecoration: "none" }}
+                      >
+                        {scan.repo_url}
+                      </a>
+                    )}
+                  </div>
+                  <span style={{
+                    background: color + "22",
+                    color: color,
+                    border: `1px solid ${color}44`,
+                    borderRadius: "999px",
+                    padding: "4px 14px",
+                    fontSize: "0.8rem",
+                    fontWeight: "600",
+                    whiteSpace: "nowrap"
+                  }}>
+                    {label} Risk
+                  </span>
+                </div>
 
-  return ( 
-    <div className="min-h-screen bg-gray-100 p-10"> 
+                {/* Stats */}
+                <div style={{ display: "flex", gap: "24px", flexWrap: "wrap" }}>
+                  <div>
+                    <p style={{ color: "#64748b", fontSize: "0.75rem", margin: "0 0 2px" }}>Files Scanned</p>
+                    <p style={{ color: "#f1f5f9", fontWeight: "600", fontSize: "1.1rem", margin: 0 }}>{files}</p>
+                  </div>
+                  <div>
+                    <p style={{ color: "#64748b", fontSize: "0.75rem", margin: "0 0 2px" }}>Vulnerabilities</p>
+                    <p style={{ color: vulns > 0 ? "#f87171" : "#4ade80", fontWeight: "600", fontSize: "1.1rem", margin: 0 }}>{vulns}</p>
+                  </div>
+                  <div>
+                    <p style={{ color: "#64748b", fontSize: "0.75rem", margin: "0 0 2px" }}>Risk Score</p>
+                    <p style={{ color: color, fontWeight: "600", fontSize: "1.1rem", margin: 0 }}>
+                      {riskScore !== undefined && riskScore !== null ? riskScore : "N/A"}
+                    </p>
+                  </div>
+                </div>
 
-      <h1 className="text-4xl font-bold mb-8"> 
-        GitHub Scan History 
-      </h1> 
+                {/* Date */}
+                <p style={{ color: "#475569", fontSize: "0.8rem", margin: 0 }}>
+                  Scanned on: {scan.created_at ? new Date(scan.created_at).toLocaleString() : "Unknown"}
+                </p>
+              </div>
+            )
+          })}
+        </div>
 
-      <div className="grid gap-6"> 
-
-        {history.map((scan) => ( 
-
-          <div 
-            key={scan._id} 
-            className="bg-white p-6 rounded shadow" 
-          > 
-
-            <h2 className="text-2xl font-bold"> 
-              {scan.repository} 
-            </h2> 
-
-            <div className="mt-4 space-y-2"> 
-
-              <p> 
-                Files Scanned: 
-                <span className="ml-2 font-bold"> 
-                  {scan.scanned_files} 
-                </span> 
-              </p> 
-
-              <p> 
-                Vulnerabilities: 
-                <span className="ml-2 font-bold"> 
-                  {scan.vulnerabilities_found} 
-                </span> 
-              </p> 
-
-              <p>
-                Risk Score:
-                <span className="ml-2 font-bold">
-                  {scan.risk_score}
-                </span>
-              </p>
-
-              <p className="text-gray-500 text-sm mt-4">
-                Scanned on: {new Date(scan.created_at).toLocaleString()}
-              </p>
-
-            </div> 
-
-          </div> 
-
-        ))} 
-
-      </div> 
-
-    </div> 
-  ) 
-} 
+      </div>
+    </div>
+  )
+}
 
 export default GitHubScanHistory
