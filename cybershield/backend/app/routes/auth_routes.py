@@ -9,6 +9,7 @@ from app.utils.security import (
     verify_password,
     create_access_token
 )
+from app.utils.dependencies import verify_token
 from app.dependencies.auth import get_current_user
 
 router = APIRouter()
@@ -102,10 +103,10 @@ async def login_user(user: UserLogin):
 
 @router.get("/profile")
 async def get_profile(
-    current_user: dict = Depends(get_current_user)
+    user_data: dict = Depends(verify_token)
 ):
 
     return {
         "message": "Protected route accessed",
-        "user": current_user
+        "user": user_data
     }

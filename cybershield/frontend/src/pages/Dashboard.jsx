@@ -109,6 +109,17 @@ function Dashboard() {
 
         </Link>
 
+        <Link to="/monitoring">
+          <div className="bg-white p-8 rounded shadow hover:shadow-xl transition">
+            <h2 className="text-2xl font-bold">
+              Security Monitoring
+            </h2>
+            <p className="mt-4 text-gray-600">
+              View real-time security alerts and targets
+            </p>
+          </div>
+        </Link>
+
         {role === "admin" && (
           <Link to="/admin">
             <div className="bg-white p-8 rounded shadow border-2 border-black hover:shadow-xl transition">
