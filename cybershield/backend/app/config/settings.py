@@ -17,6 +17,9 @@ class Settings(BaseSettings):
 
     GITHUB_TOKEN: str = ""
 
+    EMAIL_USER: str = ""
+    EMAIL_PASSWORD: str = ""
+
     model_config = {
         "env_file": ".env",
         "extra": "ignore"

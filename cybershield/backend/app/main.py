@@ -9,6 +9,9 @@ from app.routes.github_routes import router as github_router
 from app.routes.analytics_routes import router as analytics_router
 from app.routes.report_routes import router as report_router
 from app.routes.admin_routes import router as admin_router
+from app.routes.monitoring_routes import router as monitoring_router
+from app.services.scheduler import scheduler
+from app.services.monitoring_jobs import monitor_targets
 
 # ── App instance ─────────────────────────────────────────────────────────────
 app = FastAPI(
@@ -36,6 +39,7 @@ app.include_router(github_router, prefix="/api/v1/github", tags=["GitHub Scanner
 app.include_router(analytics_router, prefix="/api/v1/analytics", tags=["Analytics"])
 app.include_router(report_router, prefix="/api/v1/reports", tags=["Reports"])
 app.include_router(admin_router, prefix="/api/admin", tags=["Admin"])
+app.include_router(monitoring_router, prefix="/api/v1/monitoring", tags=["Monitoring"])
 
 
 # ── Health check ──────────────────────────────────────────────────────────────
@@ -47,3 +51,21 @@ def root():
 @app.get("/health", tags=["Health"])
 def health():
     return {"status": "healthy"}
+
+# ── Scheduler ─────────────────────────────────────────────────────────────────
+@app.on_event("startup")
+async def startup():
+    # Add scheduled jobs
+    scheduler.add_job(
+        monitor_targets,
+        "interval",
+        minutes=30
+    )
+    # Start the scheduler
+    scheduler.start()
+    print("Scheduler started. Monitoring jobs scheduled every 30 minutes.")
+
+@app.on_event("shutdown")
+async def shutdown_scheduler():
+    scheduler.shutdown()
+    print("Scheduler shut down.")
