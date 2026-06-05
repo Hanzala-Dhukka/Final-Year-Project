@@ -98,13 +98,13 @@ async def scan_repository(
     try: 
         # Check current rate limit status before starting
         try:
-            rate_limit = github_client.get_rate_limit().core
+            rate_limit = github_client.get_rate_limit().resources.core
             if rate_limit.remaining < 10:
                 # If rate limit is low, try to re-initialize with token if it's available
                 # This helps if the client was somehow initialized without a token
                 if GITHUB_TOKEN:
                     github_client = Github(GITHUB_TOKEN)
-                    rate_limit = github_client.get_rate_limit().core
+                    rate_limit = github_client.get_rate_limit().resources.core
                 
                 if rate_limit.remaining < 5:
                     reset_time = time.strftime('%H:%M:%S', time.localtime(rate_limit.reset.timestamp()))
@@ -154,12 +154,13 @@ async def scan_repository(
 
         risk_score = calculate_risk_score(findings)
         
-        report = generate_security_report(
-            repo_name,
-            findings,
-            list(technologies),
-            risk_score
-        )
+        report_data = {
+            "repository": repo_name,
+            "findings": findings,
+            "technologies": list(technologies),
+            "risk_score": risk_score
+        }
+        report = generate_security_report(report_data)
 
         # Save scan to database
         scan_collection = database["github_scans"]
@@ -173,7 +174,14 @@ async def scan_repository(
         }
         await scan_collection.insert_one(scan_doc)
 
-        return report
+        return {
+            "repository": repo_name,
+            "scanned_files": len(files_to_scan),
+            "vulnerabilities_found": len(findings),
+            "risk_score": risk_score,
+            "findings": findings,
+            "report": report
+        }
 
     except BadCredentialsException:
         raise HTTPException(
