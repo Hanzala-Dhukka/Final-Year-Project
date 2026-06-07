@@ -25,6 +25,20 @@ def generate_pdf_report(report, output_path):
         text_obj.textLines(report.get("summary", ""))
         c.drawText(text_obj)
         
+        # Add Recommendations
+        recommendations = report.get("recommendations", [])
+        if recommendations:
+            c.setFont("Helvetica-Bold", 14)
+            c.drawString(50, height - 250, "Recommendations:")
+            c.setFont("Helvetica", 12)
+            y_pos = height - 270
+            for rec in recommendations:
+                if y_pos < 50:
+                    c.showPage()
+                    y_pos = height - 50
+                c.drawString(60, y_pos, f"- {rec}")
+                y_pos -= 20
+        
         c.save()
         return output_path
         

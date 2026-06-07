@@ -4,17 +4,25 @@ def calculate_risk_score(findings):
 
     for finding in findings:
 
-        for issue in finding["issues"]:
+        # Handle both flat list of issues and nested structure
+        issues = finding.get("issues", [finding])
 
-            severity = issue["severity"]
+        for issue in issues:
+            if not isinstance(issue, dict):
+                continue
+                
+            severity = issue.get("severity", "Low")
 
             if severity == "Critical":
-                score -= 15
-
-            elif severity == "High":
                 score -= 10
 
-            elif severity == "Medium":
+            elif severity == "High":
                 score -= 5
+
+            elif severity == "Medium":
+                score -= 3
+
+            elif severity == "Low":
+                score -= 1
 
     return max(score, 0)

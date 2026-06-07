@@ -42,27 +42,32 @@ CODE_PATTERNS = {
 
     "Python eval()": {
         "pattern": r"eval\s*\(",
-        "severity": "High"
+        "severity": "High",
+        "ext": [".py"]
     },
 
     "Python exec()": {
         "pattern": r"exec\s*\(",
-        "severity": "Critical"
+        "severity": "Critical",
+        "ext": [".py"]
     },
 
     "JavaScript eval()": {
         "pattern": r"eval\s*\(",
-        "severity": "High"
+        "severity": "High",
+        "ext": [".js", ".jsx", ".ts", ".tsx"]
     },
 
     "Shell Execution": {
         "pattern": r"os\.system\s*\(",
-        "severity": "Critical"
+        "severity": "Critical",
+        "ext": [".py"]
     },
 
     "Subprocess Execution": {
         "pattern": r"subprocess\.run\s*\(",
-        "severity": "Medium"
+        "severity": "Medium",
+        "ext": [".py"]
     }
 }
 
@@ -81,46 +86,42 @@ def detect_technology(file_name):
     return TECH_FILES.get(file_name)
 
 
-def scan_file_content(content): 
+def scan_file_content(content, file_path): 
  
     findings = [] 
  
-    for name, config in SECRET_PATTERNS.items(): 
- 
-        matches = re.findall( 
-            config["pattern"], 
-            content, 
-            re.IGNORECASE 
-        ) 
- 
-        if matches: 
- 
-            findings.append({ 
-                "type": name, 
-                "severity": config["severity"], 
-                "matches_found": len(matches) 
-            }) 
+    for line_number, line in enumerate(content.splitlines(), start=1):
+        for name, config in SECRET_PATTERNS.items(): 
+            if re.search(config["pattern"], line, re.IGNORECASE):
+                findings.append({ 
+                    "file": file_path,
+                    "line": line_number,
+                    "finding": name,
+                    "severity": config["severity"], 
+                    "evidence": line.strip()
+                }) 
  
     return findings
 
 
-def scan_dangerous_code(content):
+def scan_dangerous_code(content, file_path):
 
     findings = []
+    file_ext = "." + file_path.split(".")[-1].lower() if "." in file_path else ""
 
-    for name, config in CODE_PATTERNS.items():
-
-        matches = re.findall(
-            config["pattern"],
-            content
-        )
-
-        if matches:
-
-            findings.append({
-                "type": name,
-                "severity": config["severity"],
-                "matches_found": len(matches)
-            })
+    for line_number, line in enumerate(content.splitlines(), start=1):
+        for name, config in CODE_PATTERNS.items():
+            # Only apply pattern if it matches the file extension or has no extension restrictions
+            if "ext" in config and file_ext not in config["ext"]:
+                continue
+                
+            if re.search(config["pattern"], line):
+                findings.append({
+                    "file": file_path,
+                    "line": line_number,
+                    "finding": name,
+                    "severity": config["severity"],
+                    "evidence": line.strip()
+                })
 
     return findings

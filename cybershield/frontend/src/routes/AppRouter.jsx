@@ -14,7 +14,6 @@ import GitHubScanHistory from "../pages/GitHubScanHistory"
 import AnalyticsDashboard from "../pages/AnalyticsDashboard"
 import ReportCenter from "../pages/ReportCenter"
 import AdminDashboard from "../pages/AdminDashboard"
-import MonitoringDashboard from "../pages/MonitoringDashboard"
 import NotFound from "../pages/NotFound"
  
 import ProtectedRoute from "./ProtectedRoute" 
@@ -119,17 +118,6 @@ import ProtectedRoute from "./ProtectedRoute"
              <ProtectedRoute> 
  
                <AdminDashboard /> 
- 
-             </ProtectedRoute> 
-           } 
-         /> 
-
-         <Route 
-           path="/monitoring" 
-           element={ 
-             <ProtectedRoute> 
- 
-               <MonitoringDashboard /> 
  
              </ProtectedRoute> 
            } 
