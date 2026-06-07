@@ -23,16 +23,18 @@ function GitHubScanHistory() {
 
   const getRiskColor = (score) => {
     if (score === undefined || score === null) return "#6b7280"
-    if (score >= 7) return "#ef4444"
-    if (score >= 4) return "#f59e0b"
-    return "#22c55e"
+    if (score >= 90) return "#22c55e" // Low Risk
+    if (score >= 70) return "#3b82f6" // Medium Risk
+    if (score >= 50) return "#f59e0b" // High Risk
+    return "#ef4444" // Critical Risk
   }
 
   const getRiskLabel = (score) => {
     if (score === undefined || score === null) return "Unknown"
-    if (score >= 7) return "High"
-    if (score >= 4) return "Medium"
-    return "Low"
+    if (score >= 90) return "Low"
+    if (score >= 70) return "Medium"
+    if (score >= 50) return "High"
+    return "Critical"
   }
 
   return (

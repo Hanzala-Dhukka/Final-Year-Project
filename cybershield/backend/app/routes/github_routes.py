@@ -23,6 +23,14 @@ from app.services.pdf_generator import (
 from app.services.risk_engine import (
     calculate_risk_score
 )
+from app.services.threat_analyzer import ( 
+    generate_summary, 
+    calculate_risk_level,
+    risk_level_from_score,
+    generate_ai_report,
+    analyze_finding,
+    generate_file_report
+)
 from app.dependencies.auth import get_current_user
  
 router = APIRouter() 
@@ -56,22 +64,36 @@ def scan_single_file(repo_full_name, branch, file_path):
         decoded_content = response.text
         
         secret_findings = scan_file_content(
-            decoded_content
+            decoded_content,
+            file_path
         )
 
         code_findings = scan_dangerous_code(
-            decoded_content
+            decoded_content,
+            file_path
         )
 
-        result = (
-            secret_findings +
-            code_findings
-        )
+        raw_findings = secret_findings + code_findings
         
-        if result: 
+        # Enrich findings with threat analysis
+        enriched_findings = []
+        for finding in raw_findings:
+            analysis = analyze_finding(finding)
+            enriched_finding = {
+                **finding,
+                "impact": analysis["impact"],
+                "recommendation": analysis["recommendation"]
+            }
+            # Use risk level from analysis if available, otherwise keep severity
+            if analysis["risk"] != "Unknown":
+                enriched_finding["severity"] = analysis["risk"]
+            
+            enriched_findings.append(enriched_finding)
+
+        if enriched_findings: 
             return { 
                 "file": file_path, 
-                "issues": result 
+                "issues": enriched_findings 
             }
     except Exception:
         pass
@@ -79,6 +101,19 @@ def scan_single_file(repo_full_name, branch, file_path):
 
 
 import traceback
+
+@router.post( 
+    "/generate-threat-report" 
+) 
+async def generate_threat_report( 
+    data: dict 
+): 
+ 
+    findings = data["findings"] 
+    files_scanned = data.get("files_scanned", 0)
+    risk_score = calculate_risk_score([{"issues": findings}])
+ 
+    return generate_ai_report(findings, files_scanned, risk_score)
 
 @router.post("/scan-repository") 
 async def scan_repository(
@@ -95,29 +130,34 @@ async def scan_repository(
             detail="Repository URL is required" 
         ) 
  
-    try: 
+    try:
         # Check current rate limit status before starting
         try:
             rate_limit = github_client.get_rate_limit().resources.core
-            if rate_limit.remaining < 10:
-                # If rate limit is low, try to re-initialize with token if it's available
-                # This helps if the client was somehow initialized without a token
-                if GITHUB_TOKEN:
-                    github_client = Github(GITHUB_TOKEN)
-                    rate_limit = github_client.get_rate_limit().resources.core
-                
-                if rate_limit.remaining < 5:
-                    reset_time = time.strftime('%H:%M:%S', time.localtime(rate_limit.reset.timestamp()))
-                    raise HTTPException(
-                        status_code=429,
-                        detail=f"GitHub API rate limit nearly exhausted. Resets at {reset_time}."
-                    )
+            if rate_limit.remaining < 5:
+                reset_time = time.strftime('%H:%M:%S', time.localtime(rate_limit.reset.timestamp()))
+                raise HTTPException(
+                    status_code=429,
+                    detail=f"GitHub API rate limit nearly exhausted. Resets at {reset_time}."
+                )
+        except HTTPException:
+            raise
         except (BadCredentialsException, GithubException):
-            # If token is invalid or another GitHub error occurs
+            # Token is invalid/expired — fall back to unauthenticated mode
+            print("WARNING: GitHub token is invalid or expired. Falling back to unauthenticated mode (60 req/hr).")
+            github_client = Github()
+        except Exception:
             pass
 
         repo_name = repo_url.split("github.com/")[-1].strip("/")
-        repo = github_client.get_repo(repo_name)
+
+        # Try with current client; if credentials fail, retry without token
+        try:
+            repo = github_client.get_repo(repo_name)
+        except BadCredentialsException:
+            print("WARNING: GitHub token rejected on get_repo. Retrying without token.")
+            github_client = Github()
+            repo = github_client.get_repo(repo_name)
         
         # Get all files using git tree to be more efficient
         default_branch = repo.default_branch
@@ -126,15 +166,16 @@ async def scan_repository(
         files_to_scan = [
             item.path for item in tree.tree 
             if item.type == "blob" and (
-                item.path.endswith((".py", ".js", ".env", ".yml", ".json", ".txt", ".sh")) or
+                item.path.endswith((".py", ".js", ".env", ".yml", ".json", ".sh")) or
                 "config" in item.path.lower()
-            )
+            ) and not any(ignore in item.path.upper() for ignore in ["README", "DOCS/", "DOCUMENTATION/"])
+            and not item.path.endswith((".md", ".txt"))
         ]
 
         # Limit to 100 files to avoid timeouts
         files_to_scan = files_to_scan[:100]
 
-        findings = []
+        file_results = []
         technologies = set()
 
         # Parallelize file scanning for speed
@@ -147,42 +188,61 @@ async def scan_repository(
             for future in concurrent.futures.as_completed(future_to_file):
                 result = future.result()
                 if result:
-                    findings.append(result)
+                    file_results.append(result)
                     # Extract technology from file extension
                     tech = detect_technology(result["file"])
                     if tech: technologies.add(tech)
 
-        risk_score = calculate_risk_score(findings)
+        risk_score = calculate_risk_score(file_results)
         
-        report_data = {
-            "repository": repo_name,
-            "findings": findings,
-            "technologies": list(technologies),
-            "risk_score": risk_score
-        }
-        report = generate_security_report(report_data)
+        # Extract all issues for threat analysis
+        findings = []
+        for f in file_results:
+            findings.extend(f["issues"])
 
-        # Save scan to database
-        scan_collection = database["github_scans"]
-        scan_doc = {
-            "user_id": current_user["_id"],
+        file_report = generate_file_report( 
+            findings 
+        ) 
+
+        # Generate legacy AI report for frontend compatibility
+        ai_report = generate_ai_report(findings, len(files_to_scan), risk_score)
+
+        response_data = { 
+            "repository": repo_name, 
+            "description": repo.description,
+            "stars": repo.stargazers_count,
+            "language": repo.language,
+            "risk_score": risk_score, 
+            "findings": findings, 
+            "file_report": file_report,
+            "ai_report": ai_report,
             "repo_url": repo_url,
-            "repository": repo_name,
-            "scanned_files": len(files_to_scan),
+            "technologies": list(technologies),
+            "files_scanned": len(files_to_scan),
             "vulnerabilities_found": len(findings),
-            "risk_score": risk_score,
             "created_at": datetime.utcnow()
         }
-        await scan_collection.insert_one(scan_doc)
 
-        return {
+        # Save to database
+        scan_document = {
+            "user_id": current_user["_id"],
             "repository": repo_name,
-            "scanned_files": len(files_to_scan),
-            "vulnerabilities_found": len(findings),
+            "description": repo.description,
+            "stars": repo.stargazers_count,
+            "language": repo.language,
+            "repo_url": repo_url,
             "risk_score": risk_score,
             "findings": findings,
-            "report": report
+            "file_report": file_report,
+            "technologies": list(technologies),
+            "scanned_files": len(files_to_scan),
+            "vulnerabilities_found": len(findings),
+            "created_at": datetime.utcnow(),
+            "ai_report": ai_report
         }
+        await database["github_scans"].insert_one(scan_document)
+
+        return response_data
 
     except BadCredentialsException:
         raise HTTPException(
@@ -203,7 +263,7 @@ async def generate_pdf(
     current_user: dict = Depends(get_current_user) 
 ): 
  
-    report = data.get("report") 
+    report = data.get("report") or data.get("report_data") or data.get("ai_report")
     title = data.get("title", "GitHub Security Report")
  
     if not report: 

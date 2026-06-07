@@ -21,13 +21,6 @@ async def add_target(data: dict):
         "id": str(result.inserted_id) 
     } 
 
-@router.get("/targets")
-async def get_targets():
-    targets = await database["monitoring_targets"].find().to_list(100)
-    for target in targets:
-        target["_id"] = str(target["_id"])
-    return targets
-
 @router.get("/alerts") 
 async def get_alerts(): 
     alerts = await database[ 
