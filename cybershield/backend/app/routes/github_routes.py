@@ -27,9 +27,7 @@ from app.services.threat_analyzer import (
     generate_summary, 
     calculate_risk_level,
     risk_level_from_score,
-    generate_ai_report,
-    analyze_finding,
-    generate_file_report
+    generate_ai_report
 )
 from app.dependencies.auth import get_current_user
  
@@ -64,36 +62,22 @@ def scan_single_file(repo_full_name, branch, file_path):
         decoded_content = response.text
         
         secret_findings = scan_file_content(
-            decoded_content,
-            file_path
+            decoded_content
         )
 
         code_findings = scan_dangerous_code(
-            decoded_content,
-            file_path
+            decoded_content
         )
 
-        raw_findings = secret_findings + code_findings
+        result = (
+            secret_findings +
+            code_findings
+        )
         
-        # Enrich findings with threat analysis
-        enriched_findings = []
-        for finding in raw_findings:
-            analysis = analyze_finding(finding)
-            enriched_finding = {
-                **finding,
-                "impact": analysis["impact"],
-                "recommendation": analysis["recommendation"]
-            }
-            # Use risk level from analysis if available, otherwise keep severity
-            if analysis["risk"] != "Unknown":
-                enriched_finding["severity"] = analysis["risk"]
-            
-            enriched_findings.append(enriched_finding)
-
-        if enriched_findings: 
+        if result: 
             return { 
                 "file": file_path, 
-                "issues": enriched_findings 
+                "issues": result 
             }
     except Exception:
         pass
@@ -166,10 +150,9 @@ async def scan_repository(
         files_to_scan = [
             item.path for item in tree.tree 
             if item.type == "blob" and (
-                item.path.endswith((".py", ".js", ".env", ".yml", ".json", ".sh")) or
+                item.path.endswith((".py", ".js", ".env", ".yml", ".json", ".txt", ".sh")) or
                 "config" in item.path.lower()
-            ) and not any(ignore in item.path.upper() for ignore in ["README", "DOCS/", "DOCUMENTATION/"])
-            and not item.path.endswith((".md", ".txt"))
+            )
         ]
 
         # Limit to 100 files to avoid timeouts
@@ -200,49 +183,58 @@ async def scan_repository(
         for f in file_results:
             findings.extend(f["issues"])
 
-        file_report = generate_file_report( 
-            findings 
-        ) 
-
-        # Generate legacy AI report for frontend compatibility
+        # Generate threat analysis
         ai_report = generate_ai_report(findings, len(files_to_scan), risk_score)
+        risk_level = ai_report["risk_level"]
+        summary = ai_report["summary"]
 
-        response_data = { 
-            "repository": repo_name, 
-            "description": repo.description,
-            "stars": repo.stargazers_count,
-            "language": repo.language,
-            "risk_score": risk_score, 
-            "findings": findings, 
-            "file_report": file_report,
-            "ai_report": ai_report,
-            "repo_url": repo_url,
-            "technologies": list(technologies),
-            "files_scanned": len(files_to_scan),
-            "vulnerabilities_found": len(findings),
-            "created_at": datetime.utcnow()
-        }
-
-        # Save to database
-        scan_document = {
-            "user_id": current_user["_id"],
+        report_data = {
             "repository": repo_name,
-            "description": repo.description,
-            "stars": repo.stargazers_count,
-            "language": repo.language,
-            "repo_url": repo_url,
-            "risk_score": risk_score,
-            "findings": findings,
-            "file_report": file_report,
+            "findings": file_results,
             "technologies": list(technologies),
-            "scanned_files": len(files_to_scan),
-            "vulnerabilities_found": len(findings),
-            "created_at": datetime.utcnow(),
+            "risk_score": risk_score,
+            "summary": summary,
+            "risk_level": risk_level,
             "ai_report": ai_report
         }
-        await database["github_scans"].insert_one(scan_document)
+        report = generate_security_report(report_data)
 
-        return response_data
+        # Save scan to database
+        scan_collection = database["github_scans"]
+        scan_document = { 
+ 
+             "repository": repo_name, 
+ 
+             "findings": findings, 
+ 
+             "risk_level": risk_level, 
+ 
+             "summary": summary, 
+ 
+             "business_impact": ai_report["business_impact"],
+
+             "recommendations": ai_report["recommendations"],
+
+             "created_at": 
+             datetime.utcnow(),
+
+             # Keeping application context
+             "user_id": current_user["_id"],
+             "repo_url": repo_url,
+             "scanned_files": len(files_to_scan),
+             "vulnerabilities_found": len(file_results),
+             "risk_score": risk_score
+         }
+        await scan_collection.insert_one(scan_document)
+
+        return { 
+ 
+             "findings": findings, 
+ 
+             "risk_score": risk_score, 
+ 
+             "ai_report": ai_report 
+         }
 
     except BadCredentialsException:
         raise HTTPException(
@@ -263,7 +255,7 @@ async def generate_pdf(
     current_user: dict = Depends(get_current_user) 
 ): 
  
-    report = data.get("report") or data.get("report_data") or data.get("ai_report")
+    report = data.get("report") 
     title = data.get("title", "GitHub Security Report")
  
     if not report: 

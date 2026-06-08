@@ -102,7 +102,23 @@ function Dashboard() {
             </h2>
 
             <p className="mt-4 text-gray-600">
-              Generate security PDF reports
+              Generate and view security reports
+            </p>
+
+          </div>
+
+        </Link>
+
+        <Link to="/owasp-simulator">
+
+          <div className="bg-white p-8 rounded shadow hover:shadow-xl transition">
+
+            <h2 className="text-2xl font-bold">
+              OWASP Simulator
+            </h2>
+
+            <p className="mt-4 text-gray-600">
+              Simulate common web vulnerabilities
             </p>
 
           </div>
