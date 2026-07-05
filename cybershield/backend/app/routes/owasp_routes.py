@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Query
 import re
 from datetime import datetime
 from app.database.db import database
@@ -21,6 +21,9 @@ OWASP_GUIDANCE = {
     },
     "Path Traversal": {
         "prevention": "Use indirect object references, validate file paths against an allow-list, and use built-in path normalization functions."
+    },
+    "Broken Authentication": {
+        "prevention": "Implement Multi-Factor Authentication (MFA), enforce rate limiting, use account lockout policies, and require strong passwords."
     }
 }
 
@@ -38,7 +41,7 @@ async def save_simulation(attack: str, payload: str, success: bool, user_id: str
 
 @router.post("/simulate/sqli") 
 async def simulate_sqli( 
-    payload: str,
+    payload: str = Query(..., description="Attack payload string"),
     current_user: dict = Depends(get_current_user)
 ):
     # Fake vulnerable login logic
@@ -99,7 +102,7 @@ async def simulate_sqli(
 
 @router.post("/simulate/xss")
 async def simulate_xss(
-    payload: str,
+    payload: str = Query(..., description="Attack payload string"),
     current_user: dict = Depends(get_current_user)
 ):
     # Detect <script> tag for specific response
@@ -161,7 +164,7 @@ async def simulate_xss(
 
 @router.post("/simulate/cmdi")
 async def simulate_cmdi(
-    payload: str,
+    payload: str = Query(..., description="Attack payload string"),
     current_user: dict = Depends(get_current_user)
 ):
     # Detect Command Injection delimiters
@@ -222,7 +225,7 @@ async def simulate_cmdi(
 
 @router.post("/simulate/path-traversal")
 async def simulate_path_traversal(
-    payload: str,
+    payload: str = Query(..., description="Attack payload string"),
     current_user: dict = Depends(get_current_user)
 ):
     # Detect Path Traversal patterns
@@ -251,5 +254,45 @@ async def simulate_path_traversal(
         "status": "Secure",
         "payload_received": payload,
         "analysis": "No path traversal patterns detected.",
+        "risk_score": 0.0
+    }
+
+@router.post("/simulate/broken-auth")
+async def simulate_broken_auth(
+    payload: str = Query(..., description="Username to simulate brute force attack"),
+    current_user: dict = Depends(get_current_user)
+):
+    # Simulated vulnerable credentials
+    vulnerable_credentials = {
+        "admin": "admin123",
+        "administrator": "admin123",
+        "root": "admin123",
+        "user123": "password"
+    }
+    
+    is_vulnerable = payload in vulnerable_credentials
+    
+    if is_vulnerable:
+        attack_type = "Broken Authentication"
+        result = {
+            "attack": attack_type,
+            "impact": "Account Compromised via Brute Force",
+            "prevention": OWASP_GUIDANCE[attack_type]["prevention"],
+            "vulnerability": "Broken Authentication",
+            "status": "Vulnerable Detected",
+            "payload_received": payload,
+            "password_found": vulnerable_credentials[payload],
+            "analysis": f"The username '{payload}' was found with a weak password '{vulnerable_credentials[payload]}'. This demonstrates how brute force attacks can succeed against weak credentials.",
+            "risk_score": 9.0
+        }
+        await save_simulation(attack_type, payload, True, current_user["_id"])
+        return result
+    
+    await save_simulation("Broken Authentication", payload, False, current_user["_id"])
+    return {
+        "vulnerability": "Broken Authentication",
+        "status": "Secure",
+        "payload_received": payload,
+        "analysis": "Username not found or strong password policy prevents brute force attacks.",
         "risk_score": 0.0
     }

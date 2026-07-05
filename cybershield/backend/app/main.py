@@ -10,6 +10,8 @@ from app.routes.analytics_routes import router as analytics_router
 from app.routes.report_routes import router as report_router
 from app.routes.admin_routes import router as admin_router
 from app.routes.monitoring_routes import router as monitoring_router
+from app.routes.quiz_routes import router as quiz_router
+from app.routes.glossary_routes import router as glossary_router
 from app.routes.owasp_routes import router as owasp_router
 from app.services.scheduler import scheduler
 from app.services.monitoring_jobs import monitor_targets
@@ -41,6 +43,8 @@ app.include_router(analytics_router, prefix="/api/v1/analytics", tags=["Analytic
 app.include_router(report_router, prefix="/api/v1/reports", tags=["Reports"])
 app.include_router(admin_router, prefix="/api/admin", tags=["Admin"])
 app.include_router(monitoring_router, prefix="/api/v1/monitoring", tags=["Monitoring"])
+app.include_router(quiz_router)
+app.include_router(glossary_router)
 app.include_router(owasp_router)
 
 

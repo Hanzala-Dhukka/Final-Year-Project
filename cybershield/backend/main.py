@@ -4,7 +4,6 @@ from app.routes.auth_routes import router as auth_router
 from app.routes.user_routes import router as user_router
 from app.routes.scan_routes import router as scan_router
 from app.routes.analytics_routes import router as analytics_router
-from app.routes.owasp_routes import router as owasp_router
 
 app = FastAPI()
 
@@ -31,8 +30,6 @@ app.include_router(
     prefix="/api/analytics",
     tags=["Analytics"]
 )
-
-app.include_router(owasp_router)
 
 @app.get("/")
 def home():

@@ -30,6 +30,9 @@ from app.services.threat_analyzer import (
     generate_ai_report
 )
 from app.dependencies.auth import get_current_user
+from app.services.repository_info import get_repository_info
+from app.services.technology_detector import detect_technologies
+from app.services.dependency_scanner import scan_dependencies
  
 router = APIRouter() 
  
@@ -115,6 +118,19 @@ async def scan_repository(
         ) 
  
     try:
+        repo_info = get_repository_info(repo_url)
+    except ValueError as val_err:
+        err_msg = str(val_err)
+        if "not found" in err_msg.lower():
+            raise HTTPException(status_code=404, detail="Repository not found.")
+        elif "rate limit" in err_msg.lower():
+            raise HTTPException(status_code=429, detail="GitHub API rate limit exceeded.")
+        else:
+            raise HTTPException(status_code=400, detail="Invalid GitHub repository URL.")
+
+    repo_name = repo_info["repository"]
+
+    try:
         # Check current rate limit status before starting
         try:
             rate_limit = github_client.get_rate_limit().resources.core
@@ -122,18 +138,24 @@ async def scan_repository(
                 reset_time = time.strftime('%H:%M:%S', time.localtime(rate_limit.reset.timestamp()))
                 raise HTTPException(
                     status_code=429,
-                    detail=f"GitHub API rate limit nearly exhausted. Resets at {reset_time}."
+                    detail=f"GitHub API rate limit exceeded."
                 )
         except HTTPException:
             raise
-        except (BadCredentialsException, GithubException):
-            # Token is invalid/expired — fall back to unauthenticated mode
-            print("WARNING: GitHub token is invalid or expired. Falling back to unauthenticated mode (60 req/hr).")
-            github_client = Github()
+        except (BadCredentialsException, GithubException) as ge:
+            if isinstance(ge, BadCredentialsException) or (hasattr(ge, "status") and ge.status == 401):
+                # Token is invalid/expired — fall back to unauthenticated mode
+                print("WARNING: GitHub token is invalid or expired. Falling back to unauthenticated mode (60 req/hr).")
+                github_client = Github()
+            elif hasattr(ge, "status") and ge.status in [403, 429]:
+                raise HTTPException(
+                    status_code=429,
+                    detail="GitHub API rate limit exceeded."
+                )
+            else:
+                pass
         except Exception:
             pass
-
-        repo_name = repo_url.split("github.com/")[-1].strip("/")
 
         # Try with current client; if credentials fail, retry without token
         try:
@@ -142,24 +164,38 @@ async def scan_repository(
             print("WARNING: GitHub token rejected on get_repo. Retrying without token.")
             github_client = Github()
             repo = github_client.get_repo(repo_name)
+        except GithubException as ge:
+            if ge.status == 404:
+                raise HTTPException(status_code=404, detail="Repository not found.")
+            elif ge.status in [403, 429]:
+                raise HTTPException(status_code=429, detail="GitHub API rate limit exceeded.")
+            else:
+                raise
         
         # Get all files using git tree to be more efficient
         default_branch = repo.default_branch
         tree = repo.get_git_tree(default_branch, recursive=True)
-        
+        all_file_paths = [item.path for item in tree.tree if item.type == "blob"]
+
+        # ── Technology Detection (runs before security scan) ─────────────────
+        technologies = detect_technologies(all_file_paths, repo_name, default_branch)
+
+        # ── Dependency Scan ────────────────────────────────────────
+        dep_scan = scan_dependencies(all_file_paths, repo_name, default_branch)
+        dependency_report   = dep_scan["dependency_report"]
+        dependency_findings = dep_scan["dependency_findings"]
+
+        # Filter files eligible for security scanning
         files_to_scan = [
-            item.path for item in tree.tree 
-            if item.type == "blob" and (
-                item.path.endswith((".py", ".js", ".env", ".yml", ".json", ".txt", ".sh")) or
-                "config" in item.path.lower()
-            )
+            p for p in all_file_paths
+            if p.endswith((".py", ".js", ".ts", ".env", ".yml", ".yaml", ".json", ".txt", ".sh")) or
+            "config" in p.lower()
         ]
 
         # Limit to 100 files to avoid timeouts
         files_to_scan = files_to_scan[:100]
 
         file_results = []
-        technologies = set()
 
         # Parallelize file scanning for speed
         with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
@@ -172,9 +208,6 @@ async def scan_repository(
                 result = future.result()
                 if result:
                     file_results.append(result)
-                    # Extract technology from file extension
-                    tech = detect_technology(result["file"])
-                    if tech: technologies.add(tech)
 
         risk_score = calculate_risk_score(file_results)
         
@@ -188,10 +221,25 @@ async def scan_repository(
         risk_level = ai_report["risk_level"]
         summary = ai_report["summary"]
 
+        # ── Enhance AI report with dependency insights ──────────────────
+        dep_rpt = dependency_report
+        dep_summary = (
+            f"Dependency Analysis: {dep_rpt['total_packages']} packages scanned. "
+            f"{dep_rpt['outdated']} outdated, "
+            f"{dep_rpt['risky']} risky, "
+            f"{dep_rpt['unpinned']} packages without pinned versions."
+        )
+        dep_recommendations = []
+        if dep_rpt["outdated"]  > 0: dep_recommendations.append("Update outdated dependencies to reduce known vulnerability exposure.")
+        if dep_rpt["unpinned"]  > 0: dep_recommendations.append("Pin all package versions for reproducible, predictable builds.")
+        if dep_rpt["risky"]     > 0: dep_recommendations.append("Review and replace risky packages where safer alternatives exist.")
+        ai_report["dependency_analysis"] = dep_summary
+        ai_report["recommendations"] = dep_recommendations + (ai_report.get("recommendations") or [])
+
         report_data = {
             "repository": repo_name,
             "findings": file_results,
-            "technologies": list(technologies),
+            "technologies": technologies,
             "risk_score": risk_score,
             "summary": summary,
             "risk_level": risk_level,
@@ -215,6 +263,8 @@ async def scan_repository(
 
              "recommendations": ai_report["recommendations"],
 
+             "dependency_report": dependency_report,
+
              "created_at": 
              datetime.utcnow(),
 
@@ -228,20 +278,25 @@ async def scan_repository(
         await scan_collection.insert_one(scan_document)
 
         return { 
- 
+             "repository_info": repo_info,
+             "technologies": technologies,
+             "dependency_report": dependency_report,
+             "dependency_findings": dependency_findings,
+             "scan_summary": report,
              "findings": findings, 
- 
-             "risk_score": risk_score, 
- 
+             "file_report": file_results, 
              "ai_report": ai_report 
          }
 
+    except HTTPException:
+        raise
     except BadCredentialsException:
         raise HTTPException(
             status_code=401,
             detail="Invalid GitHub credentials. Please check your token."
         )
     except Exception as e:
+        import traceback
         traceback.print_exc()
         raise HTTPException(
             status_code=500,
