@@ -14,6 +14,8 @@ import GitHubScanHistory from "../pages/GitHubScanHistory"
 import AnalyticsDashboard from "../pages/AnalyticsDashboard"
 import ReportCenter from "../pages/ReportCenter"
 import AdminDashboard from "../pages/AdminDashboard"
+import Quiz from "../pages/Quiz"
+import Glossary from "../pages/Glossary"
 import OwaspSimulator from "../pages/OwaspSimulator"
 import NotFound from "../pages/NotFound"
  
@@ -114,11 +116,22 @@ import ProtectedRoute from "./ProtectedRoute"
          /> 
  
          <Route 
-           path="/admin" 
+           path="/quiz" 
            element={ 
              <ProtectedRoute> 
  
-               <AdminDashboard /> 
+               <Quiz /> 
+ 
+             </ProtectedRoute> 
+           } 
+         /> 
+ 
+         <Route 
+           path="/glossary" 
+           element={ 
+             <ProtectedRoute> 
+ 
+               <Glossary /> 
  
              </ProtectedRoute> 
            } 
@@ -130,6 +143,17 @@ import ProtectedRoute from "./ProtectedRoute"
              <ProtectedRoute> 
  
                <OwaspSimulator /> 
+ 
+             </ProtectedRoute> 
+           } 
+         /> 
+ 
+         <Route 
+           path="/admin" 
+           element={ 
+             <ProtectedRoute> 
+ 
+               <AdminDashboard /> 
  
              </ProtectedRoute> 
            } 

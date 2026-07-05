@@ -84,7 +84,7 @@ THREAT_KNOWLEDGE_BASE = {
 
 def analyze_finding(finding): 
  
-     finding_type = finding["finding"] 
+     finding_type = finding.get("finding") or finding.get("type") or "Unknown"
  
      return THREAT_KNOWLEDGE_BASE.get( 
          finding_type, 
@@ -97,11 +97,12 @@ def analyze_finding(finding):
      )
 
 def analyze_file_finding( 
-     finding 
- ): 
+      finding 
+  ): 
  
+     finding_type = finding.get("finding") or finding.get("type") or "Unknown"
      threat = THREAT_KNOWLEDGE_BASE.get( 
-         finding["finding"], 
+         finding_type, 
          { 
              "risk": "Unknown", 
              "impact": "Unknown", 
@@ -113,13 +114,13 @@ def analyze_file_finding(
      return { 
  
          "file": 
-         finding["file"], 
+         finding.get("file") or "Unknown", 
  
          "line": 
-         finding["line"], 
+         finding.get("line") or 0, 
  
          "finding": 
-         finding["finding"], 
+         finding_type, 
  
          "risk": 
          threat["risk"], 
@@ -132,27 +133,27 @@ def analyze_file_finding(
      } 
 
 def generate_file_report( 
-     findings 
- ): 
+      findings 
+  ): 
  
      grouped = {} 
  
      for finding in findings: 
          # Group by file path and finding type
-         key = (finding["file"], finding["finding"])
+         key = (finding.get("file") or "Unknown", finding.get("finding") or finding.get("type") or "Unknown")
          
          if key not in grouped:
              analysis = analyze_file_finding(finding)
              grouped[key] = {
                  **analysis,
-                 "lines": [finding["line"]],
+                 "lines": [finding.get("line") or 0],
                  "count": 1
              }
              # Remove single line reference since we now use a list
              if "line" in grouped[key]:
                  del grouped[key]["line"]
          else:
-             grouped[key]["lines"].append(finding["line"])
+             grouped[key]["lines"].append(finding.get("line") or 0)
              grouped[key]["count"] += 1
  
      # Format the results

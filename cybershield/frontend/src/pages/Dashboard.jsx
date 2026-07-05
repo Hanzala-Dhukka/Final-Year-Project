@@ -94,36 +94,48 @@ function Dashboard() {
         </Link>
 
         <Link to="/report-center">
-
           <div className="bg-white p-8 rounded shadow hover:shadow-xl transition">
-
             <h2 className="text-2xl font-bold">
               Report Center
             </h2>
-
             <p className="mt-4 text-gray-600">
-              Generate and view security reports
+              Generate and download security reports
             </p>
-
           </div>
-
         </Link>
 
-        <Link to="/owasp-simulator">
+        <Link to="/quiz">
+           <div className="bg-white p-8 rounded shadow hover:shadow-xl transition">
+             <h2 className="text-2xl font-bold">
+               Security Quiz
+             </h2>
+             <p className="mt-4 text-gray-600">
+               Test your knowledge on cybersecurity
+             </p>
+           </div>
+         </Link>
 
-          <div className="bg-white p-8 rounded shadow hover:shadow-xl transition">
+         <Link to="/glossary">
+           <div className="bg-white p-8 rounded shadow hover:shadow-xl transition">
+             <h2 className="text-2xl font-bold">
+               Security Glossary
+             </h2>
+             <p className="mt-4 text-gray-600">
+               Learn about common security terms
+             </p>
+           </div>
+         </Link>
 
-            <h2 className="text-2xl font-bold">
-              OWASP Simulator
-            </h2>
-
-            <p className="mt-4 text-gray-600">
-              Simulate common web vulnerabilities
-            </p>
-
-          </div>
-
-        </Link>
+         <Link to="/owasp-simulator">
+           <div className="bg-white p-8 rounded shadow hover:shadow-xl transition">
+             <h2 className="text-2xl font-bold">
+               OWASP Simulator
+             </h2>
+             <p className="mt-4 text-gray-600">
+               Simulate and analyze common web vulnerability payloads
+             </p>
+           </div>
+         </Link>
 
         {role === "admin" && (
           <Link to="/admin">
