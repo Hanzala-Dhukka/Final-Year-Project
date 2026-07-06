@@ -13,3 +13,7 @@ motor
 requests
 PyGithub
 apscheduler
+gspread
+google-auth
+weasyprint
+google-generativeai

@@ -138,7 +138,30 @@ function GitHubScanHistory() {
                       {riskScore !== undefined && riskScore !== null ? riskScore : "N/A"}
                     </p>
                   </div>
+                  {scan.secret_summary && (
+                    <div>
+                      <p style={{ color: "#64748b", fontSize: "0.75rem", margin: "0 0 2px" }}>Secrets Found</p>
+                      <p style={{ color: scan.secret_summary.total > 0 ? "#f87171" : "#4ade80", fontWeight: "600", fontSize: "1.1rem", margin: 0 }}>
+                        {scan.secret_summary.total}
+                      </p>
+                    </div>
+                  )}
                 </div>
+
+                {/* Secret Summary */}
+                {scan.secret_summary && scan.secret_summary.total > 0 && (
+                  <div style={{ display: "flex", gap: "12px", flexWrap: "wrap", marginTop: "8px" }}>
+                    <span style={{ background: "#991b1b22", color: "#f87171", border: "1px solid #991b1b44", borderRadius: "6px", padding: "4px 8px", fontSize: "0.75rem", fontWeight: "600" }}>
+                      Critical: {scan.secret_summary.critical}
+                    </span>
+                    <span style={{ background: "#ea580c22", color: "#fb923c", border: "1px solid #ea580c44", borderRadius: "6px", padding: "4px 8px", fontSize: "0.75rem", fontWeight: "600" }}>
+                      High: {scan.secret_summary.high}
+                    </span>
+                    <span style={{ background: "#ca8a0422", color: "#facc15", border: "1px solid #ca8a0444", borderRadius: "6px", padding: "4px 8px", fontSize: "0.75rem", fontWeight: "600" }}>
+                      Medium: {scan.secret_summary.medium}
+                    </span>
+                  </div>
+                )}
 
                 {/* Date */}
                 <p style={{ color: "#475569", fontSize: "0.8rem", margin: 0 }}>

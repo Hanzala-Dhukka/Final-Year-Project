@@ -13,6 +13,12 @@ from app.routes.monitoring_routes import router as monitoring_router
 from app.routes.quiz_routes import router as quiz_router
 from app.routes.glossary_routes import router as glossary_router
 from app.routes.owasp_routes import router as owasp_router
+from app.routes.threat_model_routes import router as threat_model_router
+from app.routes.threat_report_routes import router as threat_report_router
+from app.routes.chatbot_routes import router as chatbot_router
+from app.routers.copilot_routes import router as copilot_router
+from app.routers.defense_routes import router as defense_router
+from app.routers.lab_routes import router as lab_router
 from app.services.scheduler import scheduler
 from app.services.monitoring_jobs import monitor_targets
 
@@ -46,6 +52,12 @@ app.include_router(monitoring_router, prefix="/api/v1/monitoring", tags=["Monito
 app.include_router(quiz_router)
 app.include_router(glossary_router)
 app.include_router(owasp_router)
+app.include_router(threat_model_router, prefix="/api/v1/threat-model", tags=["Threat Modeling"])
+app.include_router(threat_report_router, prefix="/api/v1/threat-model", tags=["Threat Report"])
+app.include_router(chatbot_router, prefix="/api/v1/chatbot", tags=["Chatbot"])
+app.include_router(copilot_router, prefix="/api/v1/copilot", tags=["AI Security Copilot"])
+app.include_router(defense_router, prefix="/api/v1/owasp", tags=["OWASP Defense Mode"])
+app.include_router(lab_router, prefix="/api/v1/labs", tags=["Interactive Attack Labs"])
 
 
 # ── Health check ──────────────────────────────────────────────────────────────

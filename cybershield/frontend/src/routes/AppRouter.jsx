@@ -1,23 +1,31 @@
 import { 
    BrowserRouter, 
    Routes, 
-   Route 
+   Route,
+   Navigate
  } from "react-router-dom" 
  
-import Register from "../pages/Register" 
-import Login from "../pages/Login" 
-import Dashboard from "../pages/Dashboard" 
-import SecurityAnalyzer from "../pages/SecurityAnalyzer" 
-import ScanHistory from "../pages/ScanHistory"
-import GitHubScanner from "../pages/GitHubScanner" 
-import GitHubScanHistory from "../pages/GitHubScanHistory"
-import AnalyticsDashboard from "../pages/AnalyticsDashboard"
-import ReportCenter from "../pages/ReportCenter"
-import AdminDashboard from "../pages/AdminDashboard"
-import Quiz from "../pages/Quiz"
-import Glossary from "../pages/Glossary"
-import OwaspSimulator from "../pages/OwaspSimulator"
-import NotFound from "../pages/NotFound"
+ import Register from "../pages/Register"
+ import Login from "../pages/Login"
+ import Dashboard from "../pages/Dashboard"
+ import SecurityAnalyzer from "../pages/SecurityAnalyzer"
+ import ScanHistory from "../pages/ScanHistory"
+ import GitHubScanner from "../pages/GitHubScanner" 
+ import GitHubScanHistory from "../pages/GitHubScanHistory"
+ import AnalyticsDashboard from "../pages/AnalyticsDashboard"
+ import ReportCenter from "../pages/ReportCenter"
+ import AdminDashboard from "../pages/AdminDashboard"
+ import Quiz from "../pages/Quiz"
+ import Glossary from "../pages/Glossary"
+ import OwaspSimulator from "../pages/OwaspSimulator"
+ import ThreatModeling from "../pages/ThreatModeling"
+ import ThreatAnalysis from "../pages/ThreatAnalysis"
+ import RiskMatrix from "../pages/RiskMatrix"
+ import SecurityReport from "../pages/SecurityReport"
+  import AIAssistant from "../pages/AIAssistant"
+  import OWASPDefenseMode from "../pages/OWASPDefenseMode"
+  import InteractiveLabs from "../pages/InteractiveLabs"
+  import NotFound from "../pages/NotFound"
  
 import ProtectedRoute from "./ProtectedRoute" 
  
@@ -138,28 +146,105 @@ import ProtectedRoute from "./ProtectedRoute"
          /> 
  
          <Route 
-           path="/owasp-simulator" 
-           element={ 
-             <ProtectedRoute> 
+          path="/owasp-simulator" 
+          element={ 
+            <ProtectedRoute> 
+
+              <OwaspSimulator /> 
+
+            </ProtectedRoute> 
+          } 
+        />
+
+        <Route 
+          path="/threat-modeling" 
+          element={ 
+            <ProtectedRoute> 
+
+              <ThreatModeling /> 
+
+            </ProtectedRoute> 
+          } 
+        /> 
+
+        <Route 
+          path="/threat-analysis" 
+          element={ 
+            <ProtectedRoute> 
+
+              <ThreatAnalysis /> 
+
+            </ProtectedRoute> 
+          } 
+        /> 
+
+        <Route 
+          path="/risk-matrix" 
+          element={ 
+            <ProtectedRoute> 
+
+              <RiskMatrix /> 
+
+            </ProtectedRoute> 
+          } 
+        /> 
+
+        <Route 
+          path="/security-report" 
+          element={ 
+            <ProtectedRoute> 
+
+              <SecurityReport /> 
+
+            </ProtectedRoute> 
+          } 
+        /> 
+
+        <Route 
+          path="/ai-assistant" 
+          element={ 
+            <ProtectedRoute> 
  
-               <OwaspSimulator /> 
+              <AIAssistant /> 
  
-             </ProtectedRoute> 
-           } 
-         /> 
+            </ProtectedRoute> 
+          } 
+        />
+
+        <Route 
+          path="/owasp-defense" 
+          element={ 
+            <ProtectedRoute> 
+ 
+              <OWASPDefenseMode /> 
+ 
+            </ProtectedRoute> 
+          } 
+        />
+
+        <Route 
+          path="/interactive-labs" 
+          element={ 
+            <ProtectedRoute> 
+ 
+              <InteractiveLabs /> 
+ 
+            </ProtectedRoute> 
+          } 
+        />
  
          <Route 
            path="/admin" 
            element={ 
              <ProtectedRoute> 
- 
+
                <AdminDashboard /> 
- 
+
              </ProtectedRoute> 
            } 
          /> 
  
-         <Route path="*" element={<NotFound />} /> 
+         <Route path="*" element={<NotFound />} />
  
        </Routes> 
  
