@@ -127,15 +127,26 @@ function Dashboard() {
          </Link>
 
          <Link to="/owasp-simulator">
-           <div className="bg-white p-8 rounded shadow hover:shadow-xl transition">
-             <h2 className="text-2xl font-bold">
-               OWASP Simulator
-             </h2>
-             <p className="mt-4 text-gray-600">
-               Simulate and analyze common web vulnerability payloads
-             </p>
-           </div>
-         </Link>
+          <div className="bg-white p-8 rounded shadow hover:shadow-xl transition">
+            <h2 className="text-2xl font-bold">
+              OWASP Simulator
+            </h2>
+            <p className="mt-4 text-gray-600">
+              Simulate and analyze common web vulnerability payloads
+            </p>
+          </div>
+        </Link>
+
+        <Link to="/threat-modeling">
+          <div className="bg-white p-8 rounded shadow hover:shadow-xl transition">
+            <h2 className="text-2xl font-bold">
+              Threat Modeling
+            </h2>
+            <p className="mt-4 text-gray-600">
+              Analyze project architecture and predict security threats
+            </p>
+          </div>
+        </Link>
 
         {role === "admin" && (
           <Link to="/admin">
