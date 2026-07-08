@@ -16,4 +16,7 @@ apscheduler
 gspread
 google-auth
 weasyprint
+reportlab
 google-generativeai
+pytest
+schedule

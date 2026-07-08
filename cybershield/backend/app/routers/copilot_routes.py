@@ -12,7 +12,8 @@ from app.schemas.copilot_schema import (
 )
 from app.services.memory_service import (
     create_conversation, get_conversation, append_message,
-    get_history, get_all_conversations, clear_memory, delete_conversation
+    get_history, get_all_conversations, clear_memory, delete_conversation,
+    build_context_window
 )
 from app.services.file_analyzer import FileAnalyzer
 from app.services.report_comparator import ReportComparator

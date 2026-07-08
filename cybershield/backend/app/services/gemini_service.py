@@ -1,5 +1,6 @@
 import json
 import time
+import warnings
 from typing import Dict, Any, Optional
 
 # Try to import Gemini AI, fallback to None if not available
@@ -10,7 +11,8 @@ try:
         GEMINI_AVAILABLE = True
         USING_NEW_API = True
     except ImportError:
-        # Fallback to old package (google.generativeai)
+        # Fallback to old package (google.generativeai) - suppress deprecation warning
+        warnings.filterwarnings('ignore', category=FutureWarning, module='google.generativeai')
         import google.generativeai as genai
         GEMINI_AVAILABLE = True
         USING_NEW_API = False
@@ -21,7 +23,6 @@ except ImportError:
     USING_NEW_API = False
 
 from app.config.settings import settings
-from app.services.chatbot_service import generate_answer as fallback_answer
 
 
 # Initialize Gemini client once at module level
@@ -96,6 +97,7 @@ async def generate_ai_response(
     if not model:
         # Fallback to rule-based chatbot
         print("Gemini not available, using fallback mode")
+        from app.services.chatbot_service import generate_answer as fallback_answer
         fallback = fallback_answer(question, project_context.get("project_id"))
         return {
             "provider": "Fallback",
@@ -172,6 +174,7 @@ async def generate_ai_response(
     except Exception as e:
         print(f"Gemini API failed after {max_retries} retries: {str(e)}")
         # Fallback to rule-based chatbot
+        from app.services.chatbot_service import generate_answer as fallback_answer
         fallback = fallback_answer(question, project_context.get("project_id"))
         return {
             "provider": "Fallback",
@@ -186,3 +189,90 @@ async def generate_ai_response(
                 "secure_code": "# Configure Gemini API key for AI-powered responses"
             }
         }
+
+
+async def generate_daily_explanation(
+    category: str,
+    title: str,
+    user_answer: str
+) -> str:
+    """
+    Generate AI explanation for daily challenge
+    
+    Args:
+        category: Challenge category (e.g., "SQL Injection")
+        title: Challenge title
+        user_answer: User's submitted answer
+    
+    Returns:
+        Explanation string
+    """
+    model = get_model()
+    
+    if not model:
+        # Return fallback explanation
+        return f"""
+Today's challenge demonstrated {category}.
+
+Why it worked:
+The payload you submitted exploited a vulnerability in the application's input validation.
+
+How to prevent it:
+- Use parameterized queries/prepared statements
+- Implement proper input validation
+- Apply the principle of least privilege
+- Use Web Application Firewalls (WAF)
+
+Industry Example:
+Many major breaches have occurred due to {category} vulnerabilities, including the famous TalkTalk breach.
+
+Related OWASP Category:
+A03:2021 - Injection
+"""
+    
+    try:
+        prompt = f"""
+You are a cybersecurity expert explaining a daily challenge to a learner.
+
+Challenge Category: {category}
+Challenge Title: {title}
+User's Answer: {user_answer}
+
+Provide a comprehensive explanation in this format:
+
+1. **What this challenge demonstrated**: Explain the vulnerability in simple terms.
+
+2. **Why it worked**: Explain why the user's answer was correct or what the vulnerability allows.
+
+3. **How to prevent it**: Provide 3-4 specific prevention techniques.
+
+4. **Industry Example**: Give a real-world example of this vulnerability being exploited.
+
+5. **Related OWASP Category**: Reference the specific OWASP Top 10 category.
+
+Keep the explanation educational, clear, and actionable. Use bullet points and code examples where appropriate.
+"""
+        
+        response = model.generate_content(prompt)
+        return response.text.strip()
+        
+    except Exception as e:
+        print(f"Error generating daily explanation: {str(e)}")
+        return f"""
+Today's challenge demonstrated {category}.
+
+Why it worked:
+The payload you submitted exploited a vulnerability in the application's input validation.
+
+How to prevent it:
+- Use parameterized queries/prepared statements
+- Implement proper input validation
+- Apply the principle of least privilege
+- Use Web Application Firewalls (WAF)
+
+Industry Example:
+Many major breaches have occurred due to {category} vulnerabilities.
+
+Related OWASP Category:
+A03:2021 - Injection
+"""

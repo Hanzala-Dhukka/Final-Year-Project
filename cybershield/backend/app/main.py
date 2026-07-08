@@ -19,8 +19,14 @@ from app.routes.chatbot_routes import router as chatbot_router
 from app.routers.copilot_routes import router as copilot_router
 from app.routers.defense_routes import router as defense_router
 from app.routers.lab_routes import router as lab_router
+from app.routers.test_routes import router as test_router
+from app.routers.session_routes import router as session_router
+from app.routes.profile_routes import router as profile_router
+from app.routes.dashboard_routes import router as dashboard_router
 from app.services.scheduler import scheduler
 from app.services.monitoring_jobs import monitor_targets
+from app.core.database import connect_to_mongo, close_mongo_connection
+from app.middleware.activity_tracker import ActivityTrackerMiddleware
 
 # ── App instance ─────────────────────────────────────────────────────────────
 app = FastAPI(
@@ -38,6 +44,13 @@ app.add_middleware(
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
+)
+
+# ── Activity Tracking Middleware ─────────────────────────────────────────────
+# Auto-logout after 30 minutes of inactivity
+app.add_middleware(
+    ActivityTrackerMiddleware,
+    inactivity_timeout=30
 )
 
 # ── Routers ───────────────────────────────────────────────────────────────────
@@ -58,6 +71,10 @@ app.include_router(chatbot_router, prefix="/api/v1/chatbot", tags=["Chatbot"])
 app.include_router(copilot_router, prefix="/api/v1/copilot", tags=["AI Security Copilot"])
 app.include_router(defense_router, prefix="/api/v1/owasp", tags=["OWASP Defense Mode"])
 app.include_router(lab_router, prefix="/api/v1/labs", tags=["Interactive Attack Labs"])
+app.include_router(test_router, prefix="/api/v1", tags=["Database Test"])
+app.include_router(session_router, prefix="/api/v1", tags=["Session Management"])
+app.include_router(profile_router, prefix="/api/v1", tags=["Profile Management"])
+app.include_router(dashboard_router, prefix="/api/v1", tags=["Dashboard"])
 
 
 # ── Health check ──────────────────────────────────────────────────────────────
@@ -70,9 +87,13 @@ def root():
 def health():
     return {"status": "healthy"}
 
-# ── Scheduler ─────────────────────────────────────────────────────────────────
+# ── Database Connection ───────────────────────────────────────────────────────
 @app.on_event("startup")
 async def startup():
+    # Connect to MongoDB
+    await connect_to_mongo()
+    print("MongoDB connected successfully")
+    
     # Add scheduled jobs
     scheduler.add_job(
         monitor_targets,
@@ -84,6 +105,11 @@ async def startup():
     print("Scheduler started. Monitoring jobs scheduled every 30 minutes.")
 
 @app.on_event("shutdown")
-async def shutdown_scheduler():
+async def shutdown():
+    # Close MongoDB connection
+    await close_mongo_connection()
+    print("MongoDB connection closed")
+    
+    # Shutdown scheduler
     scheduler.shutdown()
     print("Scheduler shut down.")

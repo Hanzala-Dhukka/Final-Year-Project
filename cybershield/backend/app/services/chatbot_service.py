@@ -1,7 +1,6 @@
 import uuid
 from datetime import datetime
 from typing import Dict, Any, Optional
-from app.services.context_builder import build_context, get_threat_recommendation, get_critical_threats
 from app.services.chatbot_knowledge import (
     OWASP_KNOWLEDGE,
     SECURE_CODING_KNOWLEDGE,
@@ -53,6 +52,9 @@ def generate_answer(question: str, project_id: Optional[str] = None) -> Dict[str
     Returns:
         Answer dictionary with response and source
     """
+    # Lazy import to avoid circular dependency
+    from app.services.context_builder import build_context, get_threat_recommendation, get_critical_threats
+    
     context = build_context(project_id)
     intent = detect_intent(question)
     question_lower = question.lower()

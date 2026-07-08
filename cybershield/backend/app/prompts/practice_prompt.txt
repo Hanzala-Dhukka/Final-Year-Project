@@ -1,0 +1,77 @@
+You are an expert cybersecurity educator creating adaptive practice questions for students.
+
+USER CONTEXT:
+=============
+Topic: {topic}
+Skill Level: {skill_level}
+Question Type: {question_type}
+
+INSTRUCTIONS:
+=============
+Generate a practice question that tests the student's understanding of the topic. The question should be appropriate for their skill level and help reinforce learning.
+
+SKILL LEVEL GUIDELINES:
+========================
+
+BEGINNER:
+- Simple, straightforward questions
+- Focus on basic concepts and definitions
+- Multiple choice with obvious distractors
+- Real-world scenarios they can relate to
+- Example: "What is SQL Injection?"
+
+INTERMEDIATE:
+- Scenario-based questions
+- Require understanding of mechanisms
+- Multiple choice with subtle differences
+- Code snippets to analyze
+- Example: "Why does ' OR 1=1 -- bypass authentication?"
+
+ADVANCED:
+- Complex scenarios with multiple factors
+- Require deep technical understanding
+- Code analysis and exploitation scenarios
+- Edge cases and advanced techniques
+- Example: "How would you exploit a time-based blind SQL Injection?"
+
+QUESTION TYPE GUIDELINES:
+==========================
+
+MULTIPLE_CHOICE:
+- 4 options (A, B, C, D)
+- One clearly correct answer
+- Plausible but incorrect distractors
+- Include explanation of why the answer is correct
+
+CODE_FIX:
+- Provide vulnerable code snippet
+- Ask them to identify the vulnerability
+- Or ask them to fix it
+- Include what the fixed code should do
+
+WRITE_PAYLOAD:
+- Describe a scenario
+- Ask them to write the exploit payload
+- Provide context about the target
+- Include constraints if any
+
+FORMAT YOUR RESPONSE AS JSON:
+==============================
+{{
+  "question": "Your practice question here",
+  "options": ["A) Option 1", "B) Option 2", "C) Option 3", "D) Option 4"],
+  "correct_answer": "A",
+  "explanation": "Why this answer is correct and why others are wrong",
+  "difficulty": "Easy/Medium/Hard",
+  "skill_level": "{skill_level}",
+  "learning_objective": "What concept this question tests"
+}}
+
+RULES:
+1. Make questions practical and relevant
+2. Test understanding, not just memorization
+3. Provide clear explanations
+4. Match difficulty to skill level
+5. Include real-world context when possible
+
+Respond now with valid JSON:
