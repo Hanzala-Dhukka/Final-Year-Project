@@ -19,35 +19,45 @@ function Login() {
      }) 
    } 
  
-   const handleSubmit = async (e) => { 
+    const handleSubmit = async (e) => { 
+  
+      e.preventDefault() 
+  
+      try { 
+  
+        const response = await API.post( 
+          "auth/login", 
+          formData 
+        ) 
+  
+        // Store access token
+        localStorage.setItem( 
+          "token", 
+          response.data.access_token 
+        ) 
  
-     e.preventDefault() 
+        // Store refresh token
+        if (response.data.refresh_token) {
+          localStorage.setItem(
+            "refresh_token",
+            response.data.refresh_token
+          )
+        }
  
-     try { 
- 
-       const response = await API.post( 
-         "auth/login", 
-         formData 
-       ) 
- 
-       localStorage.setItem( 
-         "token", 
-         response.data.access_token 
-       ) 
-
-       // Fetch user role after login
-       const userResponse = await API.get("auth/me")
-       localStorage.setItem("role", userResponse.data.role)
- 
-       alert(response.data.message) 
- 
-       navigate("/dashboard") 
- 
-     } catch (error) { 
- 
-       alert(error.response.data.detail) 
-     } 
-   } 
+        // Fetch user role after login
+        const userResponse = await API.get("auth/me")
+        localStorage.setItem("role", userResponse.data.role)
+        localStorage.setItem("user", JSON.stringify(userResponse.data))
+  
+        alert(response.data.message) 
+  
+        navigate("/dashboard") 
+  
+      } catch (error) { 
+  
+        alert(error.response?.data?.detail || "Login failed") 
+      } 
+    } 
  
    return ( 
      <div className="h-screen flex items-center justify-center"> 

@@ -5,7 +5,6 @@ from typing import Dict, Any, List
 from app.models.threat_model import ThreatModelCreate
 from app.services.threat_engine import generate_threats
 from app.services.risk_matrix import process_threats_with_risk_matrix
-from app.services.recommendation_engine import generate_recommendations, generate_fix_plan, generate_security_report
 from app.services.google_sheets_service import save_threats_to_sheet, save_risk_matrix_to_sheet, save_recommendations_to_sheet
 
 # In-memory storage for threat models and results
@@ -41,6 +40,7 @@ def create_threat_model(data: ThreatModelCreate) -> Dict[str, Any]:
     risk_result = process_threats_with_risk_matrix(threat_result.get("threats", []))
     
     # Generate recommendations
+    from app.services.recommendation_engine import generate_recommendations, generate_fix_plan, generate_security_report
     recommendations = generate_recommendations(risk_result.get("threats", []))
     
     # Generate fix plan

@@ -4,11 +4,12 @@ from github import Github, GithubException, BadCredentialsException
 import concurrent.futures
 import time
 import requests
-from datetime import datetime 
+from datetime import datetime, timezone
 from bson import ObjectId
-from app.database.db import database 
- 
+
 from app.config.settings import settings
+from app.repositories.github_repository import github_scan_repository
+from app.repositories.security_report_repository import security_report_repository
 from app.services.github_scanner import ( 
     scan_file_content,
     detect_technology,
@@ -273,8 +274,7 @@ async def scan_repository(
         }
         report = generate_security_report(report_data)
 
-        # Save scan to database
-        scan_collection = database["github_scans"]
+        # Save scan to database using repository
         scan_document = { 
              "repository": repo_name, 
              "findings": findings, 
@@ -293,15 +293,13 @@ async def scan_repository(
              "top_risks": risk_data["top_risks"],
              "score_card": risk_data["score_card"],
              "executive_summary": risk_data["executive_summary"],
-             "created_at": datetime.utcnow(),
-             # Keeping application context
-             "user_id": current_user["_id"],
+             "user_id": str(current_user["_id"]),
              "repo_url": repo_url,
              "scanned_files": len(files_to_scan),
              "vulnerabilities_found": len(file_results),
              "risk_score": risk_data["risk_dashboard"]["risk_score"]
          }
-        await scan_collection.insert_one(scan_document)
+        github_scan_repository.create_scan(scan_document)
 
         return { 
              "repository_info": repo_info,
@@ -357,19 +355,17 @@ async def generate_pdf(
             detail="Report data required" 
         ) 
  
-    # Save to database
-    reports_collection = database["security_reports"]
+    # Save to database using repository
     report_document = {
-        "user_id": current_user["_id"],
+        "user_id": str(current_user["_id"]),
         "report_data": report,
         "title": title,
         "risk_level": report.get("risk_level", "Unknown"),
         "summary": report.get("summary", ""),
-        "report_type": "github_scan",
-        "created_at": datetime.utcnow()
+        "report_type": "github_scan"
     }
     
-    await reports_collection.insert_one(report_document)
+    security_report_repository.create_report(report_document)
 
     output_path = "security_report.pdf" 
  
@@ -388,32 +384,11 @@ async def generate_pdf(
 @router.get("/scan-history")
 async def get_scan_history(current_user: dict = Depends(get_current_user)):
     try:
-        scan_collection = database["github_scans"]
+        # Use repository to get scans
+        scans = github_scan_repository.get_user_scans(str(current_user["_id"]))
         
-        # Admin sees all, user sees own
-        # Also include legacy scans that have no user_id (saved before auth was enforced)
-        query = {}
-        if current_user.get("role") != "admin":
-            query = {
-                "$or": [
-                    {"user_id": current_user["_id"]},
-                    {"user_id": {"$exists": False}},
-                    {"user_id": None}
-                ]
-            }
-
-        scans = await scan_collection.find(query).sort("created_at", -1).to_list(length=100)
-        
-        # Convert MongoDB _id to string and normalize old field names
+        # Normalize old field names to new ones for backward compatibility
         for scan in scans:
-            scan["_id"] = str(scan["_id"])
-            if "user_id" in scan:
-                scan["user_id"] = str(scan["user_id"])
-            # Normalize old field names to new ones for backward compatibility
-            if "repo_name" in scan and "repository" not in scan:
-                scan["repository"] = scan["repo_name"]
-            if "findings_count" in scan and "vulnerabilities_found" not in scan:
-                scan["vulnerabilities_found"] = scan["findings_count"]
             if "scanned_files" not in scan:
                 scan["scanned_files"] = "N/A"
             if "advanced_secrets" not in scan:
@@ -461,27 +436,13 @@ async def get_scan_history(current_user: dict = Depends(get_current_user)):
 
 @router.get("/reports")
 async def get_reports(current_user: dict = Depends(get_current_user)):
-
-    reports_collection = database[
-        "security_reports"
-    ]
-
-    # Admin sees all, user sees own
-    query = {}
-    if current_user.get("role") != "admin":
-        query = {"user_id": current_user["_id"]}
-
-    reports = await reports_collection.find(query).sort(
-        "created_at",
-        -1
-    ).to_list(100)
-
-    for report in reports:
-        report["_id"] = str(
-            report["_id"]
+    try:
+        # Use repository to get reports
+        reports = security_report_repository.get_user_reports(str(current_user["_id"]))
+        return reports
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=str(e)
         )
-        if "user_id" in report:
-            report["user_id"] = str(report["user_id"])
-
-    return reports
 

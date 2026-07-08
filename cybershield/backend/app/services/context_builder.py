@@ -1,5 +1,4 @@
 from typing import Dict, Any, Optional
-from app.services.threat_model_service import threat_results_store, threat_models_store
 
 
 def build_context(project_id: Optional[str] = None) -> Dict[str, Any]:
@@ -12,6 +11,9 @@ def build_context(project_id: Optional[str] = None) -> Dict[str, Any]:
     Returns:
         Context dictionary with project information
     """
+    # Lazy import to avoid circular dependency
+    from app.services.threat_model_service import threat_results_store, threat_models_store
+    
     context = {
         "project": "Unknown",
         "risk": "Unknown",

@@ -391,11 +391,9 @@ def generate_pdf(project_id: str, project_data: Dict[str, Any]) -> str:
     # Try to convert to PDF, fallback to HTML if weasyprint not available
     try:
         from weasyprint import HTML
-        from weasyprint.fonts import FontConfiguration
         
-        font_config = FontConfiguration()
         html = HTML(string=html_content)
-        pdf_bytes = html.write_pdf(font_config=font_config)
+        pdf_bytes = html.write_pdf()
         
         # Save PDF
         filename = f"{project_data.get('project', 'report').replace(' ', '_')}_Threat_Report.pdf"
@@ -453,11 +451,9 @@ def generate_pdf_report(report_data: Dict[str, Any], output_path: str) -> None:
     
     try:
         from weasyprint import HTML
-        from weasyprint.fonts import FontConfiguration
         
-        font_config = FontConfiguration()
         html = HTML(string=html_content)
-        pdf_bytes = html.write_pdf(font_config=font_config)
+        pdf_bytes = html.write_pdf()
         
         with open(output_path, 'wb') as f:
             f.write(pdf_bytes)

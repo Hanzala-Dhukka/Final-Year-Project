@@ -2,6 +2,7 @@
 Interactive Attack Labs Data
 Each lab provides a realistic penetration testing scenario
 """
+from typing import Optional, Dict, Any, List
 
 ATTACK_LABS = {
     "SQL Injection": [

@@ -35,7 +35,8 @@ class Settings(BaseSettings):
     # Map keys to fallback values
     SECRET_KEY: str = os.getenv("JWT_SECRET_KEY") or os.getenv("JWT_SECRET") or "your-secret-key-here"
     ALGORITHM: str = os.getenv("JWT_ALGORITHM") or os.getenv("ALGORITHM") or "HS256"
-    ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 15
+    REFRESH_TOKEN_EXPIRE_DAYS: int = 7
 
     GITHUB_TOKEN: str = os.getenv("GITHUB_TOKEN") or ""
     EMAIL_USER: str = os.getenv("EMAIL_USER") or ""
