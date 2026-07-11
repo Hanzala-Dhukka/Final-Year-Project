@@ -10,6 +10,36 @@ from pymongo.collection import Collection
 from app.core.database import get_collection
 
 
+class QuizRepository:
+    """Repository for quiz attempt database operations."""
+
+    def __init__(self):
+        self.collection_name = "quiz_attempts"
+
+    async def get_quiz_attempts_by_user(self, user_id: str, limit: int = 50) -> List[Dict[str, Any]]:
+        """
+        Get quiz attempts by user.
+
+        Args:
+            user_id: User's MongoDB ObjectId as string
+            limit: Maximum number of attempts to return
+
+        Returns:
+            List of quiz attempt documents
+        """
+        try:
+            collection = get_collection(self.collection_name)
+            attempts = []
+            cursor = collection.find({"user_id": user_id}).sort("created_at", -1).limit(limit)
+            async for attempt in cursor:
+                attempt["_id"] = str(attempt["_id"])
+                attempts.append(attempt)
+            return attempts
+        except Exception as e:
+            print(f"Error getting quiz attempts: {e}")
+            return []
+
+
 class QuizSessionRepository:
     """Repository class for quiz session database operations."""
     
@@ -66,9 +96,9 @@ class QuizResultRepository:
         self._collection: Optional[Collection] = None
     
     def _get_collection(self) -> Collection:
-        """Get the quiz_results collection."""
+        """Get the quiz_attempts collection."""
         if self._collection is None:
-            self._collection = get_collection("quiz_results")
+            self._collection = get_collection("quiz_attempts")
         return self._collection
     
     def create_result(self, result_data: Dict[str, Any]) -> str:
@@ -90,3 +120,4 @@ class QuizResultRepository:
 # Create singleton instances
 quiz_session_repository = QuizSessionRepository()
 quiz_result_repository = QuizResultRepository()
+quiz_repository = QuizRepository()

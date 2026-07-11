@@ -6,7 +6,6 @@ from typing import Optional, Dict, Any, List
 from app.repositories.profile_repository import profile_repository
 from app.repositories.user_repository import user_repository
 from app.repositories.progress_repository import progress_repository
-from app.repositories.lab_repository import lab_repository
 from app.repositories.quiz_repository import quiz_repository
 from app.services.password_service import password_service
 from app.services.session_service import session_service
@@ -71,7 +70,7 @@ class ProfileService:
             progress = await progress_repository.get_progress_by_user(user_id)
             
             # Get lab attempts
-            lab_attempts = await lab_repository.get_lab_attempts_by_user(user_id, limit=1000)
+            lab_attempts = await progress_repository.get_lab_attempts_by_user(user_id, limit=1000)
             completed_labs = len([a for a in lab_attempts if a.get("status") == "completed"])
             
             # Get quiz attempts

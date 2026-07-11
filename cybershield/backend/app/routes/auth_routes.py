@@ -1,7 +1,8 @@
 """
 Authentication routes for login, register, and password reset.
 """
-from fastapi import APIRouter, HTTPException, Depends, status
+from fastapi import APIRouter, HTTPException, Depends, status, Request
+from pydantic import BaseModel
 from datetime import datetime, timezone, timedelta
 from typing import Optional
 from app.models.user_model import UserCreate, UserLogin, UserResponse, TokenResponse
@@ -102,16 +103,20 @@ async def login(credentials: UserLogin, request: Request):
         Access and refresh tokens
     """
     try:
+        print(f"LOGIN ATTEMPT: Email={credentials.email}")
         # Get user by email
         user = await user_repository.get_user_by_email(credentials.email)
         if not user:
+            print(f"LOGIN FAILED: User not found")
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Invalid email or password"
             )
         
+        print(f"LOGIN: User found, verifying password...")
         # Verify password
         if not password_service.verify_password(credentials.password, user["password_hash"]):
+            print(f"LOGIN FAILED: Invalid password")
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Invalid email or password"
@@ -124,32 +129,42 @@ async def login(credentials: UserLogin, request: Request):
                 detail="Account is disabled"
             )
         
+        print(f"LOGIN: Password verified, creating tokens...")
         # Create tokens
         user_id = str(user["_id"])
         access_token = create_access_token(data={"user_id": user_id, "role": user.get("role", "student")})
         refresh_token = create_refresh_token(data={"user_id": user_id})
         
-        # Store refresh token in database
-        await refresh_service.store_refresh_token(
-            user_id=user_id,
-            token=refresh_token,
-            device=credentials.device or "Unknown Device",
-            ip_address=request.client.host if request.client else "Unknown"
-        )
+        # Store refresh token in database (with error handling)
+        try:
+            await refresh_service.store_refresh_token(
+                user_id=user_id,
+                token=refresh_token,
+                device=credentials.device or "Unknown Device",
+                ip_address=request.client.host if request.client else "Unknown"
+            )
+        except Exception as e:
+            print(f"WARNING: Failed to store refresh token: {e}")
         
-        # Create session
-        await session_service.create_session(
-            user_id=user_id,
-            refresh_token=refresh_token,
-            device=credentials.device or "Unknown Device",
-            ip_address=request.client.host if request.client else "Unknown"
-        )
+        # Create session (with error handling)
+        try:
+            session_service.create_session(
+                user_id=user_id,
+                device=credentials.device or "Unknown Device",
+                ip_address=request.client.host if request.client else "Unknown"
+            )
+        except Exception as e:
+            print(f"WARNING: Failed to create session: {e}")
         
-        # Update last login
-        await user_repository.update_user(user_id, {
-            "last_login": datetime.now(timezone.utc)
-        })
+        # Update last login (with error handling)
+        try:
+            await user_repository.update_user(user_id, {
+                "last_login": datetime.now(timezone.utc)
+            })
+        except Exception as e:
+            print(f"WARNING: Failed to update last login: {e}")
         
+        print(f"LOGIN SUCCESS: Token created for user {user_id}")
         return TokenResponse(
             access_token=access_token,
             refresh_token=refresh_token,
@@ -160,14 +175,21 @@ async def login(credentials: UserLogin, request: Request):
     except HTTPException:
         raise
     except Exception as e:
+        print(f"LOGIN ERROR: {e}")
+        import traceback
+        traceback.print_exc()
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Login failed: {str(e)}"
         )
 
 
+class RefreshTokenRequest(BaseModel):
+    refresh_token: str
+
+
 @router.post("/refresh", response_model=TokenResponse)
-async def refresh_token(refresh_token: str):
+async def refresh_token(request: RefreshTokenRequest):
     """
     Refresh access token using refresh token.
     
@@ -177,6 +199,7 @@ async def refresh_token(refresh_token: str):
     Returns:
         New access token
     """
+    refresh_token = request.refresh_token
     try:
         # Verify refresh token
         token_data = refresh_service.verify_refresh_token(refresh_token)
@@ -245,7 +268,7 @@ async def logout(current_user: dict = Depends(get_current_user)):
         await refresh_service.revoke_all_user_tokens(user_id)
         
         # Close all sessions
-        await session_service.close_all_user_sessions(user_id)
+        session_service.close_all_user_sessions(user_id)
         
         return {"message": "Logged out successfully"}
         
@@ -353,7 +376,7 @@ async def reset_password(request: PasswordResetConfirm):
         await token_service.use_reset_token(request.token)
         
         # Invalidate all user sessions (security measure)
-        await session_service.close_all_user_sessions(user_id)
+        session_service.close_all_user_sessions(user_id)
         await refresh_service.revoke_all_user_tokens(user_id)
         
         return PasswordResetResponse(message="Password updated successfully")

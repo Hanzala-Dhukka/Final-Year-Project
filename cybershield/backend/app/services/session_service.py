@@ -110,6 +110,22 @@ class SessionService:
             print(f"Error closing session: {e}")
             return False
     
+    def close_all_user_sessions(self, user_id: str) -> bool:
+        """
+        Close all sessions for a user.
+        
+        Args:
+            user_id: User's MongoDB ObjectId as string
+            
+        Returns:
+            True if successful, False otherwise
+        """
+        try:
+            return self.session_repo.close_all_user_sessions(user_id)
+        except Exception as e:
+            print(f"Error closing all user sessions: {e}")
+            return False
+    
     def logout_user(self, user_id: str, refresh_token: Optional[str] = None) -> bool:
         """
         Logout user from all sessions or specific session.

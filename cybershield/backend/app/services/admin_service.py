@@ -13,7 +13,7 @@ from app.core.database import get_collection
 class AdminService:
     """Service class for admin operations."""
     
-    def get_all_users(self, skip: int = 0, limit: int = 100) -> Dict[str, Any]:
+    async def get_all_users(self, skip: int = 0, limit: int = 100) -> Dict[str, Any]:
         """
         Get all users with pagination.
         
@@ -24,15 +24,15 @@ class AdminService:
         Returns:
             Dictionary with total count and users list
         """
-        users = user_repository.get_all_users(skip, limit)
-        total = user_repository.count_users()
+        users = await user_repository.get_all_users(skip, limit)
+        total = await user_repository.count_users()
         
         # Sanitize users for response
         sanitized_users = []
         for user in users:
             sanitized_user = {
                 "id": str(user.get("_id", "")),
-                "name": user.get("full_name") or user.get("username", ""),
+                "name": user.get("name", ""),
                 "email": user.get("email", ""),
                 "role": user.get("role", "student"),
                 "status": user.get("account_status", "active"),
@@ -47,7 +47,7 @@ class AdminService:
             "users": sanitized_users
         }
     
-    def search_users(self, query: str) -> List[Dict[str, Any]]:
+    async def search_users(self, query: str) -> List[Dict[str, Any]]:
         """
         Search users by name, email, or role.
         
@@ -57,14 +57,14 @@ class AdminService:
         Returns:
             List of matching users
         """
-        users = user_repository.search_users(query)
+        users = await user_repository.search_users(query)
         
         # Sanitize users for response
         sanitized_users = []
         for user in users:
             sanitized_user = {
                 "id": str(user.get("_id", "")),
-                "name": user.get("full_name") or user.get("username", ""),
+                "name": user.get("name", ""),
                 "email": user.get("email", ""),
                 "role": user.get("role", "student"),
                 "status": user.get("account_status", "active"),
@@ -75,7 +75,7 @@ class AdminService:
         
         return sanitized_users
     
-    def change_user_role(self, user_id: str, new_role: str, admin_id: str, admin_username: str) -> Dict[str, Any]:
+    async def change_user_role(self, user_id: str, new_role: str, admin_id: str, admin_username: str) -> Dict[str, Any]:
         """
         Change a user's role.
         
@@ -97,7 +97,7 @@ class AdminService:
             }
         
         # Get user before update
-        user = user_repository.get_user_by_id(user_id)
+        user = await user_repository.get_user_by_id(user_id)
         if not user:
             return {
                 "success": False,
@@ -107,13 +107,13 @@ class AdminService:
         old_role = user.get("role", "student")
         
         # Update role
-        success = user_repository.update_user_role(user_id, new_role)
+        success = await user_repository.update_user_role(user_id, new_role)
         
         if success:
             # Log the action
             log_role_change(
                 user_id=user_id,
-                username=user.get("username", ""),
+                username=user.get("name", ""),
                 old_role=old_role,
                 new_role=new_role,
                 performed_by=admin_username
@@ -129,7 +129,7 @@ class AdminService:
                 "message": "Failed to update role"
             }
     
-    def change_user_status(self, user_id: str, new_status: str, admin_id: str, admin_username: str) -> Dict[str, Any]:
+    async def change_user_status(self, user_id: str, new_status: str, admin_id: str, admin_username: str) -> Dict[str, Any]:
         """
         Change a user's account status.
         
@@ -151,7 +151,7 @@ class AdminService:
             }
         
         # Get user before update
-        user = user_repository.get_user_by_id(user_id)
+        user = await user_repository.get_user_by_id(user_id)
         if not user:
             return {
                 "success": False,
@@ -161,13 +161,13 @@ class AdminService:
         old_status = user.get("account_status", "active")
         
         # Update status
-        success = user_repository.update_user_status(user_id, new_status)
+        success = await user_repository.update_user_status(user_id, new_status)
         
         if success:
             # Log the action
             log_account_status_change(
                 user_id=user_id,
-                username=user.get("username", ""),
+                username=user.get("name", ""),
                 old_status=old_status,
                 new_status=new_status,
                 performed_by=admin_username
@@ -183,7 +183,7 @@ class AdminService:
                 "message": "Failed to update account status"
             }
     
-    def delete_user(self, user_id: str, admin_id: str, admin_username: str) -> Dict[str, Any]:
+    async def delete_user(self, user_id: str, admin_id: str, admin_username: str) -> Dict[str, Any]:
         """
         Delete a user and create audit log.
         
@@ -196,7 +196,7 @@ class AdminService:
             Dictionary with success status and message
         """
         # Get user before deletion
-        user = user_repository.get_user_by_id(user_id)
+        user = await user_repository.get_user_by_id(user_id)
         if not user:
             return {
                 "success": False,
@@ -206,7 +206,7 @@ class AdminService:
         # Create audit log before deletion
         log_action(
             user_id=user_id,
-            username=user.get("username", ""),
+            username=user.get("name", ""),
             action="USER_DELETED",
             module="ADMIN",
             description=f"User account deleted by admin {admin_username}",
@@ -214,7 +214,7 @@ class AdminService:
         )
         
         # Delete user
-        success = user_repository.delete_user(user_id)
+        success = await user_repository.delete_user(user_id)
         
         if success:
             return {
@@ -227,7 +227,7 @@ class AdminService:
                 "message": "Failed to delete user"
             }
     
-    def get_user_activity(self, user_id: str) -> Dict[str, Any]:
+    async def get_user_activity(self, user_id: str) -> Dict[str, Any]:
         """
         Get user activity summary.
         
@@ -238,17 +238,17 @@ class AdminService:
             Dictionary with activity counts
         """
         # Get user info
-        user = user_repository.get_user_by_id(user_id)
+        user = await user_repository.get_user_by_id(user_id)
         if not user:
             return {}
         
         # Get activity counts
-        activity = user_repository.get_user_activity(user_id)
+        activity = await user_repository.get_user_activity(user_id)
         
         return {
             "user_id": user_id,
-            "username": user.get("username", ""),
-            "full_name": user.get("full_name") or user.get("username", ""),
+            "username": user.get("name", ""),
+            "full_name": user.get("name", ""),
             "github_scans": activity.get("github_scans", 0),
             "security_scans": activity.get("security_scans", 0),
             "quiz_attempts": activity.get("quiz_attempts", 0),
@@ -257,7 +257,7 @@ class AdminService:
             "last_login": user.get("last_login")
         }
     
-    def get_platform_statistics(self) -> Dict[str, Any]:
+    async def get_platform_statistics(self) -> Dict[str, Any]:
         """
         Get platform-wide statistics.
         
@@ -265,30 +265,30 @@ class AdminService:
             Dictionary with platform statistics
         """
         # User statistics
-        total_users = user_repository.count_users()
-        active_users = user_repository.count_active_users()
+        total_users = await user_repository.count_users()
+        active_users = await user_repository.count_active_users()
         
         # Count scans
         github_collection = get_collection("github_scans")
-        total_scans = github_collection.count_documents({})
+        total_scans = await github_collection.count_documents({})
         
         security_collection = get_collection("security_scans")
-        total_security_scans = security_collection.count_documents({})
+        total_security_scans = await security_collection.count_documents({})
         
         # Count quiz attempts
-        quiz_collection = get_collection("quiz_results")
-        total_quiz_attempts = quiz_collection.count_documents({})
+        quiz_collection = get_collection("quiz_attempts")
+        total_quiz_attempts = await quiz_collection.count_documents({})
         
         # Count OWASP attempts
         owasp_collection = get_collection("owasp_simulations")
-        total_owasp_attempts = owasp_collection.count_documents({})
+        total_owasp_attempts = await owasp_collection.count_documents({})
         
         # Count critical issues
         critical_issues = 0
         high_issues = 0
         
         # Count from github scans
-        for scan in github_collection.find({}, {"vulnerabilities": 1}):
+        async for scan in github_collection.find({}, {"vulnerabilities": 1}):
             vulns = scan.get("vulnerabilities", [])
             for vuln in vulns:
                 severity = vuln.get("severity", "").lower()
@@ -298,7 +298,7 @@ class AdminService:
                     high_issues += 1
         
         # Count from security scans
-        for scan in security_collection.find({}, {"threats": 1}):
+        async for scan in security_collection.find({}, {"threats": 1}):
             threats = scan.get("threats", [])
             for threat in threats:
                 severity = threat.get("severity", "").lower()
@@ -321,7 +321,7 @@ class AdminService:
             "high_issues": high_issues
         }
     
-    def get_security_monitoring(self) -> Dict[str, Any]:
+    async def get_security_monitoring(self) -> Dict[str, Any]:
         """
         Get security monitoring data.
         
@@ -330,11 +330,11 @@ class AdminService:
         """
         # GitHub Scanner stats
         github_collection = get_collection("github_scans")
-        total_github_scans = github_collection.count_documents({})
+        total_github_scans = await github_collection.count_documents({})
         
         github_critical = 0
         github_high = 0
-        for scan in github_collection.find({}, {"vulnerabilities": 1}):
+        async for scan in github_collection.find({}, {"vulnerabilities": 1}):
             vulns = scan.get("vulnerabilities", [])
             for vuln in vulns:
                 severity = vuln.get("severity", "").lower()
@@ -345,10 +345,10 @@ class AdminService:
         
         # Security Scanner stats
         security_collection = get_collection("security_scans")
-        total_security_scans = security_collection.count_documents({})
+        total_security_scans = await security_collection.count_documents({})
         
         security_critical = 0
-        for scan in security_collection.find({}, {"threats": 1}):
+        async for scan in security_collection.find({}, {"threats": 1}):
             threats = scan.get("threats", [])
             for threat in threats:
                 severity = threat.get("severity", "").lower()
@@ -357,11 +357,11 @@ class AdminService:
         
         # OWASP Simulator stats
         owasp_collection = get_collection("owasp_simulations")
-        total_owasp = owasp_collection.count_documents({})
+        total_owasp = await owasp_collection.count_documents({})
         
         sql_injection_attempts = 0
         xss_attempts = 0
-        for sim in owasp_collection.find({}, {"attack_type": 1}):
+        async for sim in owasp_collection.find({}, {"attack_type": 1}):
             attack_type = sim.get("attack_type", "").lower()
             if "sql" in attack_type or "injection" in attack_type:
                 sql_injection_attempts += 1
@@ -385,7 +385,7 @@ class AdminService:
             }
         }
     
-    def get_recent_activities(self, limit: int = 20) -> List[Dict[str, Any]]:
+    async def get_recent_activities(self, limit: int = 20) -> List[Dict[str, Any]]:
         """
         Get recent platform activities.
         
@@ -398,7 +398,9 @@ class AdminService:
         audit_collection = get_collection("audit_logs")
         
         # Get recent logs
-        logs = list(audit_collection.find().sort("timestamp", -1).limit(limit))
+        logs = []
+        async for log in audit_collection.find().sort("timestamp", -1).limit(limit):
+            logs.append(log)
         
         activities = []
         for log in logs:

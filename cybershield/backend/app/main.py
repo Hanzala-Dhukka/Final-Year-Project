@@ -40,7 +40,7 @@ app = FastAPI(
 # ── CORS ─────────────────────────────────────────────────────────────────────
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=["http://localhost:5173", "http://localhost:3000", "http://127.0.0.1:5173"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -56,11 +56,11 @@ app.add_middleware(
 # ── Routers ───────────────────────────────────────────────────────────────────
 app.include_router(auth_router, prefix="/api/v1/auth", tags=["Authentication"])
 app.include_router(security_router, prefix="/api/v1/security", tags=["Security Analyzer"])
-app.include_router(scan_router, prefix="/api/v1/scan", tags=["Scan"])
+app.include_router(scan_router, prefix="/api/v1/security-scan", tags=["Security Scan"])
 app.include_router(github_router, prefix="/api/v1/github", tags=["GitHub Scanner"])
 app.include_router(analytics_router, prefix="/api/v1/analytics", tags=["Analytics"])
 app.include_router(report_router, prefix="/api/v1/reports", tags=["Reports"])
-app.include_router(admin_router, prefix="/api/admin", tags=["Admin"])
+app.include_router(admin_router, prefix="/api/v1/admin", tags=["Admin"])
 app.include_router(monitoring_router, prefix="/api/v1/monitoring", tags=["Monitoring"])
 app.include_router(quiz_router)
 app.include_router(glossary_router)

@@ -9,6 +9,7 @@ from app.services.mongo_service import (
     get_user_progress,
     get_all_users_progress
 )
+from app.services.google_sheets_service import get_user_progress_from_sheet
 
 
 class ProgressService:
