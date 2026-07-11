@@ -299,7 +299,7 @@ async def scan_repository(
              "vulnerabilities_found": len(file_results),
              "risk_score": risk_data["risk_dashboard"]["risk_score"]
          }
-        github_scan_repository.create_scan(scan_document)
+        await github_scan_repository.create_scan(scan_document)
 
         return { 
              "repository_info": repo_info,
@@ -365,7 +365,7 @@ async def generate_pdf(
         "report_type": "github_scan"
     }
     
-    security_report_repository.create_report(report_document)
+    await security_report_repository.create_report(report_document)
 
     output_path = "security_report.pdf" 
  
@@ -385,7 +385,7 @@ async def generate_pdf(
 async def get_scan_history(current_user: dict = Depends(get_current_user)):
     try:
         # Use repository to get scans
-        scans = github_scan_repository.get_user_scans(str(current_user["_id"]))
+        scans = await github_scan_repository.get_user_scans(str(current_user["_id"]))
         
         # Normalize old field names to new ones for backward compatibility
         for scan in scans:
@@ -438,7 +438,7 @@ async def get_scan_history(current_user: dict = Depends(get_current_user)):
 async def get_reports(current_user: dict = Depends(get_current_user)):
     try:
         # Use repository to get reports
-        reports = security_report_repository.get_user_reports(str(current_user["_id"]))
+        reports = await security_report_repository.get_user_reports(str(current_user["_id"]))
         return reports
     except Exception as e:
         raise HTTPException(

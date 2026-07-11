@@ -1,0 +1,11 @@
+.MuiAppBar-root {
+    background: white !important;
+}
+
+.navbar-logo {
+    font-weight: bold;
+}
+
+.navbar-search {
+    max-width: 500px;
+}

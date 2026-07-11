@@ -12,7 +12,7 @@ from app.repositories.user_repository import user_repository
 security = HTTPBearer()
 
 
-def get_current_user(
+async def get_current_user(
     credentials: HTTPAuthorizationCredentials = Depends(security)
 ):
     """
@@ -35,7 +35,7 @@ def get_current_user(
         if not user_id:
             raise HTTPException(status_code=401, detail="Invalid token payload")
         
-        user = user_repository.get_user_by_id(user_id)
+        user = await user_repository.get_user_by_id(user_id)
         if not user:
             raise HTTPException(status_code=401, detail="User not found")
             

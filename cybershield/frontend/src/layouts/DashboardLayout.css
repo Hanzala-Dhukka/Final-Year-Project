@@ -1,0 +1,17 @@
+.app-layout {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+.main-wrapper {
+    display: flex;
+    flex: 1;
+}
+
+.content-area {
+    flex: 1;
+    padding: 24px;
+    background: #f5f7fb;
+    overflow-y: auto;
+}

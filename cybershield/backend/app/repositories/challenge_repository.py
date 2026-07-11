@@ -10,6 +10,45 @@ from pymongo.collection import Collection
 from app.core.database import get_collection
 
 
+class ChallengeRepository:
+    """Repository for combined challenge database operations."""
+
+    def __init__(self):
+        self._daily_collection: Optional[Collection] = None
+        self._user_collection: Optional[Collection] = None
+
+    def _get_daily_collection(self) -> Collection:
+        if self._daily_collection is None:
+            self._daily_collection = get_collection("daily_challenges")
+        return self._daily_collection
+
+    def _get_user_collection(self) -> Collection:
+        if self._user_collection is None:
+            self._user_collection = get_collection("user_challenges")
+        return self._user_collection
+
+    async def get_today_challenge(self, user_id: str) -> Optional[Dict[str, Any]]:
+        """
+        Get the user's challenge record for today.
+
+        Args:
+            user_id: User's MongoDB ObjectId as string
+
+        Returns:
+            The user's challenge for today, or None if not found
+        """
+        try:
+            today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+            collection = self._get_user_collection()
+            challenge = await collection.find_one({"user_id": user_id, "date": today})
+            if challenge:
+                challenge["_id"] = str(challenge["_id"])
+            return challenge
+        except Exception as e:
+            print(f"Error getting today's challenge: {e}")
+            return None
+
+
 class DailyChallengeRepository:
     """Repository class for daily challenge database operations."""
     
@@ -100,3 +139,4 @@ class UserChallengeRepository:
 # Create singleton instances
 daily_challenge_repository = DailyChallengeRepository()
 user_challenge_repository = UserChallengeRepository()
+challenge_repository = ChallengeRepository()

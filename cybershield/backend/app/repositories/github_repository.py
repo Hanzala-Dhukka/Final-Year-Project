@@ -22,7 +22,7 @@ class GitHubScanRepository:
             self._collection = get_collection("github_scans")
         return self._collection
     
-    def create_scan(self, scan_data: Dict[str, Any]) -> str:
+    async def create_scan(self, scan_data: Dict[str, Any]) -> str:
         """
         Create a new GitHub scan record.
         
@@ -37,10 +37,10 @@ class GitHubScanRepository:
         # Add timestamp
         scan_data["created_at"] = datetime.now(timezone.utc)
         
-        result = collection.insert_one(scan_data)
+        result = await collection.insert_one(scan_data)
         return str(result.inserted_id)
     
-    def get_scan(self, scan_id: str) -> Optional[Dict[str, Any]]:
+    async def get_scan(self, scan_id: str) -> Optional[Dict[str, Any]]:
         """
         Get a scan by ID.
         
@@ -52,11 +52,11 @@ class GitHubScanRepository:
         """
         collection = self._get_collection()
         try:
-            return collection.find_one({"_id": ObjectId(scan_id)})
+            return await collection.find_one({"_id": ObjectId(scan_id)})
         except Exception:
             return None
     
-    def get_user_scans(self, user_id: str, limit: int = 100) -> List[Dict[str, Any]]:
+    async def get_user_scans(self, user_id: str, limit: int = 100) -> List[Dict[str, Any]]:
         """
         Get all scans for a user.
         
@@ -78,7 +78,8 @@ class GitHubScanRepository:
             ]
         }
         
-        scans = list(collection.find(query).sort("created_at", -1).limit(limit))
+        cursor = collection.find(query).sort("created_at", -1).limit(limit)
+        scans = await cursor.to_list(length=limit)
         
         # Convert ObjectId to string
         for scan in scans:
@@ -87,8 +88,21 @@ class GitHubScanRepository:
                 scan["user_id"] = str(scan["user_id"])
         
         return scans
-    
-    def get_all_scans(self, limit: int = 100) -> List[Dict[str, Any]]:
+
+    async def get_scans_by_user(self, user_id: str, limit: int = 100) -> List[Dict[str, Any]]:
+        """
+        Async alias for get_user_scans, used by dashboard routes.
+
+        Args:
+            user_id: User's MongoDB ObjectId as string
+            limit: Maximum number of scans to return
+
+        Returns:
+            List of scan documents
+        """
+        return await self.get_user_scans(user_id, limit)
+
+    async def get_all_scans(self, limit: int = 100) -> List[Dict[str, Any]]:
         """
         Get all scans (admin only).
         
@@ -100,7 +114,8 @@ class GitHubScanRepository:
         """
         collection = self._get_collection()
         
-        scans = list(collection.find({}).sort("created_at", -1).limit(limit))
+        cursor = collection.find({}).sort("created_at", -1).limit(limit)
+        scans = await cursor.to_list(length=limit)
         
         for scan in scans:
             scan["_id"] = str(scan["_id"])
@@ -109,7 +124,7 @@ class GitHubScanRepository:
         
         return scans
     
-    def delete_scan(self, scan_id: str) -> bool:
+    async def delete_scan(self, scan_id: str) -> bool:
         """
         Delete a scan.
         
@@ -122,7 +137,7 @@ class GitHubScanRepository:
         collection = self._get_collection()
         
         try:
-            result = collection.delete_one({"_id": ObjectId(scan_id)})
+            result = await collection.delete_one({"_id": ObjectId(scan_id)})
             return result.deleted_count > 0
         except Exception:
             return False
@@ -130,3 +145,6 @@ class GitHubScanRepository:
 
 # Create a singleton instance
 github_scan_repository = GitHubScanRepository()
+
+# Alias for backward compatibility
+github_repository = github_scan_repository

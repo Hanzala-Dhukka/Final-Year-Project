@@ -139,7 +139,7 @@ async def submit_quiz(
         "created_at": datetime.utcnow()
     }
     
-    await database["quiz_results"].insert_one(result_data)
+    await database["quiz_attempts"].insert_one(result_data)
     
     # Deactivate the session
     await database["quiz_sessions"].update_one(
@@ -158,7 +158,7 @@ async def submit_quiz(
 
 @router.get("/history")
 async def get_quiz_history(current_user: dict = Depends(get_current_user)):
-    history = await database["quiz_results"].find(
+    history = await database["quiz_attempts"].find(
         {"user_id": str(current_user["_id"])}
     ).sort("created_at", -1).to_list(length=100)
     

@@ -1,28 +1,31 @@
 from pydantic import BaseModel, EmailStr
 from datetime import datetime
+from typing import Optional
 
 class UserCreate(BaseModel):
-    username: str
+    name: str
     email: EmailStr
     password: str
-    role: str = "user"
+    role: str = "student"
 
 
 class UserLogin(BaseModel):
     email: EmailStr
     password: str
+    device: Optional[str] = None
 
 
 class UserResponse(BaseModel):
     id: str
-    username: str
+    name: str
     email: EmailStr
     role: str
+    is_verified: bool
     created_at: datetime
 
 
 class UserUpdate(BaseModel):
-    username: str | None = None
+    name: str | None = None
     email: EmailStr | None = None
     role: str | None = None
 
@@ -33,4 +36,3 @@ class TokenResponse(BaseModel):
     refresh_token: str
     token_type: str = "bearer"
     expires_in: int
-

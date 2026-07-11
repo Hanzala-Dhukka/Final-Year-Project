@@ -2,13 +2,30 @@
 Security score service for calculating user security health.
 """
 from datetime import datetime, timezone
-from typing import Dict, List, Any
+from typing import Dict, List, Any, Optional
 from app.repositories.profile_repository import profile_repository
 from app.repositories.user_repository import user_repository
 from app.repositories.progress_repository import progress_repository
-from app.repositories.lab_repository import lab_repository
 from app.repositories.quiz_repository import quiz_repository
 from app.services.password_service import password_service
+
+
+def make_timezone_aware(dt):
+    if dt is None:
+        return None
+
+    if isinstance(dt, str):
+        try:
+            dt = datetime.fromisoformat(dt.replace("Z", "+00:00"))
+        except Exception:
+            return None
+
+    if isinstance(dt, datetime):
+        if dt.tzinfo is None:
+            return dt.replace(tzinfo=timezone.utc)
+        return dt.astimezone(timezone.utc)
+
+    return None
 
 
 class SecurityScoreService:
@@ -118,7 +135,7 @@ class SecurityScoreService:
         
         try:
             # Get lab attempts
-            lab_attempts = await lab_repository.get_lab_attempts_by_user(user_id, limit=1000)
+            lab_attempts = await progress_repository.get_lab_attempts_by_user(user_id, limit=1000)
             completed_labs = len([a for a in lab_attempts if a.get("status") == "completed"])
             
             # Score: 2 points per lab, max 30
@@ -173,11 +190,17 @@ class SecurityScoreService:
         """Calculate account security score."""
         score = 0
         recommendations = []
-        
+
+        # Debug: inspect what MongoDB actually returns for created_at
+        print(type(user.get("created_at")))
+        print(user.get("created_at"))
+
         # Account age (5 points)
-        created_at = user.get("created_at")
-        if created_at:
-            account_age_days = (datetime.now(timezone.utc) - created_at).days
+        created_at = make_timezone_aware(user.get("created_at"))
+
+        if created_at is not None:
+            now = datetime.now(timezone.utc)
+            account_age_days = (now - created_at).days
             if account_age_days >= 30:
                 score += 5
             elif account_age_days >= 7:

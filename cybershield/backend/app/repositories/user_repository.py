@@ -66,8 +66,14 @@ class UserRepository:
             User document if found, None otherwise
         """
         try:
+            object_id = ObjectId(user_id)
+        except Exception:
+            print("Invalid ObjectId:", user_id)
+            return None
+
+        try:
             collection = get_collection(self.collection_name)
-            user = await collection.find_one({"_id": ObjectId(user_id)})
+            user = await collection.find_one({"_id": object_id})
             return user
         except Exception as e:
             print(f"Error getting user by ID: {e}")
@@ -156,6 +162,145 @@ class UserRepository:
         except Exception as e:
             print(f"Error counting users: {e}")
             return 0
+    
+    async def count_active_users(self) -> int:
+        """
+        Count active users.
+        
+        Returns:
+            Number of active users
+        """
+        try:
+            collection = get_collection(self.collection_name)
+            count = await collection.count_documents({"account_status": "active"})
+            return count
+        except Exception as e:
+            print(f"Error counting active users: {e}")
+            return 0
+    
+    async def search_users(self, query: str) -> List[Dict[str, Any]]:
+        """
+        Search users by name, email, or role.
+        
+        Args:
+            query: Search query string
+            
+        Returns:
+            List of matching user documents
+        """
+        try:
+            collection = get_collection(self.collection_name)
+            users = []
+            
+            # Search in name, email, and role fields
+            search_filter = {
+                "$or": [
+                    {"name": {"$regex": query, "$options": "i"}},
+                    {"email": {"$regex": query, "$options": "i"}},
+                    {"role": {"$regex": query, "$options": "i"}}
+                ]
+            }
+            
+            cursor = collection.find(search_filter)
+            async for user in cursor:
+                users.append(user)
+            
+            return users
+        except Exception as e:
+            print(f"Error searching users: {e}")
+            return []
+    
+    async def update_user_role(self, user_id: str, new_role: str) -> bool:
+        """
+        Update user role.
+        
+        Args:
+            user_id: User's MongoDB ObjectId as string
+            new_role: New role to assign
+            
+        Returns:
+            True if successful, False otherwise
+        """
+        try:
+            collection = get_collection(self.collection_name)
+            
+            result = await collection.update_one(
+                {"_id": ObjectId(user_id)},
+                {"$set": {"role": new_role, "updated_at": datetime.now(timezone.utc)}}
+            )
+            
+            return result.modified_count > 0
+        except Exception as e:
+            print(f"Error updating user role: {e}")
+            return False
+    
+    async def update_user_status(self, user_id: str, new_status: str) -> bool:
+        """
+        Update user account status.
+        
+        Args:
+            user_id: User's MongoDB ObjectId as string
+            new_status: New status to assign
+            
+        Returns:
+            True if successful, False otherwise
+        """
+        try:
+            collection = get_collection(self.collection_name)
+            
+            result = await collection.update_one(
+                {"_id": ObjectId(user_id)},
+                {"$set": {"account_status": new_status, "updated_at": datetime.now(timezone.utc)}}
+            )
+            
+            return result.modified_count > 0
+        except Exception as e:
+            print(f"Error updating user status: {e}")
+            return False
+    
+    async def get_user_activity(self, user_id: str) -> Dict[str, Any]:
+        """
+        Get user activity summary.
+        
+        Args:
+            user_id: User's MongoDB ObjectId as string
+            
+        Returns:
+            Dictionary with activity counts
+        """
+        try:
+            # Get GitHub scans count
+            github_collection = get_collection("github_scans")
+            github_scans = await github_collection.count_documents({"user_id": user_id})
+            
+            # Get security scans count
+            security_collection = get_collection("security_scans")
+            security_scans = await security_collection.count_documents({"user_id": user_id})
+            
+            # Get quiz attempts count
+            quiz_collection = get_collection("quiz_attempts")
+            quiz_attempts = await quiz_collection.count_documents({"user_id": user_id})
+            
+            # Get OWASP attempts count
+            owasp_collection = get_collection("owasp_simulations")
+            owasp_attempts = await owasp_collection.count_documents({"user_id": user_id})
+            
+            return {
+                "github_scans": github_scans,
+                "security_scans": security_scans,
+                "quiz_attempts": quiz_attempts,
+                "owasp_attempts": owasp_attempts,
+                "total_activities": github_scans + security_scans + quiz_attempts + owasp_attempts
+            }
+        except Exception as e:
+            print(f"Error getting user activity: {e}")
+            return {
+                "github_scans": 0,
+                "security_scans": 0,
+                "quiz_attempts": 0,
+                "owasp_attempts": 0,
+                "total_activities": 0
+            }
 
 
 # Create singleton instance

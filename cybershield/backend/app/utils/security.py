@@ -3,9 +3,62 @@ Security utilities for JWT token generation and validation.
 """
 from datetime import datetime, timezone, timedelta
 from typing import Optional, Dict, Any
-import jwt
-from jose import JWTError
+from jose import jwt, JWTError
+from fastapi import Depends, HTTPException
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from app.config.settings import settings
+from app.repositories.user_repository import user_repository
+
+security = HTTPBearer()
+
+
+async def get_current_user(
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+) -> Dict[str, Any]:
+    """
+    Get the current authenticated user from the JWT bearer token.
+
+    Args:
+        credentials: HTTP Bearer credentials extracted from the Authorization header
+
+    Returns:
+        The user document from MongoDB
+
+    Raises:
+        HTTPException: If the token is invalid or the user cannot be found
+    """
+    token = credentials.credentials
+    try:
+        payload = jwt.decode(
+            token,
+            settings.SECRET_KEY,
+            algorithms=[settings.ALGORITHM]
+        )
+        user_id = payload.get("user_id")
+        if not user_id:
+            print(f"ERROR: No user_id in token payload")
+            raise HTTPException(status_code=401, detail="Invalid token payload")
+
+        user = await user_repository.get_user_by_id(user_id)
+        if not user:
+            print(f"ERROR: User not found for user_id: {user_id}")
+            raise HTTPException(status_code=401, detail="User not found")
+
+        return user
+    except JWTError as e:
+        print(f"ERROR: JWT decode failed: {e}")
+        raise HTTPException(
+            status_code=401,
+            detail="Invalid or expired token"
+        )
+    except Exception as e:
+        print(f"ERROR: Unexpected error in get_current_user: {e}")
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(
+            status_code=500,
+            detail=f"Authentication error: {str(e)}"
+        )
 
 
 def create_access_token(data: Dict[str, Any], expires_delta: Optional[timedelta] = None) -> str:

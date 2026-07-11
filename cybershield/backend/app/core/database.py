@@ -25,8 +25,8 @@ def get_client() -> AsyncIOMotorClient:
     
     if _client is None:
         try:
-            _client = AsyncIOMotorClient(settings.MONGO_URI)
-            print(f"MongoDB client connected successfully to {settings.MONGO_URI}")
+            _client = AsyncIOMotorClient(settings.MONGODB_URI)
+            print(f"MongoDB client connected successfully to {settings.MONGODB_URI}")
         except Exception as e:
             print(f"Failed to connect to MongoDB: {e}")
             raise
@@ -87,20 +87,20 @@ async def ensure_collections():
     
     required_collections = [
         "users",
-        "sessions",
-        "refresh_tokens",
-        "security_reports",
-        "github_scans",
-        "threat_models",
-        "ai_conversations",
+        "scans",
+        "threat_reports",
+        "vulnerabilities",
+        "owasp_sessions",
         "quiz_attempts",
-        "glossary",
-        "labs",
-        "lab_attempts",
+        "glossary_progress",
+        "conversations",
         "achievements",
         "certificates",
-        "audit_logs",
-        "progress"
+        "daily_challenges",
+        "user_progress",
+        "sessions",
+        "refresh_tokens",
+        "audit_logs"
     ]
     
     for collection_name in required_collections:
@@ -119,7 +119,13 @@ async def create_indexes():
         # Users collection indexes
         users_collection = get_collection("users")
         await users_collection.create_index("email", unique=True)
-        await users_collection.create_index("user_id", unique=True)
+        # Drop old non-sparse unique index on user_id if it exists, then recreate as sparse
+        # so documents with user_id=null don't cause E11000 duplicate key errors
+        try:
+            await users_collection.drop_index("user_id_1")
+        except Exception:
+            pass  # Index didn't exist yet, that's fine
+        await users_collection.create_index("user_id", unique=True, sparse=True)
         await users_collection.create_index("created_at")
         print("Indexes created for 'users' collection")
         
@@ -140,7 +146,12 @@ async def create_indexes():
         
         # Progress indexes
         progress_collection = get_collection("progress")
-        await progress_collection.create_index("user_id", unique=True)
+        # Drop old non-sparse unique index on user_id if it exists, then recreate as sparse
+        try:
+            await progress_collection.drop_index("user_id_1")
+        except Exception:
+            pass  # Index didn't exist yet, that's fine
+        await progress_collection.create_index("user_id", unique=True, sparse=True)
         await progress_collection.create_index("updated_at")
         print("Indexes created for 'progress' collection")
         

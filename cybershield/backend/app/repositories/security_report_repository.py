@@ -22,7 +22,7 @@ class SecurityReportRepository:
             self._collection = get_collection("security_reports")
         return self._collection
     
-    def create_report(self, report_data: Dict[str, Any]) -> str:
+    async def create_report(self, report_data: Dict[str, Any]) -> str:
         """
         Create a new security report.
         
@@ -37,10 +37,10 @@ class SecurityReportRepository:
         # Add timestamp
         report_data["created_at"] = datetime.now(timezone.utc)
         
-        result = collection.insert_one(report_data)
+        result = await collection.insert_one(report_data)
         return str(result.inserted_id)
     
-    def get_report(self, report_id: str) -> Optional[Dict[str, Any]]:
+    async def get_report(self, report_id: str) -> Optional[Dict[str, Any]]:
         """
         Get a report by ID.
         
@@ -52,11 +52,11 @@ class SecurityReportRepository:
         """
         collection = self._get_collection()
         try:
-            return collection.find_one({"_id": ObjectId(report_id)})
+            return await collection.find_one({"_id": ObjectId(report_id)})
         except Exception:
             return None
     
-    def get_user_reports(self, user_id: str, limit: int = 100) -> List[Dict[str, Any]]:
+    async def get_user_reports(self, user_id: str, limit: int = 100) -> List[Dict[str, Any]]:
         """
         Get all reports for a user.
         
@@ -69,7 +69,8 @@ class SecurityReportRepository:
         """
         collection = self._get_collection()
         
-        reports = list(collection.find({"user_id": user_id}).sort("created_at", -1).limit(limit))
+        cursor = collection.find({"user_id": user_id}).sort("created_at", -1).limit(limit)
+        reports = await cursor.to_list(length=limit)
         
         for report in reports:
             report["_id"] = str(report["_id"])
@@ -78,7 +79,7 @@ class SecurityReportRepository:
         
         return reports
     
-    def get_all_reports(self, limit: int = 100) -> List[Dict[str, Any]]:
+    async def get_all_reports(self, limit: int = 100) -> List[Dict[str, Any]]:
         """
         Get all reports (admin only).
         
@@ -90,7 +91,8 @@ class SecurityReportRepository:
         """
         collection = self._get_collection()
         
-        reports = list(collection.find({}).sort("created_at", -1).limit(limit))
+        cursor = collection.find({}).sort("created_at", -1).limit(limit)
+        reports = await cursor.to_list(length=limit)
         
         for report in reports:
             report["_id"] = str(report["_id"])
@@ -99,7 +101,7 @@ class SecurityReportRepository:
         
         return reports
     
-    def delete_report(self, report_id: str) -> bool:
+    async def delete_report(self, report_id: str) -> bool:
         """
         Delete a report.
         
@@ -112,10 +114,14 @@ class SecurityReportRepository:
         collection = self._get_collection()
         
         try:
-            result = collection.delete_one({"_id": ObjectId(report_id)})
+            result = await collection.delete_one({"_id": ObjectId(report_id)})
             return result.deleted_count > 0
         except Exception:
             return False
+
+    async def get_reports_by_user(self, user_id: str, limit: int = 100):
+        """Async alias for get_user_reports, used by dashboard routes."""
+        return await self.get_user_reports(user_id, limit)
 
 
 # Create a singleton instance

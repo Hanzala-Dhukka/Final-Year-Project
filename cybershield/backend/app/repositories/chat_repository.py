@@ -225,5 +225,10 @@ class ChatRepository:
             return []
 
 
+    async def get_chats_by_user(self, user_id: str, limit: int = 50):
+        """Async alias for get_user_conversations, used by dashboard routes."""
+        return await self.get_user_conversations(user_id, limit)
+
+
 # Create singleton instance
 chat_repository = ChatRepository()
