@@ -1,7 +1,11 @@
 import { useState, useEffect } from "react"
+import { useNavigate } from "react-router-dom"
+import { useAuth } from "../../contexts/AuthContext"
 import API from "../../api/api"
 
 function Settings() {
+  const navigate = useNavigate()
+  const { user } = useAuth()
   const [sessions, setSessions] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState("")
@@ -12,7 +16,7 @@ function Settings() {
 
   const fetchSessions = async () => {
     try {
-      const response = await API.get("/auth/sessions")
+      const response = await API.get("/auth/session/list")
       setSessions(response.data.sessions || [])
     } catch (error) {
       setError("Failed to load sessions")
@@ -24,7 +28,7 @@ function Settings() {
 
   const handleLogoutSession = async (sessionId) => {
     try {
-      await API.delete(`/auth/sessions/${sessionId}`)
+      await API.delete(`/auth/session/${sessionId}`)
       setSessions(sessions.filter(s => s.id !== sessionId))
       alert("Session closed successfully")
     } catch (error) {
@@ -69,13 +73,47 @@ function Settings() {
 
   return (
     <div className="container mx-auto px-4 py-8 max-w-4xl">
-      <h1 className="text-3xl font-bold mb-8">Security Settings</h1>
+      <h1 className="text-3xl font-bold mb-8">Settings</h1>
 
       {error && (
         <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
           {error}
         </div>
       )}
+
+      {/* Profile Section */}
+      <div className="bg-white shadow-md rounded-lg p-6 mb-8">
+        <div className="flex justify-between items-center mb-6">
+          <h2 className="text-2xl font-semibold">Profile</h2>
+          <button
+            onClick={() => navigate("/profile")}
+            className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+          >
+            Edit Profile
+          </button>
+        </div>
+
+        <div className="flex items-center gap-6">
+          <div className="w-20 h-20 rounded-full bg-gray-200 flex items-center justify-center overflow-hidden">
+            {user?.profile_image ? (
+              <img
+                src={`http://localhost:8000${user.profile_image}`}
+                alt="Profile"
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              <span className="text-3xl text-gray-500">
+                {user?.full_name?.charAt(0) || "U"}
+              </span>
+            )}
+          </div>
+          <div>
+            <h3 className="text-xl font-semibold">{user?.full_name || "User"}</h3>
+            <p className="text-gray-600">{user?.email || "user@example.com"}</p>
+            <p className="text-gray-500 capitalize">{user?.role || "student"}</p>
+          </div>
+        </div>
+      </div>
 
       {/* Active Sessions Section */}
       <div className="bg-white shadow-md rounded-lg p-6 mb-8">

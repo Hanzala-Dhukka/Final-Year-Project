@@ -1,8 +1,11 @@
 from dotenv import load_dotenv
+from pathlib import Path
 import os
 from pydantic_settings import BaseSettings
 
-load_dotenv(override=True)
+# Load .env from the project root regardless of the current working directory
+PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
+load_dotenv(dotenv_path=PROJECT_ROOT / ".env", override=True)
 
 # Module-level variables as requested
 MONGO_URI = os.getenv("MONGO_URI")
@@ -35,7 +38,7 @@ class Settings(BaseSettings):
     # Map keys to fallback values
     SECRET_KEY: str = os.getenv("JWT_SECRET_KEY") or os.getenv("JWT_SECRET") or "your-secret-key-here"
     ALGORITHM: str = os.getenv("JWT_ALGORITHM") or os.getenv("ALGORITHM") or "HS256"
-    ACCESS_TOKEN_EXPIRE_MINUTES: int = 15
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 60
     REFRESH_TOKEN_EXPIRE_DAYS: int = 7
 
     GITHUB_TOKEN: str = os.getenv("GITHUB_TOKEN") or ""

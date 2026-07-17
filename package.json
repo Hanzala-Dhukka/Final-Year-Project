@@ -4,6 +4,9 @@
     "tailwindcss": "^4.3.0"
   },
   "dependencies": {
-    "recharts": "^3.8.1"
+    "framer-motion": "^12.42.2",
+    "react-icons": "^5.7.0",
+    "reactflow": "^11.11.4",
+    "recharts": "^3.9.2"
   }
 }

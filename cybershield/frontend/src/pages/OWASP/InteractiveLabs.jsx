@@ -25,7 +25,7 @@ function InteractiveLabs() {
 
   const loadCategories = async () => {
     try {
-      const response = await API.get("/labs/categories")
+      const response = await API.get("/categories")
       setCategories(response.data.categories || [])
     } catch (error) {
       console.error("Error loading categories:", error)

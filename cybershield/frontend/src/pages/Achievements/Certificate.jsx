@@ -11,7 +11,8 @@ export default function Certificate() {
 
   const fetchCertificate = async () => {
     try {
-      const response = await API.get("/progress/certificate")
+      const userId = localStorage.getItem("user_id") || "anonymous"
+      const response = await API.get(`/certificate/${userId}`)
       setCertificate(response.data)
     } catch (error) {
       console.error("Error fetching certificate:", error)

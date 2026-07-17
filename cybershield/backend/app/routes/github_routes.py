@@ -4,30 +4,24 @@ from github import Github, GithubException, BadCredentialsException
 import concurrent.futures
 import time
 import requests
-from datetime import datetime, timezone
+from datetime import datetime 
 from bson import ObjectId
-
+from app.database.db import database 
+ 
 from app.config.settings import settings
-from app.repositories.github_repository import github_scan_repository
-from app.repositories.security_report_repository import security_report_repository
 from app.services.github_scanner import ( 
     scan_file_content,
     detect_technology,
     scan_dangerous_code
 ) 
-from app.services.secret_scanner import (
-    scan_secrets,
-    aggregate_secret_findings
-)
 from app.services.report_generator import ( 
     generate_security_report 
 ) 
 from app.services.pdf_generator import ( 
-    generate_pdf_report,
-    calculate_risk_score
+    generate_pdf_report 
 ) 
-from app.services.risk_engine import ( 
-    calculate_risk 
+from app.services.risk_engine import (
+    calculate_risk_score
 )
 from app.services.threat_analyzer import ( 
     generate_summary, 
@@ -70,28 +64,24 @@ def scan_single_file(repo_full_name, branch, file_path):
 
         decoded_content = response.text
         
-        # Old-style secret/code findings (keeping for backward compatibility)
         secret_findings = scan_file_content(
             decoded_content
         )
 
         code_findings = scan_dangerous_code(
-            decoded_content
+            decoded_content, file_path
         )
-
-        # New-style advanced secret findings
-        advanced_secret_findings = scan_secrets(decoded_content, file_path)
 
         result = (
             secret_findings +
             code_findings
         )
         
-        return { 
-            "file": file_path, 
-            "issues": result,
-            "advanced_secrets": advanced_secret_findings
-        }
+        if result: 
+            return { 
+                "file": file_path, 
+                "issues": result 
+            }
     except Exception:
         pass
     return None
@@ -206,7 +196,6 @@ async def scan_repository(
         files_to_scan = files_to_scan[:100]
 
         file_results = []
-        all_advanced_secrets = []
 
         # Parallelize file scanning for speed
         with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
@@ -219,21 +208,19 @@ async def scan_repository(
                 result = future.result()
                 if result:
                     file_results.append(result)
-                    # Collect all advanced secrets
-                    if result.get("advanced_secrets"):
-                        all_advanced_secrets.extend(result["advanced_secrets"])
 
+        risk_score = calculate_risk_score(file_results)
+        
         # Extract all issues for threat analysis
         findings = []
         for f in file_results:
             findings.extend(f["issues"])
-        
-        # Aggregate advanced secret findings
-        secret_aggregation = aggregate_secret_findings(all_advanced_secrets)
 
         # Generate threat analysis
-        ai_report = generate_ai_report(findings, len(files_to_scan), 0)
-        
+        ai_report = generate_ai_report(findings, len(files_to_scan), risk_score)
+        risk_level = ai_report["risk_level"]
+        summary = ai_report["summary"]
+
         # ── Enhance AI report with dependency insights ──────────────────
         dep_rpt = dependency_report
         dep_summary = (
@@ -249,57 +236,46 @@ async def scan_repository(
         ai_report["dependency_analysis"] = dep_summary
         ai_report["recommendations"] = dep_recommendations + (ai_report.get("recommendations") or [])
 
-        # ── Calculate complete risk dashboard ───────────────────────────────
-        risk_data = calculate_risk(
-            findings=file_results,
-            dependency_report=dependency_report,
-            secret_summary=secret_aggregation["secret_summary"],
-            repository_info=repo_info,
-            technologies=technologies,
-            file_report=file_results,
-            advanced_secrets=all_advanced_secrets,
-            dependency_findings=dependency_findings,
-            ai_report=ai_report,
-            files_scanned=len(files_to_scan)
-        )
-
         report_data = {
             "repository": repo_name,
             "findings": file_results,
             "technologies": technologies,
-            "risk_score": risk_data["risk_dashboard"]["risk_score"],
-            "summary": ai_report.get("summary", ""),
-            "risk_level": risk_data["risk_dashboard"]["risk_level"],
+            "risk_score": risk_score,
+            "summary": summary,
+            "risk_level": risk_level,
             "ai_report": ai_report
         }
         report = generate_security_report(report_data)
 
-        # Save scan to database using repository
+        # Save scan to database
+        scan_collection = database["github_scans"]
         scan_document = { 
+ 
              "repository": repo_name, 
+ 
              "findings": findings, 
-             "advanced_secrets": all_advanced_secrets,
-             "secret_summary": secret_aggregation["secret_summary"],
-             "risk_level": risk_data["risk_dashboard"]["risk_level"], 
-             "summary": ai_report.get("summary", ""), 
+ 
+             "risk_level": risk_level, 
+ 
+             "summary": summary, 
+ 
              "business_impact": ai_report["business_impact"],
-             "recommendations": risk_data["recommendations"],
+
+             "recommendations": ai_report["recommendations"],
+
              "dependency_report": dependency_report,
-             "risk_dashboard": risk_data["risk_dashboard"],
-             "severity_summary": risk_data["severity_summary"],
-             "category_summary": risk_data["category_summary"],
-             "distribution": risk_data["distribution"],
-             "repository_health": risk_data["repository_health"],
-             "top_risks": risk_data["top_risks"],
-             "score_card": risk_data["score_card"],
-             "executive_summary": risk_data["executive_summary"],
-             "user_id": str(current_user["_id"]),
+
+             "created_at": 
+             datetime.utcnow(),
+
+             # Keeping application context
+             "user_id": current_user["_id"],
              "repo_url": repo_url,
              "scanned_files": len(files_to_scan),
              "vulnerabilities_found": len(file_results),
-             "risk_score": risk_data["risk_dashboard"]["risk_score"]
+             "risk_score": risk_score
          }
-        await github_scan_repository.create_scan(scan_document)
+        await scan_collection.insert_one(scan_document)
 
         return { 
              "repository_info": repo_info,
@@ -309,18 +285,7 @@ async def scan_repository(
              "scan_summary": report,
              "findings": findings, 
              "file_report": file_results, 
-             "ai_report": ai_report,
-             "secret_summary": secret_aggregation["secret_summary"],
-             "advanced_secrets": secret_aggregation["detailed_findings"],
-             "risk_dashboard": risk_data["risk_dashboard"],
-             "severity_summary": risk_data["severity_summary"],
-             "category_summary": risk_data["category_summary"],
-             "distribution": risk_data["distribution"],
-             "repository_health": risk_data["repository_health"],
-             "top_risks": risk_data["top_risks"],
-             "recommendations": risk_data["recommendations"],
-             "score_card": risk_data["score_card"],
-             "executive_summary": risk_data["executive_summary"]
+             "ai_report": ai_report 
          }
 
     except HTTPException:
@@ -355,17 +320,19 @@ async def generate_pdf(
             detail="Report data required" 
         ) 
  
-    # Save to database using repository
+    # Save to database
+    reports_collection = database["security_reports"]
     report_document = {
-        "user_id": str(current_user["_id"]),
+        "user_id": current_user["_id"],
         "report_data": report,
         "title": title,
         "risk_level": report.get("risk_level", "Unknown"),
         "summary": report.get("summary", ""),
-        "report_type": "github_scan"
+        "report_type": "github_scan",
+        "created_at": datetime.utcnow()
     }
     
-    await security_report_repository.create_report(report_document)
+    await reports_collection.insert_one(report_document)
 
     output_path = "security_report.pdf" 
  
@@ -384,47 +351,34 @@ async def generate_pdf(
 @router.get("/scan-history")
 async def get_scan_history(current_user: dict = Depends(get_current_user)):
     try:
-        # Use repository to get scans
-        scans = await github_scan_repository.get_user_scans(str(current_user["_id"]))
+        scan_collection = database["github_scans"]
         
-        # Normalize old field names to new ones for backward compatibility
+        # Admin sees all, user sees own
+        # Also include legacy scans that have no user_id (saved before auth was enforced)
+        query = {}
+        if current_user.get("role") != "admin":
+            query = {
+                "$or": [
+                    {"user_id": current_user["_id"]},
+                    {"user_id": {"$exists": False}},
+                    {"user_id": None}
+                ]
+            }
+
+        scans = await scan_collection.find(query).sort("created_at", -1).to_list(length=100)
+        
+        # Convert MongoDB _id to string and normalize old field names
         for scan in scans:
+            scan["_id"] = str(scan["_id"])
+            if "user_id" in scan:
+                scan["user_id"] = str(scan["user_id"])
+            # Normalize old field names to new ones for backward compatibility
+            if "repo_name" in scan and "repository" not in scan:
+                scan["repository"] = scan["repo_name"]
+            if "findings_count" in scan and "vulnerabilities_found" not in scan:
+                scan["vulnerabilities_found"] = scan["findings_count"]
             if "scanned_files" not in scan:
                 scan["scanned_files"] = "N/A"
-            if "advanced_secrets" not in scan:
-                scan["advanced_secrets"] = []
-            if "secret_summary" not in scan:
-                scan["secret_summary"] = {"critical": 0, "high": 0, "medium": 0, "total": 0}
-            if "risk_dashboard" not in scan:
-                scan["risk_dashboard"] = {
-                    "risk_score": 0,
-                    "risk_level": "Unknown",
-                    "security_grade": "N/A",
-                    "files_scanned": 0
-                }
-            if "severity_summary" not in scan:
-                scan["severity_summary"] = {"critical": 0, "high": 0, "medium": 0, "low": 0}
-            if "category_summary" not in scan:
-                scan["category_summary"] = {"Secrets": 0, "Dependencies": 0, "Code Vulnerabilities": 0, "Configuration": 0}
-            if "repository_health" not in scan:
-                scan["repository_health"] = {
-                    "overall": "Good",
-                    "maintainability": "Good",
-                    "security": "Good",
-                    "dependency_health": "Good",
-                    "secret_management": "Good"
-                }
-            if "top_risks" not in scan:
-                scan["top_risks"] = []
-            if "score_card" not in scan:
-                scan["score_card"] = {
-                    "Secrets": "100/100",
-                    "Dependencies": "100/100",
-                    "Source Code": "100/100",
-                    "Configuration": "100/100"
-                }
-            if "executive_summary" not in scan:
-                scan["executive_summary"] = "Scan completed."
             
         return scans
     except Exception as e:
@@ -436,13 +390,27 @@ async def get_scan_history(current_user: dict = Depends(get_current_user)):
 
 @router.get("/reports")
 async def get_reports(current_user: dict = Depends(get_current_user)):
-    try:
-        # Use repository to get reports
-        reports = await security_report_repository.get_user_reports(str(current_user["_id"]))
-        return reports
-    except Exception as e:
-        raise HTTPException(
-            status_code=500,
-            detail=str(e)
+
+    reports_collection = database[
+        "security_reports"
+    ]
+
+    # Admin sees all, user sees own
+    query = {}
+    if current_user.get("role") != "admin":
+        query = {"user_id": current_user["_id"]}
+
+    reports = await reports_collection.find(query).sort(
+        "created_at",
+        -1
+    ).to_list(100)
+
+    for report in reports:
+        report["_id"] = str(
+            report["_id"]
         )
+        if "user_id" in report:
+            report["user_id"] = str(report["user_id"])
+
+    return reports
 

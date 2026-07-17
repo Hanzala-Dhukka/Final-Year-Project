@@ -18,7 +18,7 @@ const RoadmapPage = () => {
   const loadRoadmap = async () => {
     setLoading(true);
     try {
-      const response = await API.get(`/progress/roadmap/${userId}`);
+      const response = await API.get(`/roadmap/${userId}`);
       setRoadmap(response.data.data);
     } catch (error) {
       console.error('Error loading roadmap:', error);

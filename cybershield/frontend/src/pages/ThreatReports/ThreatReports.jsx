@@ -11,7 +11,7 @@ export default function ThreatReports() {
 
   const fetchReports = async () => {
     try {
-      const response = await API.get("/threat/reports")
+      const response = await API.get("/reports")
       setReports(response.data)
     } catch (error) {
       console.error("Error fetching reports:", error)
@@ -39,7 +39,7 @@ export default function ThreatReports() {
       ) : (
         <div className="space-y-4">
           {reports.map((report, index) => (
-            <div key={index} className="bg-white shadow-md rounded-lg p-6">
+            <div key={report.id || index} className="bg-white shadow-md rounded-lg p-6">
               <h3 className="text-xl font-semibold mb-2">{report.title || "Untitled Report"}</h3>
               <div className="flex items-center gap-4">
                 <span className={`px-3 py-1 rounded-full text-sm font-semibold ${getRiskColor(report.risk)}`}>

@@ -20,3 +20,13 @@ async def search_glossary(term: str):
         if term.lower() in item["term"].lower()
     ]
     return results
+
+@router.get("/progress")
+async def get_glossary_progress():
+    """Learning progress for the glossary (total terms available)."""
+    total = len(GLOSSARY)
+    return {
+        "terms_learned": 0,
+        "total_terms": total,
+        "percentage": 0,
+    }

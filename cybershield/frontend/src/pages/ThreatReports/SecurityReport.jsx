@@ -43,7 +43,7 @@ function SecurityReport() {
 
   const handlePreviewPDF = async () => {
     try {
-      const response = await API.get(`/threat-model/report/${project_id}/preview`, {
+      const response = await API.get(`/report/${project_id}/preview`, {
         responseType: 'blob'
       })
       const url = window.URL.createObjectURL(new Blob([response.data], { type: 'application/pdf' }))

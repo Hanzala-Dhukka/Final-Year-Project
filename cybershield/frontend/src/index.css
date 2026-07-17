@@ -1,1 +1,99 @@
 @import "tailwindcss";
+
+/* ── Auth page animations ──────────────────────────────────────────────── */
+@keyframes cs-fade-up {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes cs-fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+@keyframes cs-float {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-14px); }
+}
+@keyframes cs-pulse-ring {
+  0%   { transform: scale(0.85); opacity: 0.55; }
+  70%  { transform: scale(1.25); opacity: 0; }
+  100% { transform: scale(1.25); opacity: 0; }
+}
+@keyframes cs-gradient {
+  0%   { background-position: 0% 50%; }
+  50%  { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+.cs-animate-fade-up { animation: cs-fade-up 0.6s ease-out both; }
+.cs-animate-fade-in { animation: cs-fade-in 0.8s ease-out both; }
+.cs-float          { animation: cs-float 6s ease-in-out infinite; }
+.cs-pulse-ring     { animation: cs-pulse-ring 2.5s cubic-bezier(0.2, 0.6, 0.4, 1) infinite; }
+.cs-gradient-bg    {
+  background: linear-gradient(135deg, #0f172a 0%, #1e3a8a 45%, #0ea5e9 100%);
+  background-size: 200% 200%;
+  animation: cs-gradient 14s ease infinite;
+}
+
+/* Respect reduced-motion preferences */
+@media (prefers-reduced-motion: reduce) {
+  .cs-animate-fade-up, .cs-animate-fade-in, .cs-float, .cs-pulse-ring, .cs-gradient-bg {
+    animation: none !important;
+  }
+}
+
+/* AI Assistant markdown rendering */
+.markdown-body {
+  font-size: 0.95rem;
+  line-height: 1.6;
+  color: #1f2937;
+  word-break: break-word;
+}
+
+.markdown-body h1 { font-size: 1.4rem; font-weight: 700; margin: 0.8rem 0 0.5rem; }
+.markdown-body h2 { font-size: 1.2rem; font-weight: 700; margin: 0.8rem 0 0.5rem; }
+.markdown-body h3 { font-size: 1.05rem; font-weight: 600; margin: 0.7rem 0 0.4rem; }
+.markdown-body p { margin: 0.5rem 0; }
+.markdown-body ul { list-style: disc; padding-left: 1.4rem; margin: 0.5rem 0; }
+.markdown-body ol { list-style: decimal; padding-left: 1.4rem; margin: 0.5rem 0; }
+.markdown-body li { margin: 0.25rem 0; }
+.markdown-body a { color: #2563eb; text-decoration: underline; }
+.markdown-body blockquote {
+  border-left: 4px solid #93c5fd;
+  background: #eff6ff;
+  padding: 0.5rem 1rem;
+  margin: 0.5rem 0;
+  color: #374151;
+}
+.markdown-body table {
+  border-collapse: collapse;
+  width: 100%;
+  margin: 0.75rem 0;
+  font-size: 0.9rem;
+}
+.markdown-body th, .markdown-body td {
+  border: 1px solid #e5e7eb;
+  padding: 0.4rem 0.6rem;
+  text-align: left;
+}
+.markdown-body th { background: #f3f4f6; font-weight: 600; }
+.markdown-body code {
+  background: #f3f4f6;
+  padding: 0.1rem 0.35rem;
+  border-radius: 0.25rem;
+  font-size: 0.85em;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+.markdown-body pre {
+  background: #282c34;
+  color: #abb2bf;
+  padding: 0.9rem;
+  border-radius: 0.5rem;
+  overflow-x: auto;
+  margin: 0.6rem 0;
+}
+.markdown-body pre code {
+  background: transparent;
+  padding: 0;
+  color: inherit;
+  font-size: 0.85rem;
+}

@@ -9,8 +9,15 @@ from motor import motor_asyncio
 from pymongo import MongoClient
 
 # MongoDB configuration
+# Load .env so DATABASE_NAME resolves to the configured value (CyberShieldDB)
+# instead of the legacy lowercase "cybershield" fallback.
+try:
+    from dotenv import load_dotenv
+    load_dotenv(override=True)
+except Exception:
+    pass
 MONGO_URI = os.getenv("MONGO_URI", "mongodb://localhost:27017/")
-DATABASE_NAME = os.getenv("DATABASE_NAME", "cybershield")
+DATABASE_NAME = os.getenv("DATABASE_NAME", "CyberShieldDB")
 
 # Initialize MongoDB client
 def get_mongo_client():

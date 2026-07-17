@@ -1,258 +1,230 @@
-import { useState, useEffect } from "react"
-import { Link, useLocation } from "react-router-dom"
-import API from "../../api/api"
+import { useState, useEffect, useCallback, useRef } from "react";
+import chatApi from "../../api/chatApi";
+import { projectApi } from "../../api/projectApi";
+import ChatSidebar from "../../components/AIAssistant/ChatSidebar";
+import ChatWindow from "../../components/AIAssistant/ChatWindow";
+import MessageInput from "../../components/AIAssistant/MessageInput";
+import ContextSelector from "../../components/AIAssistant/ContextSelector";
 
-function AIAssistant() {
-  const location = useLocation()
-  const { result } = location.state || {}
-  const [project_id, setProject_id] = useState(result?.project_id || "")
-  const [question, setQuestion] = useState("")
-  const [messages, setMessages] = useState([])
-  const [loading, setLoading] = useState(false)
-  const [aiProvider, setAiProvider] = useState("Loading...")
+/**
+ * AI Security Assistant (Modules 5.1 & 5.2)
+ *
+ * Layout: sidebar (conversations) + chat window + input, with a project
+ * selector and context dropdown so the assistant is aware of the user's
+ * CyberShield data (GitHub scans, threat reports, OWASP, quizzes).
+ */
+export default function AIAssistant() {
+  const [conversations, setConversations] = useState([]);
+  const [activeId, setActiveId] = useState(null);
+  const [messages, setMessages] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
-  // Suggested questions
-  const suggestedQuestions = [
-    "What is SQL Injection?",
-    "Explain JWT",
-    "Why is my project High Risk?",
-    "How to fix XSS?",
-    "Explain Rate Limiting",
-    "Show my Critical Threats",
-    "How do I secure AWS?",
-    "Explain CSP"
-  ]
+  // Context-aware state (Module 5.2)
+  const [projects, setProjects] = useState([]);
+  const [projectId, setProjectId] = useState(null);
+  const [context, setContext] = useState("general");
+  const [contextMeta, setContextMeta] = useState({});
 
-  // Check AI health on mount
+  const scrollRef = useRef(null);
+
+  const loadConversations = useCallback(async () => {
+    try {
+      const res = await chatApi.getConversations();
+      setConversations(res.data || []);
+    } catch (e) {
+      console.error("Failed to load conversations", e);
+    }
+  }, []);
+
+  const loadProjects = useCallback(async () => {
+    try {
+      const res = await projectApi.list();
+      setProjects(res.data || []);
+    } catch (e) {
+      console.error("Failed to load projects", e);
+    }
+  }, []);
+
+  const loadContext = useCallback(async () => {
+    try {
+      const res = await chatApi.getContext();
+      const c = res.data || {};
+      setProjectId(c.project_id || null);
+      setContext(c.context || "general");
+      setContextMeta(c);
+    } catch (e) {
+      console.error("Failed to load context", e);
+    }
+  }, []);
+
   useEffect(() => {
-    checkAIHealth()
-  }, [])
+    loadConversations();
+    loadProjects();
+    loadContext();
+  }, [loadConversations, loadProjects, loadContext]);
 
-  const checkAIHealth = async () => {
-    try {
-      const response = await API.get("/chatbot/health")
-      setAiProvider(response.data.provider)
-    } catch (error) {
-      setAiProvider("Rule-Based (Fallback)")
+  // Auto-scroll to the bottom when messages change
+  useEffect(() => {
+    if (scrollRef.current) {
+      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
-  }
+  }, [messages, loading]);
 
-  const handleAsk = async (q) => {
-    const questionText = q || question
-    if (!questionText.trim()) return
+  const loadMessages = useCallback(async (conversationId) => {
+    try {
+      const res = await chatApi.getMessages(conversationId);
+      const data = res.data || {};
+      // Adopt the conversation's stored context/project on open
+      if (data.project_id) setProjectId(data.project_id);
+      if (data.context) setContext(data.context);
+      const msgs = (data.messages || []).map((m) => ({
+        role: m.role,
+        content: m.content,
+      }));
+      setMessages(msgs);
+    } catch (e) {
+      console.error("Failed to load messages", e);
+      setMessages([]);
+    }
+  }, []);
 
-    setLoading(true)
-    setQuestion("")
+  const handleSelect = async (id) => {
+    setActiveId(id);
+    setError("");
+    await loadMessages(id);
+  };
 
-    // Add user message
-    setMessages(prev => [...prev, { type: "user", text: questionText }])
+  const handleNewChat = () => {
+    setActiveId(null);
+    setMessages([]);
+    setError("");
+  };
+
+  const handleDelete = async (id) => {
+    try {
+      await chatApi.deleteConversation(id);
+      if (activeId === id) {
+        setActiveId(null);
+        setMessages([]);
+      }
+      await loadConversations();
+    } catch (e) {
+      console.error("Failed to delete conversation", e);
+    }
+  };
+
+  // Update the active context on the backend whenever project/context changes
+  const changeContext = async (nextContext) => {
+    setContext(nextContext);
+    try {
+      const res = await chatApi.updateContext(projectId, nextContext);
+      setContextMeta(res.data || {});
+    } catch (e) {
+      console.error("Failed to update context", e);
+    }
+  };
+
+  const changeProject = async (nextProjectId) => {
+    setProjectId(nextProjectId);
+    try {
+      const res = await chatApi.updateContext(nextProjectId, context);
+      setContextMeta(res.data || {});
+    } catch (e) {
+      console.error("Failed to update project context", e);
+    }
+  };
+
+  const handleSend = async (text) => {
+    setLoading(true);
+    setError("");
+    const userMsg = { role: "user", content: text };
+    setMessages((prev) => [...prev, userMsg]);
 
     try {
-      const response = await API.post("/chatbot/ask", {
-        project_id,
-        question: questionText
-      })
+      const res = await chatApi.sendMessage(activeId, text, context, projectId);
+      const data = res.data;
+      const conversationId = data.conversation_id;
 
-      // Add AI response with new format
-      setMessages(prev => [...prev, { 
-        type: "ai", 
-        data: response.data.answer,
-        provider: response.data.provider,
-        model: response.data.model,
-        response_time: response.data.response_time,
-        source: response.data.provider
-      }])
-    } catch (error) {
-      setMessages(prev => [...prev, { 
-        type: "ai", 
-        data: {
-          title: "Error",
-          summary: "Sorry, I couldn't process your question. Please try again.",
-          business_impact: "N/A",
-          recommendation: "Please try again or contact support.",
-          implementation_steps: [],
-          secure_code: ""
-        },
-        provider: "Error",
-        source: "Error"
-      }])
+      setMessages((prev) => [
+        ...prev,
+        { role: "assistant", content: data.reply },
+      ]);
+
+      if (!activeId || activeId !== conversationId) {
+        setActiveId(conversationId);
+      }
+      // Refresh sidebar (title may have been auto-generated)
+      await loadConversations();
+    } catch (e) {
+      setError("Sorry, I couldn't process your message. Please try again.");
+      setMessages((prev) => prev.slice(0, -1)); // remove the optimistic user msg
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
-  const handleSuggestedClick = (q) => {
-    setQuestion(q)
-    handleAsk(q)
-  }
-
-  // Render AI response with structured format
-  const renderAIResponse = (msg) => {
-    const data = msg.data || {}
-    
-    return (
-      <div className="max-w-3xl">
-        {/* AI Badge */}
-        <div className="flex items-center gap-2 mb-2">
-          <span className="text-xs font-semibold text-blue-600 bg-blue-50 px-2 py-1 rounded">
-            🤖 {msg.provider || 'AI'}
-          </span>
-          {msg.model && (
-            <span className="text-xs text-gray-500">{msg.model}</span>
-          )}
-          {msg.response_time && (
-            <span className="text-xs text-gray-400">({msg.response_time}s)</span>
-          )}
-        </div>
-
-        {/* Response Card */}
-        <div className="bg-white border border-gray-200 rounded-lg p-4">
-          {/* Title */}
-          {data.title && (
-            <h3 className="text-lg font-bold text-gray-900 mb-2">{data.title}</h3>
-          )}
-
-          {/* Summary */}
-          {data.summary && (
-            <div className="mb-4">
-              <p className="text-sm font-semibold text-gray-700 mb-1">Summary:</p>
-              <p className="text-gray-800 whitespace-pre-wrap">{data.summary}</p>
-            </div>
-          )}
-
-          {/* Business Impact */}
-          {data.business_impact && data.business_impact !== "See summary" && (
-            <div className="mb-4 bg-red-50 border-l-4 border-red-400 p-3">
-              <p className="text-sm font-semibold text-red-800 mb-1">⚠️ Business Impact:</p>
-              <p className="text-sm text-red-700">{data.business_impact}</p>
-            </div>
-          )}
-
-          {/* Recommendation */}
-          {data.recommendation && (
-            <div className="mb-4">
-              <p className="text-sm font-semibold text-green-700 mb-1">✓ Recommendation:</p>
-              <p className="text-gray-800">{data.recommendation}</p>
-            </div>
-          )}
-
-          {/* Implementation Steps */}
-          {data.implementation_steps && data.implementation_steps.length > 0 && (
-            <div className="mb-4">
-              <p className="text-sm font-semibold text-gray-700 mb-2">Implementation Steps:</p>
-              <ol className="list-decimal list-inside space-y-1">
-                {data.implementation_steps.map((step, idx) => (
-                  <li key={idx} className="text-sm text-gray-700">{step}</li>
-                ))}
-              </ol>
-            </div>
-          )}
-
-          {/* Secure Code */}
-          {data.secure_code && (
-            <div className="mb-2">
-              <p className="text-sm font-semibold text-gray-700 mb-2">Secure Code Example:</p>
-              <div className="bg-gray-900 text-gray-100 p-3 rounded overflow-x-auto">
-                <pre className="text-sm">
-                  <code>{data.secure_code}</code>
-                </pre>
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
-    )
-  }
+  const activeProject = projects.find((p) => p._id === projectId || p.id === projectId);
 
   return (
-    <div className="min-h-screen bg-gray-100 p-10">
-      <div className="mb-8">
-        <Link to="/dashboard" className="text-blue-600 hover:underline">
-          &larr; Back to Dashboard
-        </Link>
-        <h1 className="text-4xl font-bold mt-4">AI Security Assistant</h1>
-        <p className="text-gray-600 mt-2">
-          Ask questions about your security threats and get AI-powered recommendations
-        </p>
-        <div className="mt-2">
-          <span className="text-xs font-semibold text-gray-600">
-            AI Provider: <span className="text-blue-600">{aiProvider}</span>
-          </span>
-        </div>
-      </div>
+    <div className="flex h-[calc(100vh-140px)] bg-white rounded-lg shadow overflow-hidden">
+      <ChatSidebar
+        conversations={conversations}
+        activeId={activeId}
+        onSelect={handleSelect}
+        onNewChat={handleNewChat}
+        onDelete={handleDelete}
+      />
 
-      <div className="max-w-4xl mx-auto">
-        <div className="bg-white rounded shadow mb-4 p-4 h-96 overflow-y-auto">
-          {messages.length === 0 ? (
-            <div className="text-center text-gray-500 mt-32">
-              <p className="text-2xl mb-2">🤖 Ask me anything about security!</p>
-              <p className="text-sm mt-2">Try: "How do I fix XSS?" or "What is SQL Injection?"</p>
-            </div>
-          ) : (
-            <div className="space-y-4">
-              {messages.map((msg, index) => (
-                <div key={index} className={`flex ${msg.type === "user" ? "justify-end" : "justify-start"}`}>
-                  <div className={`max-w-3xl ${
-                    msg.type === "user" 
-                      ? "bg-blue-600 text-white p-3 rounded-lg" 
-                      : ""
-                  }`}>
-                    {msg.type === "user" ? (
-                      <p className="whitespace-pre-wrap">{msg.text}</p>
-                    ) : (
-                      renderAIResponse(msg)
-                    )}
-                  </div>
-                </div>
-              ))}
-              {loading && (
-                <div className="flex justify-start">
-                  <div className="bg-gray-100 p-3 rounded-lg">
-                    <p className="text-gray-500">🤖 Gemini is thinking...</p>
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
-        </div>
+      <div className="flex-1 flex flex-col min-w-0">
+        <header className="px-6 py-3 border-b border-gray-200 flex flex-wrap items-center gap-3">
+          <span className="text-blue-600 font-bold text-lg">🛡️ CyberShield AI</span>
 
-        <div className="bg-white rounded shadow p-4">
-          <div className="flex gap-2 mb-4">
-            <input
-              type="text"
-              value={question}
-              onChange={(e) => setQuestion(e.target.value)}
-              onKeyPress={(e) => e.key === "Enter" && handleAsk()}
-              placeholder="Ask a security question..."
-              className="flex-1 border rounded px-4 py-2"
-            />
-            <button
-              onClick={() => handleAsk()}
-              disabled={loading || !question.trim()}
-              className="px-6 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50"
+          {/* Project selector (context switching) */}
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-gray-500">Project:</span>
+            <select
+              value={projectId || ""}
+              onChange={(e) => changeProject(e.target.value || null)}
+              className="border border-gray-300 rounded-lg px-3 py-1.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
-              Ask
-            </button>
+              <option value="">General (no project)</option>
+              {projects.map((p) => (
+                <option key={p._id || p.id} value={p._id || p.id}>
+                  {p.name}
+                </option>
+              ))}
+            </select>
           </div>
 
-          <div>
-            <p className="text-sm font-semibold text-gray-600 mb-2">Suggested Questions:</p>
-            <div className="flex flex-wrap gap-2">
-              {suggestedQuestions.map((q, index) => (
-                <button
-                  key={index}
-                  onClick={() => handleSuggestedClick(q)}
-                  className="px-3 py-1 text-sm bg-gray-200 rounded hover:bg-gray-300"
-                >
-                  {q}
-                </button>
-              ))}
-            </div>
+          {/* Context domain selector */}
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-gray-500">Context:</span>
+            <ContextSelector value={context} onChange={changeContext} />
           </div>
+
+          {activeId && (
+            <span className="text-sm text-gray-400 truncate ml-auto">
+              {conversations.find((c) => c.id === activeId)?.title}
+            </span>
+          )}
+        </header>
+
+        <div ref={scrollRef} className="flex-1 min-h-0">
+          <ChatWindow
+            messages={messages}
+            loading={loading}
+            onSuggestion={handleSend}
+            context={context}
+          />
         </div>
+
+        {error && (
+          <p className="text-sm text-red-500 px-6 py-2 bg-red-50">{error}</p>
+        )}
+
+        <MessageInput onSend={handleSend} disabled={loading} />
       </div>
     </div>
-  )
+  );
 }
-
-export default AIAssistant

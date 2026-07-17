@@ -35,6 +35,11 @@ SECRET_PATTERNS = {
     "Hardcoded Token": {
         "pattern": r"token\s*=",
         "severity": "Medium"
+    },
+
+    "Hardcoded API Key": {
+        "pattern": r"(api[_-]?key|secret[_-]?key|apikey|client[_-]?secret|access[_-]?key)\s*=\s*[\"'][^\"']+[\"']",
+        "severity": "High"
     }
 }
 
@@ -42,29 +47,48 @@ CODE_PATTERNS = {
 
     "Python eval()": {
         "pattern": r"eval\s*\(",
-        "severity": "High"
+        "severity": "High",
+        "languages": ["py", "pyw"]
     },
 
     "Python exec()": {
         "pattern": r"exec\s*\(",
-        "severity": "Critical"
+        "severity": "Critical",
+        "languages": ["py", "pyw"]
     },
 
     "JavaScript eval()": {
         "pattern": r"eval\s*\(",
-        "severity": "High"
+        "severity": "High",
+        "languages": ["js", "jsx", "ts", "tsx", "mjs", "cjs", "vue"]
     },
 
     "Shell Execution": {
         "pattern": r"os\.system\s*\(",
-        "severity": "Critical"
+        "severity": "Critical",
+        "languages": ["py", "pyw"]
     },
 
     "Subprocess Execution": {
         "pattern": r"subprocess\.run\s*\(",
-        "severity": "Medium"
+        "severity": "Medium",
+        "languages": ["py", "pyw"]
     }
 }
+
+LANG_BY_EXT = {
+    "py": "python", "pyw": "python",
+    "js": "javascript", "jsx": "javascript", "ts": "javascript",
+    "tsx": "javascript", "mjs": "javascript", "cjs": "javascript",
+    "vue": "javascript",
+}
+
+def _ext(file_path):
+    if not file_path:
+        return None
+    if "." not in file_path:
+        return None
+    return file_path.rsplit(".", 1)[-1].lower()
 
 TECH_FILES = {
     "package.json": "Node.js",
@@ -104,11 +128,16 @@ def scan_file_content(content):
     return findings
 
 
-def scan_dangerous_code(content):
+def scan_dangerous_code(content, file_path=None):
 
     findings = []
+    ext = _ext(file_path)
 
     for name, config in CODE_PATTERNS.items():
+
+        # Skip patterns that don't apply to this file's language
+        if "languages" in config and ext is not None and ext not in config["languages"]:
+            continue
 
         matches = re.findall(
             config["pattern"],

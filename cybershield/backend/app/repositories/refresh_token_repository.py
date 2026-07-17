@@ -42,7 +42,7 @@ class RefreshTokenRepository:
             print(f"Error creating refresh token: {e}")
             return None
     
-    def get_token_by_hash(self, token_hash: str) -> Optional[dict]:
+    async def get_token_by_hash(self, token_hash: str) -> Optional[dict]:
         """
         Get refresh token by its hash.
         
@@ -56,7 +56,7 @@ class RefreshTokenRepository:
             collection = get_collection(self.collection_name)
             hashed_token = self._hash_token(token_hash)
             
-            token_doc = collection.find_one({
+            token_doc = await collection.find_one({
                 "token_hash": hashed_token,
                 "is_revoked": False
             })

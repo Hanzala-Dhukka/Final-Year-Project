@@ -4,11 +4,13 @@
     overflow-y: auto;
     border-right: 1px solid #e5e7eb;
     background: #ffffff;
+    transition: width 0.3s ease;
 }
 
 .sidebar .MuiListItemButton-root {
     border-radius: 10px;
     margin: 4px 10px;
+    transition: all 0.3s ease;
 }
 
 .sidebar .Mui-selected {
@@ -18,4 +20,22 @@
 
 .sidebar .Mui-selected .MuiSvgIcon-root {
     color: white !important;
+}
+
+/* Collapsed state styling */
+.sidebar.collapsed .MuiListItemText-root {
+    display: none;
+}
+
+.sidebar.collapsed .MuiTypography-root {
+    display: none;
+}
+
+.sidebar.collapsed .MuiListItemButton-root {
+    justify-content: center;
+    padding: 12px;
+}
+
+.sidebar.collapsed .ListItemIcon-root {
+    margin: 0;
 }

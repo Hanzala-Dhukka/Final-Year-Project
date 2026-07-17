@@ -149,6 +149,12 @@ class ScanRepository:
 
         improvement = old_scan.get("risk_score", 0) - new_scan.get("risk_score", 0)
 
+        # Convert MongoDB ObjectId to string so the response is JSON-serializable
+        old_scan = dict(old_scan)
+        new_scan = dict(new_scan)
+        old_scan["_id"] = str(old_scan.get("_id"))
+        new_scan["_id"] = str(new_scan.get("_id"))
+
         return {
             "old_scan": old_scan,
             "new_scan": new_scan,

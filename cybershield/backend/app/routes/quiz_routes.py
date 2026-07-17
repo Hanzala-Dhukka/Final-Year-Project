@@ -156,6 +156,36 @@ async def submit_quiz(
         "results": results
     }
 
+@router.get("/progress")
+async def get_quiz_progress(current_user: dict = Depends(get_current_user)):
+    """Aggregated quiz progress (attempts, average score, rank) for the current user."""
+    attempts = await database["quiz_attempts"].find(
+        {"user_id": str(current_user["_id"])}
+    ).to_list(length=1000)
+
+    total = len(attempts)
+    if total > 0:
+        average = round(sum(a.get("percentage", 0) for a in attempts) / total, 1)
+    else:
+        average = 0
+
+    # Simple rank heuristic based on average score
+    if average >= 90:
+        rank = "Expert"
+    elif average >= 70:
+        rank = "Advanced"
+    elif average >= 40:
+        rank = "Intermediate"
+    else:
+        rank = "Beginner"
+
+    return {
+        "attempts": total,
+        "average": average,
+        "rank": rank,
+    }
+
+
 @router.get("/history")
 async def get_quiz_history(current_user: dict = Depends(get_current_user)):
     history = await database["quiz_attempts"].find(

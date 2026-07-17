@@ -6,6 +6,35 @@ from typing import Optional, List, Dict, Any
 from datetime import datetime
 
 
+class ProfileResponse(BaseModel):
+    """Schema for user profile response."""
+    full_name: str
+    email: str
+    phone: Optional[str] = None
+    bio: Optional[str] = None
+    college: Optional[str] = None
+    course: Optional[str] = None
+    year: Optional[str] = None
+    github: Optional[str] = None
+    linkedin: Optional[str] = None
+    website: Optional[str] = None
+    profile_image: Optional[str] = None
+    role: str
+
+
+class UpdateProfileRequest(BaseModel):
+    """Schema for updating user profile."""
+    full_name: str
+    phone: Optional[str] = None
+    bio: Optional[str] = None
+    college: Optional[str] = None
+    course: Optional[str] = None
+    year: Optional[str] = None
+    github: Optional[str] = None
+    linkedin: Optional[str] = None
+    website: Optional[str] = None
+
+
 class ProfileUpdate(BaseModel):
     """Schema for updating user profile."""
     full_name: str

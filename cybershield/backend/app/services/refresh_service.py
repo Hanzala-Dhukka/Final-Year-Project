@@ -3,11 +3,38 @@ Refresh token service for token management.
 """
 from datetime import datetime, timezone, timedelta
 from typing import Optional, Dict, Any
-from app.utils.security import create_refresh_token, verify_token
+from jose import jwt as _jwt
+from app.utils.security import create_refresh_token
 from app.repositories.refresh_token_repository import refresh_token_repository
 from app.repositories.session_repository import session_repository
 from app.repositories.user_repository import user_repository
 from app.config.settings import settings
+
+
+def _decode_refresh(refresh_token: str):
+    """Decode a refresh JWT without relying on the module-level verify_token
+    (which can be shadowed by an async variant at runtime)."""
+    try:
+        payload = _jwt.decode(
+            refresh_token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM]
+        )
+    except Exception:
+        return None
+    if payload.get("type") != "refresh":
+        return None
+    exp = payload.get("exp")
+    if exp and datetime.fromtimestamp(exp, tz=timezone.utc) < datetime.now(timezone.utc):
+        return None
+    return payload
+
+
+def _is_expired(dt) -> bool:
+    """True if `dt` is in the past. Tolerant of naive vs aware datetimes."""
+    if not dt:
+        return False
+    if dt.tzinfo is None:
+        dt = dt.replace(tzinfo=timezone.utc)
+    return dt < datetime.now(timezone.utc)
 
 
 class RefreshService:
@@ -26,35 +53,44 @@ class RefreshService:
     ) -> bool:
         """
         Store a refresh token in the database.
-        
+
+        The stored record MUST match what `get_token_by_hash` looks up:
+        the token is stored as a sha256 hash under `token_hash`, and the
+        active flag is `is_revoked` (not `revoked`). Storing it inconsistently
+        makes every refresh verification fail with 401.
+
         Args:
             user_id: User's MongoDB ObjectId as string
             token: Plain refresh token
             device: Device information
             ip_address: User's IP address
-            
+
         Returns:
             True if successful, False otherwise
         """
         try:
+            import hashlib
             from app.core.database import get_collection
-            
+
             # Calculate expiry
             expires_at = datetime.now(timezone.utc) + timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS)
-            
+
+            # Hash the token to match get_token_by_hash() (which re-hashes on lookup)
+            token_hash = hashlib.sha256(token.encode()).hexdigest()
+
             # Store in database
             collection = get_collection("refresh_tokens")
             await collection.insert_one({
                 "user_id": user_id,
-                "token_hash": token,
+                "token_hash": token_hash,
                 "device": device,
                 "ip_address": ip_address,
                 "created_at": datetime.now(timezone.utc),
                 "expires_at": expires_at,
-                "revoked": False,
+                "is_revoked": False,
                 "last_used": None
             })
-            
+
             return True
         except Exception as e:
             print(f"Error storing refresh token: {e}")
@@ -101,92 +137,94 @@ class RefreshService:
             print(f"Error creating refresh token: {e}")
             return None
     
-    def verify_refresh_token(self, refresh_token: str) -> Optional[Dict[str, Any]]:
+    async def verify_refresh_token(self, refresh_token: str) -> Optional[Dict[str, Any]]:
         """
         Verify a refresh token.
-        
+
         Args:
             refresh_token: Plain refresh token
-            
+
         Returns:
             Token payload if valid, None otherwise
         """
         try:
-            payload = verify_token(refresh_token, token_type="refresh")
+            payload = _decode_refresh(refresh_token)
             if not payload:
                 return None
-            
-            user_id = payload.get("sub")
+
+            # The refresh token is minted with data={"user_id": ...} (no "sub")
+            user_id = payload.get("user_id") or payload.get("sub")
             if not user_id:
                 return None
-            
+
             # Check if token exists in database and is not revoked
-            token_doc = self.refresh_repo.get_token_by_hash(refresh_token)
+            token_doc = await self.refresh_repo.get_token_by_hash(refresh_token)
             if not token_doc:
                 return None
-            
+
             # Check expiry
             expires_at = token_doc.get("expires_at")
-            if expires_at and expires_at < datetime.now(timezone.utc):
+            if _is_expired(expires_at):
                 return None
-            
+
             return {"user_id": user_id, "sub": user_id}
         except Exception as e:
             print(f"Error verifying refresh token: {e}")
             return None
-    
-    def refresh_access_token(self, refresh_token: str) -> Optional[Dict[str, Any]]:
+
+    async def refresh_access_token(self, refresh_token: str) -> Optional[Dict[str, Any]]:
         """
         Generate a new access token using refresh token.
-        
+
         Args:
             refresh_token: Plain refresh token
-            
+
         Returns:
             Dict with new access token and expiry, or None if invalid
         """
         try:
-            # Verify refresh token
-            payload = verify_token(refresh_token, token_type="refresh")
+            # Verify refresh token (decode directly to avoid async-shadows)
+            payload = _decode_refresh(refresh_token)
             if not payload:
                 return None
-            
-            user_id = payload.get("sub")
+
+            # The refresh token is minted with data={"user_id": ...} (no "sub")
+            user_id = payload.get("user_id") or payload.get("sub")
             if not user_id:
                 return None
-            
+
             # Check if token exists in database and is not revoked
-            token_doc = self.refresh_repo.get_token_by_hash(refresh_token)
+            token_doc = await self.refresh_repo.get_token_by_hash(refresh_token)
             if not token_doc:
                 return None
-            
+
             # Check expiry
             expires_at = token_doc.get("expires_at")
-            if expires_at and expires_at < datetime.now(timezone.utc):
+            if _is_expired(expires_at):
                 return None
             
             # Get user
-            user = user_repository.get_user_by_id(user_id)
+            user = await user_repository.get_user_by_id(user_id)
             if not user:
                 return None
-            
+
             # Generate new access token
             access_token_data = {
                 "sub": user["email"],
                 "user_id": user_id,
                 "role": user.get("role", "student")
             }
-            new_access_token = create_refresh_token(access_token_data, 
+            new_access_token = create_refresh_token(access_token_data,
                 expires_delta=timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
             )
-            
+
             # Update last_used timestamp
-            self.refresh_repo.update_last_used(str(token_doc["_id"]))
-            
+            await self.refresh_repo.update_last_used(str(token_doc["_id"]))
+
             # Update session activity
-            session = self.session_repo.get_session_by_token_hash(refresh_token)
+            session = await self.session_repo.get_session_by_token_hash(refresh_token)
             if session:
-                self.session_repo.update_session_activity(str(session["_id"]))
+                await self.session_repo.update_session_activity(str(session["_id"]))
             
             return {
                 "access_token": new_access_token,
@@ -200,18 +238,20 @@ class RefreshService:
     async def update_token_last_used(self, refresh_token: str) -> bool:
         """
         Update the last_used timestamp for a refresh token.
-        
+
         Args:
             refresh_token: Plain refresh token
-            
+
         Returns:
             True if successful, False otherwise
         """
         try:
+            import hashlib
             from app.core.database import get_collection
             collection = get_collection("refresh_tokens")
+            token_hash = hashlib.sha256(refresh_token.encode()).hexdigest()
             result = await collection.update_one(
-                {"token_hash": refresh_token},
+                {"token_hash": token_hash},
                 {"$set": {"last_used": datetime.now(timezone.utc)}}
             )
             return result.modified_count > 0

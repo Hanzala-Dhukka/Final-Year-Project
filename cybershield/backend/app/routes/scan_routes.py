@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException, status, Depends, WebSocket, WebSocketDisconnect
+from fastapi import APIRouter, HTTPException, status, Depends, WebSocket, WebSocketDisconnect, BackgroundTasks
 from typing import List, Dict, Any
 import json
 from datetime import datetime
@@ -9,7 +9,7 @@ from app.repositories.scan_repository import scan_repository
 from app.dependencies.auth import get_current_user
 from app.services.gemini_service import generate_ai_response
 
-router = APIRouter(prefix="/security-scan", tags=["security-scan"])
+router = APIRouter(prefix="/security-scan")
 
 # WebSocket connection manager
 class ConnectionManager:
@@ -36,6 +36,7 @@ manager = ConnectionManager()
 @router.post("/start")
 async def start_scan(
     request: Dict[str, Any],
+    background_tasks: BackgroundTasks,
     current_user: Dict[str, Any] = Depends(get_current_user)
 ):
     """Start a new security scan"""
@@ -68,7 +69,6 @@ async def start_scan(
         await scan_repository.create_or_update_progress(progress_data)
         
         # Start background scan task
-        from app.main import background_tasks
         background_tasks.add_task(run_security_scan, scan_id, repo_url)
         
         return {
@@ -191,6 +191,25 @@ async def compare_scans(
         raise HTTPException(status_code=404, detail="One or both scans not found")
     
     return comparison
+
+@router.get("/history")
+async def get_scan_history(
+    current_user: Dict[str, Any] = Depends(get_current_user)
+):
+    """Get the current user's previous security scans"""
+    scans = await scan_repository.get_scans_by_user(current_user["_id"], limit=100)
+
+    history = []
+    for scan in scans:
+        history.append({
+            "_id": scan["_id"],
+            "repository": scan.get("repo_url", "Unknown Repository"),
+            "risk": scan.get("risk_score", "Unknown"),
+            "status": scan.get("status", "Unknown"),
+            "date": scan.get("created_at"),
+        })
+
+    return history
 
 @router.post("/remediation")
 async def get_ai_remediation(
