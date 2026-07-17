@@ -100,7 +100,11 @@ async def ensure_collections():
         "user_progress",
         "sessions",
         "refresh_tokens",
-        "audit_logs"
+        "audit_logs",
+        "security_checklists",
+        "user_checklists",
+        "checklist_progress",
+        "generated_checklists"
     ]
     
     for collection_name in required_collections:

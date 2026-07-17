@@ -1,9 +1,18 @@
 import { useEffect, useState } from "react"
-import API from "../../api/api"
+import { useAuth } from "../../contexts/AuthContext"
+import { getProfile, uploadAvatar, deleteAvatar } from "../../services/profileService"
+import EditProfileDialog from "./EditProfileDialog"
+import UploadAvatar from "./UploadAvatar"
+import ProfileCard from "../../components/Profile/ProfileCard"
+import ProfileStats from "../../components/Profile/ProfileStats"
+import AccountInfo from "../../components/Profile/AccountInfo"
 
 export default function Profile() {
-  const [user, setUser] = useState(null)
+  const { user: authUser, setUser: setAuthUser } = useAuth()
+  const [profile, setProfile] = useState(null)
   const [loading, setLoading] = useState(true)
+  const [showEditDialog, setShowEditDialog] = useState(false)
+  const [showUploadDialog, setShowUploadDialog] = useState(false)
 
   useEffect(() => {
     fetchProfile()
@@ -11,12 +20,40 @@ export default function Profile() {
 
   const fetchProfile = async () => {
     try {
-      const response = await API.get("/users/profile")
-      setUser(response.data)
+      const data = await getProfile()
+      setProfile(data)
     } catch (error) {
       console.error("Error fetching profile:", error)
     } finally {
       setLoading(false)
+    }
+  }
+
+  const handleProfileUpdate = (updatedProfile) => {
+    setProfile(updatedProfile)
+    setAuthUser({ ...authUser, full_name: updatedProfile.full_name })
+  }
+
+  const handleAvatarUpload = async (file) => {
+    try {
+      const result = await uploadAvatar(file)
+      setProfile({ ...profile, profile_image: result.profile_image })
+      setAuthUser({ ...authUser, profile_image: result.profile_image })
+      setShowUploadDialog(false)
+    } catch (error) {
+      console.error("Error uploading avatar:", error)
+      alert("Failed to upload avatar")
+    }
+  }
+
+  const handleAvatarDelete = async () => {
+    try {
+      await deleteAvatar()
+      setProfile({ ...profile, profile_image: null })
+      setAuthUser({ ...authUser, profile_image: null })
+    } catch (error) {
+      console.error("Error deleting avatar:", error)
+      alert("Failed to delete avatar")
     }
   }
 
@@ -28,7 +65,7 @@ export default function Profile() {
     )
   }
 
-  if (!user) {
+  if (!profile) {
     return (
       <div className="flex items-center justify-center h-screen">
         <div className="text-xl text-red-600">Failed to load profile</div>
@@ -39,30 +76,39 @@ export default function Profile() {
   return (
     <div className="container mx-auto px-4 py-8 max-w-4xl">
       <h1 className="text-3xl font-bold text-gray-900 mb-8">Profile</h1>
-      
-      <div className="bg-white shadow-md rounded-lg p-6 mb-6">
-        <h2 className="text-2xl font-semibold mb-4">{user.name || "User"}</h2>
-        <div className="space-y-3">
-          <div className="flex justify-between">
-            <span className="text-gray-600">Email:</span>
-            <span className="font-semibold">{user.email}</span>
-          </div>
-          <div className="flex justify-between">
-            <span className="text-gray-600">Level:</span>
-            <span className="font-semibold">{user.level || 1}</span>
-          </div>
-          <div className="flex justify-between">
-            <span className="text-gray-600">XP:</span>
-            <span className="font-semibold">{user.xp || 0}</span>
-          </div>
-          {user.skill && (
-            <div className="flex justify-between">
-              <span className="text-gray-600">Skill Level:</span>
-              <span className="font-semibold">{user.skill}</span>
-            </div>
-          )}
-        </div>
+
+      <div className="mb-6">
+        <ProfileCard
+          profile={profile}
+          authUser={authUser}
+          onEdit={() => setShowEditDialog(true)}
+          onUpload={() => setShowUploadDialog(true)}
+        />
       </div>
+
+      <ProfileStats profile={profile} />
+
+      <div className="mb-6">
+        <AccountInfo profile={profile} authUser={authUser} />
+      </div>
+
+      {/* Dialogs */}
+      {showEditDialog && (
+        <EditProfileDialog
+          profile={profile}
+          onClose={() => setShowEditDialog(false)}
+          onUpdate={handleProfileUpdate}
+        />
+      )}
+
+      {showUploadDialog && (
+        <UploadAvatar
+          onClose={() => setShowUploadDialog(false)}
+          onUpload={handleAvatarUpload}
+          onDelete={handleAvatarDelete}
+          hasAvatar={!!profile.profile_image}
+        />
+      )}
     </div>
   )
 }

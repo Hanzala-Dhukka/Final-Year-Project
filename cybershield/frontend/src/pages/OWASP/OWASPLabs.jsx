@@ -11,7 +11,7 @@ export default function OWASPLabs() {
 
   const fetchProgress = async () => {
     try {
-      const response = await API.get("/labs/progress")
+      const response = await API.get("/progress/anonymous")
       setProgress(response.data)
     } catch (error) {
       console.error("Error fetching lab progress:", error)

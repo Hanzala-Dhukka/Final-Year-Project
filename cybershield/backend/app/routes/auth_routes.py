@@ -14,6 +14,7 @@ from app.services.email_service import email_service
 from app.services.token_service import token_service
 from app.services.refresh_service import refresh_service
 from app.services.session_service import session_service
+from app.services.auth_service import verify_email, logout_all_devices
 from app.utils.security import create_access_token, create_refresh_token, get_current_user
 from app.core.config import settings
 
@@ -202,7 +203,7 @@ async def refresh_token(request: RefreshTokenRequest):
     refresh_token = request.refresh_token
     try:
         # Verify refresh token
-        token_data = refresh_service.verify_refresh_token(refresh_token)
+        token_data = await refresh_service.verify_refresh_token(refresh_token)
         if not token_data:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
@@ -276,6 +277,39 @@ async def logout(current_user: dict = Depends(get_current_user)):
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Logout failed: {str(e)}"
+        )
+
+
+@router.post("/logout-all")
+async def logout_all(current_user: dict = Depends(get_current_user)):
+    """
+    Logout from all devices by revoking the refresh token.
+    """
+    try:
+        user_id = str(current_user["_id"])
+        await logout_all_devices(user_id)
+        return {"message": "Logged out from all devices successfully"}
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Logout failed: {str(e)}"
+        )
+
+
+@router.get("/verify-email")
+async def verify_email_endpoint(token: str):
+    """
+    Verify a user's email using the verification token sent by email.
+    """
+    try:
+        result = await verify_email(token)
+        return result
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Email verification failed: {str(e)}"
         )
 
 

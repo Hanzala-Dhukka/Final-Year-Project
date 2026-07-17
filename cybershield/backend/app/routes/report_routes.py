@@ -1,10 +1,38 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Depends
 from fastapi.responses import FileResponse
 from app.services.threat_model_service import threat_results_store
 from app.services.pdf_generator import generate_pdf, get_pdf_path
+from app.dependencies.auth import get_current_user
+from app.database.db import database
 import os
 
 router = APIRouter()
+
+
+@router.get("/reports")
+async def get_reports(current_user: dict = Depends(get_current_user)):
+    """List security reports for the current user (or all for admins)"""
+    reports_collection = database["security_reports"]
+
+    query = {}
+    if current_user.get("role") != "admin":
+        query = {"user_id": current_user["_id"]}
+
+    reports = await reports_collection.find(query).sort("created_at", -1).to_list(length=100)
+
+    result = []
+    for report in reports:
+        report["_id"] = str(report["_id"])
+        if "user_id" in report:
+            report["user_id"] = str(report["user_id"])
+        result.append({
+            "id": report["_id"],
+            "title": report.get("title", "Untitled Report"),
+            "risk": report.get("risk_level", "Unknown"),
+            "created": report.get("created_at"),
+        })
+
+    return result
 
 
 @router.get("/report/{project_id}")

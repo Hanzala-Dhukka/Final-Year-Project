@@ -1,11 +1,18 @@
 from fastapi import FastAPI
+from fastapi.staticfiles import StaticFiles
+from pathlib import Path
 from app.database.db import database
-from app.routes.auth_routes import router as auth_router
-from app.routes.user_routes import router as user_router
+from app.api.auth_routes import router as auth_router
+from app.api.user_routes import router as user_router
 from app.routes.scan_routes import router as scan_router
 from app.routes.analytics_routes import router as analytics_router
 
 app = FastAPI()
+
+# Mount static files for uploads
+uploads_dir = Path("uploads")
+uploads_dir.mkdir(exist_ok=True)
+app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
 
 app.include_router(
     auth_router,

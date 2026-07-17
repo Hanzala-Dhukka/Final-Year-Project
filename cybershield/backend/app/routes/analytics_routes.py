@@ -1,5 +1,24 @@
 from fastapi import APIRouter
+from bson import ObjectId
 from app.database.db import database
+
+
+def _serialize(doc: dict) -> dict:
+    """Convert bson types (ObjectId) to JSON-serializable strings."""
+    out = {}
+    for k, v in doc.items():
+        if isinstance(v, ObjectId):
+            out[k] = str(v)
+        elif isinstance(v, dict):
+            out[k] = _serialize(v)
+        elif isinstance(v, list):
+            out[k] = [
+                _serialize(i) if isinstance(i, dict) else (str(i) if isinstance(i, ObjectId) else i)
+                for i in v
+            ]
+        else:
+            out[k] = v
+    return out
 
 router = APIRouter()
 
@@ -64,7 +83,4 @@ async def recent_scans():
         -1
     ).limit(5).to_list(5)
 
-    for scan in scans:
-        scan["_id"] = str(scan["_id"])
-
-    return scans
+    return [_serialize(scan) for scan in scans]

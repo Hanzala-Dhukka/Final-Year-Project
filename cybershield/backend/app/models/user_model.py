@@ -1,6 +1,32 @@
 from pydantic import BaseModel, EmailStr
 from datetime import datetime
-from typing import Optional
+from typing import Optional, List
+
+class User(BaseModel):
+    full_name: str
+    email: EmailStr
+    hashed_password: str
+    role: str = "student"
+    is_verified: bool = False
+    is_active: bool = True
+    profile_image: Optional[str] = None
+    phone: Optional[str] = None
+    bio: Optional[str] = None
+    college: Optional[str] = None
+    course: Optional[str] = None
+    year: Optional[str] = None
+    github: Optional[str] = None
+    linkedin: Optional[str] = None
+    website: Optional[str] = None
+    theme: str = "dark"
+    verification_token: Optional[str] = None
+    reset_token: Optional[str] = None
+    refresh_token: Optional[str] = None
+    last_login: Optional[datetime] = None
+    last_activity: Optional[datetime] = None
+    login_history: List[dict] = []
+    created_at: Optional[datetime] = None
+    updated_at: Optional[datetime] = None
 
 class UserCreate(BaseModel):
     name: str

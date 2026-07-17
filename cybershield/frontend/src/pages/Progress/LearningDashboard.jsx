@@ -19,7 +19,7 @@ const LearningDashboard = () => {
   const loadDashboard = async () => {
     setLoading(true);
     try {
-      const response = await API.get(`/progress/dashboard/${userId}`);
+      const response = await API.get(`/dashboard/${userId}`);
       setDashboardData(response.data.data);
     } catch (error) {
       console.error('Error loading dashboard:', error);
@@ -53,7 +53,7 @@ const LearningDashboard = () => {
   const downloadCertificate = async () => {
     setCertificateLoading(true);
     try {
-      const response = await API.get(`/progress/certificate/${userId}`);
+      const response = await API.get(`/certificate/${userId}`);
       if (response.data.data.certificate) {
         // In a real app, this would download the PDF
         console.log('Certificate generated:', response.data.data);
@@ -206,7 +206,7 @@ const LearningDashboard = () => {
             </div>
             <Button 
               type="link" 
-              onClick={() => API.get(`/progress/achievements/${userId}`)}
+              onClick={() => API.get(`/achievements/${userId}`)}
               style={{ marginTop: 16 }}
             >
               View All Achievements

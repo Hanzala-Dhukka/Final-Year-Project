@@ -1,8 +1,16 @@
-from pydantic import BaseModel
+"""
+Pydantic schemas for the AI Security Copilot.
+
+This module holds both:
+  - the legacy copilot conversation schemas (Module 5.x chat/stream),
+  - the new Security Copilot schemas (Module 5.5 assessment/advisory).
+"""
 from typing import Optional, List, Dict, Any
 from datetime import datetime
+from pydantic import BaseModel, Field
 
 
+# ── Legacy copilot conversation schemas (used by routers/copilot_routes.py) ───
 class ConversationCreate(BaseModel):
     project_id: Optional[str] = None
     user_name: Optional[str] = "User"
@@ -78,3 +86,58 @@ class ConversationMemory(BaseModel):
     context: Dict[str, Any]
     created_at: str
     updated_at: str
+
+
+# ── Security Copilot schemas (Module 5.5) ─────────────────────────────────────
+class CopilotAnalyzeRequest(BaseModel):
+    """Body for POST /copilot/analyze (spec Step 5)."""
+    project_id: Optional[str] = None
+    question: Optional[str] = None  # optional natural-language question
+
+
+class CopilotChatRequest(BaseModel):
+    """Body for POST /copilot/chat (natural-language security query)."""
+    project_id: Optional[str] = None
+    question: str = Field(..., min_length=1)
+    history: Optional[List[Dict[str, str]]] = None
+
+
+# ── Responses ─────────────────────────────────────────────────────────────────
+class RoadmapWeek(BaseModel):
+    week: str
+    tasks: List[str] = []
+
+
+class CopilotAnalyzeResponse(BaseModel):
+    advisory_id: str
+    project_id: Optional[str] = None
+    project: Optional[str] = None
+    risk_level: str
+    security_score: int
+    summary: str
+    critical_findings: List[str] = []
+    recommendations: List[str] = []
+    roadmap: List[RoadmapWeek] = []
+    raw_context: Dict[str, Any] = {}
+
+
+class CopilotChatResponse(BaseModel):
+    answer: str
+    advisory: Optional[CopilotAnalyzeResponse] = None
+
+
+class SecurityAdvisorySummary(BaseModel):
+    id: str
+    project: Optional[str]
+    risk_level: str
+    security_score: int
+    summary: str
+    created_at: str
+
+
+class SecurityScoreResponse(BaseModel):
+    project_id: Optional[str]
+    project: Optional[str]
+    security_score: int
+    risk_level: str
+    breakdown: Dict[str, Any] = {}

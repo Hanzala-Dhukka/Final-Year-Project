@@ -4,391 +4,406 @@ Dashboard service for aggregating user data from multiple collections.
 from datetime import datetime, timezone, timedelta
 from typing import Dict, Any, List, Optional
 from bson import ObjectId
-from app.core.database import get_collection
-from app.repositories.user_repository import user_repository
-from app.repositories.github_repository import github_repository
-from app.repositories.security_report_repository import security_report_repository
-from app.repositories.owasp_repository import owasp_repository
-from app.repositories.quiz_repository import quiz_repository
-from app.repositories.chat_repository import chat_repository
-from app.repositories.progress_repository import progress_repository
-from app.repositories.challenge_repository import challenge_repository
+from app.database.db import database
 
 
-class DashboardService:
-    """Service for dashboard data aggregation."""
+async def get_dashboard(user_id: str) -> Dict[str, Any]:
+    """
+    Get complete dashboard data for user.
     
-    def __init__(self):
-        self.users_collection = get_collection("users")
-        self.scans_collection = get_collection("scans")
-        self.threat_reports_collection = get_collection("threat_reports")
-        self.owasp_sessions_collection = get_collection("owasp_sessions")
-        self.quiz_attempts_collection = get_collection("quiz_attempts")
-        self.conversations_collection = get_collection("conversations")
-        self.achievements_collection = get_collection("achievements")
-        self.certificates_collection = get_collection("certificates")
-        self.daily_challenges_collection = get_collection("daily_challenges")
-        self.user_progress_collection = get_collection("user_progress")
-    
-    async def get_user_profile(self, user_id: str) -> Dict[str, Any]:
-        """
-        Get user profile information.
+    Args:
+        user_id: User's MongoDB ObjectId as string
         
-        Args:
-            user_id: User's MongoDB ObjectId as string
-            
-        Returns:
-            User profile data
-        """
-        try:
-            user = await user_repository.get_user_by_id(user_id)
-            if not user:
-                return {}
-            
-            # Get progress data
-            progress = await progress_repository.get_progress_by_user(user_id)
-            
-            return {
-                "user_id": user_id,
-                "name": user.get("name"),
-                "email": user.get("email"),
-                "role": user.get("role", "student"),
-                "level": progress.get("level", 1) if progress else 1,
-                "xp": progress.get("xp", 0) if progress else 0,
-                "skill": self._calculate_skill_level(progress.get("level", 1) if progress else 1),
-                "created_at": user.get("created_at"),
-                "last_login": user.get("last_login")
-            }
-        except Exception as e:
-            print(f"Error getting user profile: {e}")
+    Returns:
+        Complete dashboard data matching DashboardResponse schema
+    """
+    try:
+        # Get user info
+        user = await database.users.find_one({"_id": user_id})
+        if not user:
             return {}
-    
-    async def get_security_summary(self, user_id: str) -> Dict[str, Any]:
-        """
-        Get security scan summary for user.
         
-        Args:
-            user_id: User's MongoDB ObjectId as string
-            
-        Returns:
-            Security summary data
-        """
-        try:
-            # Get total scans
-            total_scans = await self.scans_collection.count_documents({"user_id": user_id})
-            
-            # Get critical vulnerabilities found
-            critical_count = 0
-            async for scan in self.scans_collection.find({"user_id": user_id}):
-                vulnerabilities = scan.get("vulnerabilities", [])
-                critical_count += sum(1 for v in vulnerabilities if v.get("severity") == "critical")
-            
-            # Get recent scans
-            recent_scans = []
-            async for scan in self.scans_collection.find(
-                {"user_id": user_id}
-            ).sort("created_at", -1).limit(5):
-                recent_scans.append({
-                    "id": str(scan["_id"]),
-                    "repository": scan.get("repository_name", "Unknown"),
-                    "vulnerabilities": len(scan.get("vulnerabilities", [])),
-                    "date": scan.get("created_at")
-                })
-            
-            # Calculate risk score (0-100)
-            risk_score = self._calculate_risk_score(total_scans, critical_count)
-            
-            return {
+        # Calculate security score
+        security_score = await calculate_security_score(user_id)
+        
+        # Get recent scans
+        recent_scans = await get_recent_scans(user_id)
+        
+        # Get recent reports
+        recent_reports = await get_recent_reports(user_id)
+        
+        # Get quiz progress
+        quiz_progress = await get_quiz_progress(user_id)
+        
+        # Get learning progress
+        learning_progress = await get_learning_progress(user_id)
+        
+        # Get recent activity
+        recent_activity = await get_recent_activity(user_id)
+        
+        # Get daily challenge
+        daily_challenge = await get_daily_challenge(user_id)
+        
+        # Get stats
+        total_scans = await database.scans.count_documents({"user_id": user_id})
+        threat_reports = await database.threat_reports.count_documents({"user_id": user_id})
+        
+        return {
+            "user": {
+                "full_name": user.get("full_name", "User"),
+                "profile_image": user.get("profile_image")
+            },
+            "stats": {
+                "security_score": security_score,
                 "total_scans": total_scans,
-                "critical_found": critical_count,
-                "risk_score": risk_score,
-                "recent_scans": recent_scans
-            }
-        except Exception as e:
-            print(f"Error getting security summary: {e}")
-            return {
-                "total_scans": 0,
-                "critical_found": 0,
-                "risk_score": 0,
-                "recent_scans": []
-            }
-    
-    async def get_learning_progress(self, user_id: str) -> Dict[str, Any]:
-        """
-        Get learning progress for user.
+                "threat_reports": threat_reports,
+                "quiz_accuracy": quiz_progress.get("average_score", 0)
+            },
+            "recent_scans": recent_scans,
+            "recent_reports": recent_reports,
+            "recent_activity": recent_activity,
+            "quiz_progress": quiz_progress,
+            "learning_progress": learning_progress,
+            "daily_challenge": daily_challenge
+        }
         
-        Args:
-            user_id: User's MongoDB ObjectId as string
-            
-        Returns:
-            Learning progress data
-        """
-        try:
-            # Get completed labs
-            labs_completed = await self.owasp_sessions_collection.count_documents({
-                "user_id": user_id,
-                "status": "completed"
-            })
-            
-            # Get total labs attempted
-            total_labs = await self.owasp_sessions_collection.count_documents({
-                "user_id": user_id
-            })
-            
-            # Get quiz statistics
-            quiz_attempts = []
-            async for quiz in self.quiz_attempts_collection.find(
-                {"user_id": user_id}
-            ).sort("completed_at", -1):
-                quiz_attempts.append(quiz.get("score", 0))
-            
-            average_score = sum(quiz_attempts) / len(quiz_attempts) if quiz_attempts else 0
-            best_score = max(quiz_attempts) if quiz_attempts else 0
-            
-            return {
-                "labs_completed": labs_completed,
-                "total_labs": total_labs,
-                "quiz_score": round(average_score, 2),
-                "best_quiz_score": best_score,
-                "quizzes_attempted": len(quiz_attempts)
-            }
-        except Exception as e:
-            print(f"Error getting learning progress: {e}")
-            return {
-                "labs_completed": 0,
-                "total_labs": 0,
-                "quiz_score": 0,
-                "best_quiz_score": 0,
-                "quizzes_attempted": 0
-            }
+    except Exception as e:
+        print(f"Error getting dashboard data: {e}")
+        import traceback
+        traceback.print_exc()
+        return {}
+
+
+async def calculate_security_score(user_id: str) -> int:
+    """
+    Calculate security score based on vulnerabilities and activities.
     
-    async def get_recent_activity(self, user_id: str, limit: int = 10) -> List[Dict[str, Any]]:
-        """
-        Get recent activity for user from multiple sources.
-        
-        Args:
-            user_id: User's MongoDB ObjectId as string
-            limit: Maximum number of activities to return
-            
-        Returns:
-            List of recent activities
-        """
-        try:
-            activities = []
-            
-            # Get recent scans
-            async for scan in self.scans_collection.find(
-                {"user_id": user_id}
-            ).sort("created_at", -1).limit(5):
-                activities.append({
-                    "type": "Security Scan",
-                    "description": f"Scanned {scan.get('repository_name', 'Unknown')}",
-                    "date": scan.get("created_at"),
-                    "icon": "🔍"
-                })
-            
-            # Get recent lab completions
-            async for lab in self.owasp_sessions_collection.find(
-                {"user_id": user_id, "status": "completed"}
-            ).sort("completed_at", -1).limit(5):
-                activities.append({
-                    "type": "OWASP Lab",
-                    "description": f"Completed {lab.get('lab_name', 'Unknown Lab')}",
-                    "date": lab.get("completed_at"),
-                    "icon": "🔬"
-                })
-            
-            # Get recent quiz attempts
-            async for quiz in self.quiz_attempts_collection.find(
-                {"user_id": user_id}
-            ).sort("completed_at", -1).limit(5):
-                activities.append({
-                    "type": "Quiz",
-                    "description": f"Scored {quiz.get('score', 0)}% on {quiz.get('quiz_name', 'Quiz')}",
-                    "date": quiz.get("completed_at"),
-                    "icon": "📝"
-                })
-            
-            # Sort by date and limit
-            activities.sort(key=lambda x: x.get("date", datetime.min), reverse=True)
-            return activities[:limit]
-            
-        except Exception as e:
-            print(f"Error getting recent activity: {e}")
-            return []
+    Formula:
+    Start Score = 100
+    - Critical × 10
+    - High × 6
+    - Medium × 3
+    - Low × 1
+    + Completed Quiz Bonus
+    + Completed Challenge Bonus
     
-    async def get_achievements(self, user_id: str, limit: int = 10) -> List[Dict[str, Any]]:
-        """
-        Get user achievements.
+    Args:
+        user_id: User's MongoDB ObjectId as string
         
-        Args:
-            user_id: User's MongoDB ObjectId as string
-            limit: Maximum number of achievements to return
-            
-        Returns:
-            List of achievements
-        """
-        try:
-            achievements = []
-            async for achievement in self.achievements_collection.find(
-                {"user_id": user_id}
-            ).sort("earned_at", -1).limit(limit):
-                achievements.append({
-                    "id": str(achievement["_id"]),
-                    "name": achievement.get("name"),
-                    "description": achievement.get("description"),
-                    "icon": achievement.get("icon", "🏆"),
-                    "earned_at": achievement.get("earned_at")
-                })
-            return achievements
-        except Exception as e:
-            print(f"Error getting achievements: {e}")
-            return []
-    
-    async def get_certificates(self, user_id: str, limit: int = 10) -> List[Dict[str, Any]]:
-        """
-        Get user certificates.
-        
-        Args:
-            user_id: User's MongoDB ObjectId as string
-            limit: Maximum number of certificates to return
-            
-        Returns:
-            List of certificates
-        """
-        try:
-            certificates = []
-            async for cert in self.certificates_collection.find(
-                {"user_id": user_id}
-            ).sort("issued_at", -1).limit(limit):
-                certificates.append({
-                    "id": str(cert["_id"]),
-                    "name": cert.get("name"),
-                    "description": cert.get("description"),
-                    "issued_at": cert.get("issued_at"),
-                    "expires_at": cert.get("expires_at")
-                })
-            return certificates
-        except Exception as e:
-            print(f"Error getting certificates: {e}")
-            return []
-    
-    async def get_daily_challenge(self, user_id: str) -> Optional[Dict[str, Any]]:
-        """
-        Get today's challenge for user.
-        
-        Args:
-            user_id: User's MongoDB ObjectId as string
-            
-        Returns:
-            Daily challenge data or None
-        """
-        try:
-            today = datetime.now(timezone.utc).date()
-            
-            challenge = await self.daily_challenges_collection.find_one({
-                "user_id": user_id,
-                "date": today.isoformat()
-            })
-            
-            if not challenge:
-                # Get a random challenge for today
-                challenge = await challenge_repository.get_today_challenge(user_id)
-            
-            return challenge
-        except Exception as e:
-            print(f"Error getting daily challenge: {e}")
-            return None
-    
-    async def get_dashboard_data(self, user_id: str) -> Dict[str, Any]:
-        """
-        Get complete dashboard data for user.
-        
-        Args:
-            user_id: User's MongoDB ObjectId as string
-            
-        Returns:
-            Complete dashboard data
-        """
-        try:
-            # Fetch all data in parallel
-            profile = await self.get_user_profile(user_id)
-            security = await self.get_security_summary(user_id)
-            learning = await self.get_learning_progress(user_id)
-            activities = await self.get_recent_activity(user_id, limit=10)
-            achievements = await self.get_achievements(user_id, limit=5)
-            certificates = await self.get_certificates(user_id, limit=5)
-            daily_challenge = await self.get_daily_challenge(user_id)
-            
-            return {
-                "user": profile.get("name", "User"),
-                "profile": {
-                    "level": profile.get("level", 1),
-                    "xp": profile.get("xp", 0),
-                    "skill": profile.get("skill", "Beginner"),
-                    "name": profile.get("name"),
-                    "email": profile.get("email"),
-                    "role": profile.get("role", "student")
-                },
-                "security": {
-                    "total_scans": security.get("total_scans", 0),
-                    "critical_found": security.get("critical_found", 0),
-                    "risk_score": security.get("risk_score", 0),
-                    "recent_scans": security.get("recent_scans", [])
-                },
-                "learning": {
-                    "labs_completed": learning.get("labs_completed", 0),
-                    "total_labs": learning.get("total_labs", 0),
-                    "quiz_score": learning.get("quiz_score", 0),
-                    "best_quiz_score": learning.get("best_quiz_score", 0),
-                    "quizzes_attempted": learning.get("quizzes_attempted", 0)
-                },
-                "recent_activity": activities,
-                "achievements": achievements,
-                "certificates": certificates,
-                "daily_challenge": daily_challenge
-            }
-            
-        except Exception as e:
-            print(f"Error getting dashboard data: {e}")
-            import traceback
-            traceback.print_exc()
-            return {}
-    
-    def _calculate_skill_level(self, level: int) -> str:
-        """Calculate skill level based on user level."""
-        if level >= 10:
-            return "Expert"
-        elif level >= 7:
-            return "Advanced"
-        elif level >= 4:
-            return "Intermediate"
-        else:
-            return "Beginner"
-    
-    def _calculate_risk_score(self, total_scans: int, critical_count: int) -> int:
-        """
-        Calculate risk score based on scans and vulnerabilities.
-        
-        Args:
-            total_scans: Total number of scans
-            critical_count: Number of critical vulnerabilities
-            
-        Returns:
-            Risk score (0-100)
-        """
-        if total_scans == 0:
-            return 0
-        
-        # Base score starts at 100 (good)
+    Returns:
+        Security score (0-100)
+    """
+    try:
         score = 100
         
-        # Deduct points for critical vulnerabilities
-        score -= critical_count * 5
+        # Count vulnerabilities by severity from scans
+        critical = 0
+        high = 0
+        medium = 0
+        low = 0
+        
+        async for scan in database.scans.find({"user_id": user_id}):
+            vulnerabilities = scan.get("vulnerabilities", [])
+            for vuln in vulnerabilities:
+                severity = vuln.get("severity", "low").lower()
+                if severity == "critical":
+                    critical += 1
+                elif severity == "high":
+                    high += 1
+                elif severity == "medium":
+                    medium += 1
+                elif severity == "low":
+                    low += 1
+        
+        # Deduct points for vulnerabilities
+        score -= (critical * 10) + (high * 6) + (medium * 3) + (low * 1)
+        
+        # Add bonus for completed quizzes (max 5 points)
+        quiz_count = await database.quiz_attempts.count_documents({
+            "user_id": user_id,
+            "status": "completed"
+        })
+        score += min(quiz_count * 0.5, 5)
+        
+        # Add bonus for completed challenges (max 5 points)
+        challenge_count = await database.daily_challenges.count_documents({
+            "user_id": user_id,
+            "completed": True
+        })
+        score += min(challenge_count * 0.5, 5)
         
         # Ensure score is between 0 and 100
-        return max(0, min(100, score))
+        return max(0, min(100, int(score)))
+        
+    except Exception as e:
+        print(f"Error calculating security score: {e}")
+        return 0
 
 
-# Create singleton instance
-dashboard_service = DashboardService()
+async def get_recent_scans(user_id: str, limit: int = 5) -> List[Dict[str, Any]]:
+    """
+    Get recent security scans.
+    
+    Args:
+        user_id: User's MongoDB ObjectId as string
+        limit: Maximum number of scans to return
+        
+    Returns:
+        List of recent scans
+    """
+    try:
+        scans = []
+        async for scan in database.scans.find(
+            {"user_id": user_id}
+        ).sort("created_at", -1).limit(limit):
+            vulnerabilities = scan.get("vulnerabilities", [])
+            risk_level = "Low"
+            if any(v.get("severity") == "critical" for v in vulnerabilities):
+                risk_level = "Critical"
+            elif any(v.get("severity") == "high" for v in vulnerabilities):
+                risk_level = "High"
+            elif any(v.get("severity") == "medium" for v in vulnerabilities):
+                risk_level = "Medium"
+            
+            created_at = scan.get("created_at", datetime.utcnow())
+            
+            scans.append({
+                "id": str(scan["_id"]),
+                "repository": scan.get("repository_name", "Unknown"),
+                "risk_level": risk_level,
+                "files": scan.get("files_scanned", 0),
+                "date": created_at.strftime("%Y-%m-%d"),
+                "status": scan.get("status", "Completed")
+            })
+        
+        return scans
+    except Exception as e:
+        print(f"Error getting recent scans: {e}")
+        return []
+
+
+async def get_recent_reports(user_id: str, limit: int = 5) -> List[Dict[str, Any]]:
+    """
+    Get recent threat reports.
+    
+    Args:
+        user_id: User's MongoDB ObjectId as string
+        limit: Maximum number of reports to return
+        
+    Returns:
+        List of recent reports
+    """
+    try:
+        reports = []
+        async for report in database.threat_reports.find(
+            {"user_id": user_id}
+        ).sort("created_at", -1).limit(limit):
+            created_at = report.get("created_at", datetime.utcnow())
+            
+            reports.append({
+                "id": str(report["_id"]),
+                "project": report.get("project_name", "Unknown"),
+                "risk": report.get("risk_level", "Medium"),
+                "score": report.get("security_score", 0),
+                "created": created_at.strftime("%Y-%m-%d")
+            })
+        
+        return reports
+    except Exception as e:
+        print(f"Error getting recent reports: {e}")
+        return []
+
+
+async def get_quiz_progress(user_id: str) -> Dict[str, Any]:
+    """
+    Get quiz progress for user.
+    
+    Args:
+        user_id: User's MongoDB ObjectId as string
+        
+    Returns:
+        Quiz progress data
+    """
+    try:
+        scores = []
+        badges = []
+        
+        async for quiz in database.quiz_attempts.find({"user_id": user_id}):
+            score = quiz.get("score", 0)
+            scores.append(score)
+            
+            if score >= 90:
+                badges.append("Expert")
+            elif score >= 75:
+                badges.append("Advanced")
+            elif score >= 60:
+                badges.append("Intermediate")
+        
+        # Calculate weekly scores (last 7 days)
+        week_ago = datetime.utcnow() - timedelta(days=7)
+        weekly_scores = []
+        async for quiz in database.quiz_attempts.find({
+            "user_id": user_id,
+            "completed_at": {"$gte": week_ago}
+        }):
+            weekly_scores.append(quiz.get("score", 0))
+        
+        return {
+            "completed_quizzes": len(scores),
+            "average_score": int(sum(scores) / len(scores)) if scores else 0,
+            "highest_score": max(scores) if scores else 0,
+            "badges": list(set(badges)),
+            "weekly_scores": weekly_scores
+        }
+    except Exception as e:
+        print(f"Error getting quiz progress: {e}")
+        return {
+            "completed_quizzes": 0,
+            "average_score": 0,
+            "highest_score": 0,
+            "badges": [],
+            "weekly_scores": []
+        }
+
+
+async def get_learning_progress(user_id: str) -> Dict[str, Any]:
+    """
+    Get learning progress percentages.
+    
+    Args:
+        user_id: User's MongoDB ObjectId as string
+        
+    Returns:
+        Learning progress data with percentages
+    """
+    try:
+        # Glossary progress
+        total_glossary = 100  # Assuming 100 total terms
+        learned_glossary = await database.glossary_progress.count_documents({
+            "user_id": user_id,
+            "learned": True
+        })
+        glossary_percent = min(100, int((learned_glossary / total_glossary) * 100))
+        
+        # OWASP progress
+        total_owasp = 10  # Assuming 10 labs
+        completed_owasp = await database.owasp_sessions.count_documents({
+            "user_id": user_id,
+            "status": "completed"
+        })
+        owasp_percent = min(100, int((completed_owasp / total_owasp) * 100))
+        
+        # Quiz progress
+        total_quiz = 20  # Assuming 20 quizzes
+        completed_quiz = await database.quiz_attempts.count_documents({
+            "user_id": user_id
+        })
+        quiz_percent = min(100, int((completed_quiz / total_quiz) * 100))
+        
+        return {
+            "glossary": glossary_percent,
+            "owasp": owasp_percent,
+            "quiz": quiz_percent
+        }
+    except Exception as e:
+        print(f"Error getting learning progress: {e}")
+        return {
+            "glossary": 0,
+            "owasp": 0,
+            "quiz": 0
+        }
+
+
+async def get_recent_activity(user_id: str, limit: int = 10) -> List[Dict[str, Any]]:
+    """
+    Get recent activity timeline.
+    
+    Args:
+        user_id: User's MongoDB ObjectId as string
+        limit: Maximum number of activities to return
+        
+    Returns:
+        List of recent activities
+    """
+    try:
+        activities = []
+        
+        # Get recent scans
+        async for scan in database.scans.find(
+            {"user_id": user_id}
+        ).sort("created_at", -1).limit(3):
+            created_at = scan.get("created_at", datetime.utcnow())
+            activities.append({
+                "date": created_at.strftime("%Y-%m-%d"),
+                "action": f"Repository Scanned: {scan.get('repository_name', 'Unknown')}",
+                "time": created_at.strftime("%H:%M")
+            })
+        
+        # Get recent quiz attempts
+        async for quiz in database.quiz_attempts.find(
+            {"user_id": user_id}
+        ).sort("completed_at", -1).limit(3):
+            completed_at = quiz.get("completed_at", datetime.utcnow())
+            activities.append({
+                "date": completed_at.strftime("%Y-%m-%d"),
+                "action": f"Quiz Completed: {quiz.get('score', 0)}%",
+                "time": completed_at.strftime("%H:%M")
+            })
+        
+        # Get recent OWASP sessions
+        async for lab in database.owasp_sessions.find(
+            {"user_id": user_id, "status": "completed"}
+        ).sort("completed_at", -1).limit(2):
+            completed_at = lab.get("completed_at", datetime.utcnow())
+            activities.append({
+                "date": completed_at.strftime("%Y-%m-%d"),
+                "action": f"OWASP Lab Completed: {lab.get('lab_name', 'Lab')}",
+                "time": completed_at.strftime("%H:%M")
+            })
+        
+        # Sort by date and limit
+        activities.sort(key=lambda x: x["date"], reverse=True)
+        return activities[:limit]
+    except Exception as e:
+        print(f"Error getting recent activity: {e}")
+        return []
+
+
+async def get_daily_challenge(user_id: str) -> Optional[Dict[str, Any]]:
+    """
+    Get today's daily challenge.
+    
+    Args:
+        user_id: User's MongoDB ObjectId as string
+        
+    Returns:
+        Daily challenge data or None
+    """
+    try:
+        today = datetime.utcnow().date()
+        
+        challenge = await database.daily_challenges.find_one({
+            "user_id": user_id,
+            "date": today.isoformat()
+        })
+        
+        if challenge:
+            return {
+                "title": challenge.get("title", "Daily Challenge"),
+                "description": challenge.get("description", ""),
+                "difficulty": challenge.get("difficulty", "Medium"),
+                "reward": challenge.get("reward", 50),
+                "completed": challenge.get("completed", False)
+            }
+        
+        # Return a default challenge if none exists
+        return {
+            "title": "SQL Injection Challenge",
+            "description": "Identify and fix SQL injection vulnerabilities",
+            "difficulty": "Medium",
+            "reward": 50,
+            "completed": False
+        }
+    except Exception as e:
+        print(f"Error getting daily challenge: {e}")
+        return None

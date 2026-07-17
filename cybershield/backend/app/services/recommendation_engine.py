@@ -301,3 +301,99 @@ def get_learning_path(user_id: str, current_topic: str, skill_level: str) -> Lis
         path.insert(0, current_topic)
     
     return path
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Threat-model recommendation helpers (used by services/threat_model_service.py)
+# ─────────────────────────────────────────────────────────────────────────────
+
+def _severity_to_priority(severity: str) -> str:
+    return {
+        "Critical": "P1",
+        "High": "P2",
+        "Medium": "P3",
+        "Low": "P4",
+    }.get(severity, "P3")
+
+
+def generate_recommendations(threats: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    """
+    Build prioritized recommendations from a list of (risk-scored) threats.
+
+    Each threat is expected to contain at least: id, threat, severity,
+    recommendation, impact (and optionally category/technology).
+    """
+    recommendations = []
+    for t in threats or []:
+        recommendations.append({
+            "priority": _severity_to_priority(t.get("severity", "Medium")),
+            "title": t.get("threat") or t.get("name") or t.get("title", "Unnamed threat"),
+            "category": t.get("category", t.get("technology", "General")),
+            "severity": t.get("severity", "Medium"),
+            "description": t.get("impact", ""),
+            "recommendation": t.get("recommendation", "Review and remediate this threat."),
+        })
+    # Highest priority first
+    recommendations.sort(key=lambda r: r["priority"])
+    return recommendations
+
+
+def generate_fix_plan(threats: List[Dict[str, Any]]) -> Dict[str, Any]:
+    """
+    Produce a structured remediation plan grouped by priority.
+    """
+    plan = {"immediate": [], "short_term": [], "long_term": []}
+    for t in threats or []:
+        item = {
+            "id": t.get("id"),
+            "threat": t.get("threat") or t.get("name", "Unnamed threat"),
+            "severity": t.get("severity", "Medium"),
+            "action": t.get("recommendation", "Review and remediate this threat."),
+        }
+        sev = t.get("severity", "Medium")
+        if sev in ("Critical", "High"):
+            plan["immediate"].append(item)
+        elif sev == "Medium":
+            plan["short_term"].append(item)
+        else:
+            plan["long_term"].append(item)
+    return plan
+
+
+def generate_security_report(
+    project_name: str,
+    threats: List[Dict[str, Any]],
+    risk_summary: Dict[str, Any]
+) -> Dict[str, Any]:
+    """
+    Assemble a human-readable security report for a threat model.
+    """
+    severity_counts = risk_summary or {}
+    report_lines = [
+        f"Security Report for: {project_name}",
+        "",
+        "Severity Summary:",
+    ]
+    if severity_counts:
+        for sev, count in severity_counts.items():
+            report_lines.append(f"  - {sev}: {count}")
+    else:
+        report_lines.append("  - No severity data available")
+
+    report_lines.append("")
+    report_lines.append("Identified Threats:")
+    for t in threats or []:
+        report_lines.append(
+            f"  [{t.get('severity', 'Medium')}] {t.get('threat') or t.get('name', 'Unnamed')} "
+            f"({t.get('category', t.get('technology', 'General'))})"
+        )
+        if t.get("recommendation"):
+            report_lines.append(f"      Fix: {t.get('recommendation')}")
+
+    report_text = "\n".join(report_lines)
+    return {
+        "project_name": project_name,
+        "severity_summary": severity_counts,
+        "threat_count": len(threats or []),
+        "report": report_text,
+    }

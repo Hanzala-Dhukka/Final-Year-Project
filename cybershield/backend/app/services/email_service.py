@@ -24,6 +24,57 @@ class EmailService:
     """Service for sending emails."""
     
     @staticmethod
+    async def send_verification_email(email: EmailStr, verification_token: str, user_name: str):
+        """
+        Send email verification email.
+        
+        Args:
+            email: User's email address
+            verification_token: Email verification token
+            user_name: User's name
+        """
+        try:
+            # Create verification link
+            verification_link = f"{core_settings.FRONTEND_URL}/verify-email?token={verification_token}"
+            
+            # Email content
+            subject = "CyberShield - Verify Your Email"
+            body = f"""
+            Hello {user_name},
+            
+            Thank you for registering with CyberShield!
+            
+            Please verify your email address by clicking the link below:
+            {verification_link}
+            
+            This link will expire in 24 hours for security reasons.
+            
+            If you did not create this account, please ignore this email.
+            
+            Best regards,
+            CyberShield Team
+            """
+            
+            # Create message
+            message = MessageSchema(
+                subject=subject,
+                recipients=[email],
+                body=body,
+                subtype="plain"
+            )
+            
+            # Send email
+            fm = FastMail(mail_config)
+            await fm.send_message(message)
+            
+            print(f"Verification email sent to {email}")
+            return True
+            
+        except Exception as e:
+            print(f"Error sending verification email: {e}")
+            return False
+
+    @staticmethod
     async def send_password_reset_email(email: EmailStr, reset_token: str, user_name: str):
         """
         Send password reset email.
