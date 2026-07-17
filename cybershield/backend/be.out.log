@@ -1,0 +1,74 @@
+MongoDB client connected successfully to mongodb://localhost:27017
+Database 'CyberShieldDB' selected
+DEBUG: No GitHub Token detected. Running in unauthenticated mode (60 req/hr limit)
+Collection 'users' already exists
+Collection 'scans' already exists
+Collection 'threat_reports' already exists
+Collection 'vulnerabilities' already exists
+Collection 'owasp_sessions' already exists
+Collection 'quiz_attempts' already exists
+Collection 'glossary_progress' already exists
+Collection 'conversations' already exists
+Collection 'achievements' already exists
+Collection 'certificates' already exists
+Collection 'daily_challenges' already exists
+Collection 'user_progress' already exists
+Collection 'sessions' already exists
+Collection 'refresh_tokens' already exists
+Collection 'audit_logs' already exists
+Indexes created for 'users' collection
+Indexes created for 'security_reports' collection
+Indexes created for 'ai_conversations' collection
+Indexes created for 'progress' collection
+Indexes created for 'quiz_attempts' collection
+Indexes created for 'lab_attempts' collection
+Indexes created for 'sessions' collection
+Indexes created for 'refresh_tokens' collection
+All database indexes created successfully
+MongoDB setup complete
+MongoDB connected successfully
+Scheduler started. Monitoring jobs scheduled every 30 minutes.
+INFO:     127.0.0.1:60083 - "GET /api/v1/health HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:61339 - "POST /api/v1/auth/register HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:49739 - "POST /api/v1/auth/login HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:60316 - "POST /api/v1/auth/login HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:52900 - "GET /openapi.json HTTP/1.1" 200 OK
+MongoDB client connected successfully to mongodb://localhost:27017
+Database 'CyberShieldDB' selected
+DEBUG: No GitHub Token detected. Running in unauthenticated mode (60 req/hr limit)
+ MongoDB connection closed
+MongoDB connection closed
+Scheduler shut down.
+MongoDB client connected successfully to mongodb://localhost:27017
+Database 'CyberShieldDB' selected
+DEBUG: No GitHub Token detected. Running in unauthenticated mode (60 req/hr limit)
+Collection 'users' already exists
+Collection 'scans' already exists
+Collection 'threat_reports' already exists
+Collection 'vulnerabilities' already exists
+Collection 'owasp_sessions' already exists
+Collection 'quiz_attempts' already exists
+Collection 'glossary_progress' already exists
+Collection 'conversations' already exists
+Collection 'achievements' already exists
+Collection 'certificates' already exists
+Collection 'daily_challenges' already exists
+Collection 'user_progress' already exists
+Collection 'sessions' already exists
+Collection 'refresh_tokens' already exists
+Collection 'audit_logs' already exists
+Indexes created for 'users' collection
+Indexes created for 'security_reports' collection
+Indexes created for 'ai_conversations' collection
+Indexes created for 'progress' collection
+Indexes created for 'quiz_attempts' collection
+Indexes created for 'lab_attempts' collection
+Indexes created for 'sessions' collection
+Indexes created for 'refresh_tokens' collection
+All database indexes created successfully
+MongoDB setup complete
+MongoDB connected successfully
+Scheduler started. Monitoring jobs scheduled every 30 minutes.
+MongoDB connection closed
+MongoDB connection closed
+Scheduler shut down.

@@ -1,0 +1,15 @@
+C:\Users\Hanzala\Desktop\Hanzala College\Github\Final-Year-Project\cybershield\backend\app\services\streaming_service.py:9: FutureWarning: 
+
+All support for the `google.generativeai` package has ended. It will no longer be receiving 
+updates or bug fixes. Please switch to the `google.genai` package as soon as possible.
+See README for more details:
+
+https://github.com/google-gemini/deprecated-generative-ai-python/blob/main/README.md
+
+  import google.generativeai as genai
+INFO:     Started server process [4012]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://127.0.0.1:8000 (Press CTRL+C to quit)
+C:\Users\Hanzala\AppData\Local\Programs\Python\Python313\Lib\site-packages\fastapi\openapi\utils.py:207: UserWarning: Duplicate Operation ID health_check_api_v1_health_get for function health_check at C:\Users\Hanzala\Desktop\Hanzala College\Github\Final-Year-Project\cybershield\backend\app\routers\lab_routes.py
+  warnings.warn(message, stacklevel=1)
