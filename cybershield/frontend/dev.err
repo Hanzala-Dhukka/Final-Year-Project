@@ -1,0 +1,382 @@
+[2m1:49:35 am[22m [31m[1m[vite][22m[39m [31m[2m(client)[22m[39m Pre-transform error: Failed to load url /src/services/dashboardService.js (resolved id: C:/Users/Hanzala/Desktop/Hanzala College/Github/Final-Year-Project/cybershield/frontend/src/services/dashboardService.js) in C:/Users/Hanzala/Desktop/Hanzala College/Github/Final-Year-Project/cybershield/frontend/src/pages/Dashboard/Dashboard.jsx. Does the file exist?
+[2m1:49:35 am[22m [31m[1m[vite][22m[39m [31m[2m(client)[22m[39m Pre-transform error: Failed to load url /src/components/Dashboard/StatsCards.jsx (resolved id: C:/Users/Hanzala/Desktop/Hanzala College/Github/Final-Year-Project/cybershield/frontend/src/components/Dashboard/StatsCards.jsx) in C:/Users/Hanzala/Desktop/Hanzala College/Github/Final-Year-Project/cybershield/frontend/src/pages/Dashboard/Dashboard.jsx. Does the file exist?
+[2m1:49:35 am[22m [31m[1m[vite][22m[39m [31m[2m(client)[22m[39m Pre-transform error: Failed to load url /src/components/Dashboard/QuickActions.jsx (resolved id: C:/Users/Hanzala/Desktop/Hanzala College/Github/Final-Year-Project/cybershield/frontend/src/components/Dashboard/QuickActions.jsx) in C:/Users/Hanzala/Desktop/Hanzala College/Github/Final-Year-Project/cybershield/frontend/src/pages/Dashboard/Dashboard.jsx. Does the file exist?
+[2m1:49:35 am[22m [31m[1m[vite][22m[39m [31m[2m(client)[22m[39m Pre-transform error: Failed to load url /src/components/Dashboard/WelcomeCard.jsx (resolved id: C:/Users/Hanzala/Desktop/Hanzala College/Github/Final-Year-Project/cybershield/frontend/src/components/Dashboard/WelcomeCard.jsx) in C:/Users/Hanzala/Desktop/Hanzala College/Github/Final-Year-Project/cybershield/frontend/src/pages/Dashboard/Dashboard.jsx. Does the file exist?
+[2m1:49:35 am[22m [31m[1m[vite][22m[39m [31m[2m(client)[22m[39m Pre-transform error: Failed to load url /src/components/Dashboard/SecurityGauge.jsx (resolved id: C:/Users/Hanzala/Desktop/Hanzala College/Github/Final-Year-Project/cybershield/frontend/src/components/Dashboard/SecurityGauge.jsx) in C:/Users/Hanzala/Desktop/Hanzala College/Github/Final-Year-Project/cybershield/frontend/src/pages/Dashboard/Dashboard.jsx. Does the file exist?
+[2m1:49:35 am[22m [31m[1m[vite][22m[39m [31m[2m(client)[22m[39m Pre-transform error: Failed to load url /src/components/Dashboard/RecentScans.jsx (resolved id: C:/Users/Hanzala/Desktop/Hanzala College/Github/Final-Year-Project/cybershield/frontend/src/components/Dashboard/RecentScans.jsx) in C:/Users/Hanzala/Desktop/Hanzala College/Github/Final-Year-Project/cybershield/frontend/src/pages/Dashboard/Dashboard.jsx. Does the file exist?
+[2m1:49:35 am[22m [31m[1m[vite][22m[39m [31m[2m(client)[22m[39m Pre-transform error: Failed to load url /src/components/Dashboard/RecentReports.jsx (resolved id: C:/Users/Hanzala/Desktop/Hanzala College/Github/Final-Year-Project/cybershield/frontend/src/components/Dashboard/RecentReports.jsx) in C:/Users/Hanzala/Desktop/Hanzala College/Github/Final-Year-Project/cybershield/frontend/src/pages/Dashboard/Dashboard.jsx. Does the file exist?
+[2m1:49:35 am[22m [31m[1m[vite][22m[39m [31m[2m(client)[22m[39m Pre-transform error: Failed to load url /src/components/Dashboard/QuizProgress.jsx (resolved id: C:/Users/Hanzala/Desktop/Hanzala College/Github/Final-Year-Project/cybershield/frontend/src/components/Dashboard/QuizProgress.jsx) in C:/Users/Hanzala/Desktop/Hanzala College/Github/Final-Year-Project/cybershield/frontend/src/pages/Dashboard/Dashboard.jsx. Does the file exist?
+[2m1:49:35 am[22m [31m[1m[vite][22m[39m [31m[2m(client)[22m[39m Pre-transform error: Failed to load url /src/components/Dashboard/DailyChallengeCard.jsx (resolved id: C:/Users/Hanzala/Desktop/Hanzala College/Github/Final-Year-Project/cybershield/frontend/src/components/Dashboard/DailyChallengeCard.jsx) in C:/Users/Hanzala/Desktop/Hanzala College/Github/Final-Year-Project/cybershield/frontend/src/pages/Dashboard/Dashboard.jsx. Does the file exist?
+[2m1:49:35 am[22m [31m[1m[vite][22m[39m [31m[2m(client)[22m[39m Pre-transform error: Failed to load url /src/components/Dashboard/LearningProgress.jsx (resolved id: C:/Users/Hanzala/Desktop/Hanzala College/Github/Final-Year-Project/cybershield/frontend/src/components/Dashboard/LearningProgress.jsx) in C:/Users/Hanzala/Desktop/Hanzala College/Github/Final-Year-Project/cybershield/frontend/src/pages/Dashboard/Dashboard.jsx. Does the file exist?
+[2m1:49:35 am[22m [31m[1m[vite][22m[39m [31m[2m(client)[22m[39m Pre-transform error: Failed to load url /src/components/Dashboard/ActivityTimeline.jsx (resolved id: C:/Users/Hanzala/Desktop/Hanzala College/Github/Final-Year-Project/cybershield/frontend/src/components/Dashboard/ActivityTimeline.jsx) in C:/Users/Hanzala/Desktop/Hanzala College/Github/Final-Year-Project/cybershield/frontend/src/pages/Dashboard/Dashboard.jsx. Does the file exist?
+[2m1:49:35 am[22m [31m[1m[vite][22m[39m [31m[2m(client)[22m[39m Pre-transform error: Failed to load url /src/components/Achievement/ProgressCard.jsx (resolved id: C:/Users/Hanzala/Desktop/Hanzala College/Github/Final-Year-Project/cybershield/frontend/src/components/Achievement/ProgressCard.jsx) in C:/Users/Hanzala/Desktop/Hanzala College/Github/Final-Year-Project/cybershield/frontend/src/pages/Dashboard/Dashboard.jsx. Does the file exist?
+[2m1:49:35 am[22m [31m[1m[vite][22m[39m [31m[2m(client)[22m[39m Pre-transform error: Failed to load url /src/components/Achievement/LevelCard.jsx (resolved id: C:/Users/Hanzala/Desktop/Hanzala College/Github/Final-Year-Project/cybershield/frontend/src/components/Achievement/LevelCard.jsx) in C:/Users/Hanzala/Desktop/Hanzala College/Github/Final-Year-Project/cybershield/frontend/src/pages/Dashboard/Dashboard.jsx. Does the file exist?
+[2m1:49:35 am[22m [31m[1m[vite][22m[39m [31m[2m(client)[22m[39m Pre-transform error: Failed to load url /src/services/projectService.js (resolved id: C:/Users/Hanzala/Desktop/Hanzala College/Github/Final-Year-Project/cybershield/frontend/src/services/projectService.js) in C:/Users/Hanzala/Desktop/Hanzala College/Github/Final-Year-Project/cybershield/frontend/src/pages/Projects/VersionHistory.jsx. Does the file exist?
+[2m1:49:35 am[22m [31m[1m[vite][22m[39m [31m[2m(client)[22m[39m Pre-transform error: Failed to load url /src/components/Projects/Timeline.jsx (resolved id: C:/Users/Hanzala/Desktop/Hanzala College/Github/Final-Year-Project/cybershield/frontend/src/components/Projects/Timeline.jsx) in C:/Users/Hanzala/Desktop/Hanzala College/Github/Final-Year-Project/cybershield/frontend/src/pages/Projects/ProjectDashboard.jsx. Does the file exist?
+[2m1:49:35 am[22m [31m[1m[vite][22m[39m [31m[2m(client)[22m[39m Pre-transform error: Failed to load url /src/components/Projects/MemberCard.jsx (resolved id: C:/Users/Hanzala/Desktop/Hanzala College/Github/Final-Year-Project/cybershield/frontend/src/components/Projects/MemberCard.jsx) in C:/Users/Hanzala/Desktop/Hanzala College/Github/Final-Year-Project/cybershield/frontend/src/pages/Projects/ProjectDashboard.jsx. Does the file exist?
+[2m1:49:35 am[22m [31m[1m[vite][22m[39m [31m[2m(client)[22m[39m Pre-transform error: Failed to load url /src/components/Projects/CommentBox.jsx (resolved id: C:/Users/Hanzala/Desktop/Hanzala College/Github/Final-Year-Project/cybershield/frontend/src/components/Projects/CommentBox.jsx) in C:/Users/Hanzala/Desktop/Hanzala College/Github/Final-Year-Project/cybershield/frontend/src/pages/Projects/ProjectDashboard.jsx. Does the file exist?
+[2m1:49:35 am[22m [31m[1m[vite][22m[39m [31m[2m(client)[22m[39m Pre-transform error: Failed to load url /src/components/Projects/AuditLogTable.jsx (resolved id: C:/Users/Hanzala/Desktop/Hanzala College/Github/Final-Year-Project/cybershield/frontend/src/components/Projects/AuditLogTable.jsx) in C:/Users/Hanzala/Desktop/Hanzala College/Github/Final-Year-Project/cybershield/frontend/src/pages/Projects/ProjectDashboard.jsx. Does the file exist?
+[2m1:49:35 am[22m [31m[1m[vite][22m[39m [31m[2m(client)[22m[39m Pre-transform error: Failed to load url /src/components/Projects/ShareDialog.jsx (resolved id: C:/Users/Hanzala/Desktop/Hanzala College/Github/Final-Year-Project/cybershield/frontend/src/components/Projects/ShareDialog.jsx) in C:/Users/Hanzala/Desktop/Hanzala College/Github/Final-Year-Project/cybershield/frontend/src/pages/Projects/ProjectDashboard.jsx. Does the file exist?
+[2m1:49:35 am[22m [31m[1m[vite][22m[39m [31m[2m(client)[22m[39m Pre-transform error: Failed to load url /src/services/projectService.js (resolved id: C:/Users/Hanzala/Desktop/Hanzala College/Github/Final-Year-Project/cybershield/frontend/src/services/projectService.js) in C:/Users/Hanzala/Desktop/Hanzala College/Github/Final-Year-Project/cybershield/frontend/src/pages/Projects/VersionHistory.jsx. Does the file exist?
+[2m1:49:35 am[22m [31m[1m[vite][22m[39m [31m[2m(client)[22m[39m Pre-transform error: Failed to load url /src/services/projectService.js (resolved id: C:/Users/Hanzala/Desktop/Hanzala College/Github/Final-Year-Project/cybershield/frontend/src/services/projectService.js) in C:/Users/Hanzala/Desktop/Hanzala College/Github/Final-Year-Project/cybershield/frontend/src/pages/Projects/VersionHistory.jsx. Does the file exist?
+[2m1:49:35 am[22m [31m[1m[vite][22m[39m [31m[2m(client)[22m[39m Pre-transform error: Failed to load url /src/pages/ThreatReports/ReportViewer.jsx (resolved id: C:/Users/Hanzala/Desktop/Hanzala College/Github/Final-Year-Project/cybershield/frontend/src/pages/ThreatReports/ReportViewer.jsx) in C:/Users/Hanzala/Desktop/Hanzala College/Github/Final-Year-Project/cybershield/frontend/src/routes/AppRoutes.jsx. Does the file exist?
+[2m1:49:35 am[22m [31m[1m[vite][22m[39m [31m[2m(client)[22m[39m Pre-transform error: Failed to load url /src/pages/ThreatDashboard/ThreatDashboard.jsx (resolved id: C:/Users/Hanzala/Desktop/Hanzala College/Github/Final-Year-Project/cybershield/frontend/src/pages/ThreatDashboard/ThreatDashboard.jsx) in C:/Users/Hanzala/Desktop/Hanzala College/Github/Final-Year-Project/cybershield/frontend/src/routes/AppRoutes.jsx. Does the file exist?
+[2m1:49:35 am[22m [31m[1m[vite][22m[39m [31m[2m(client)[22m[39m Pre-transform error: Failed to load url /src/pages/Projects/Projects.jsx (resolved id: C:/Users/Hanzala/Desktop/Hanzala College/Github/Final-Year-Project/cybershield/frontend/src/pages/Projects/Projects.jsx) in C:/Users/Hanzala/Desktop/Hanzala College/Github/Final-Year-Project/cybershield/frontend/src/routes/AppRoutes.jsx. Does the file exist?
+[2m1:49:35 am[22m [31m[1m[vite][22m[39m [31m[2m(client)[22m[39m Pre-transform error: Failed to load url /src/pages/Projects/ActivityTimeline.jsx (resolved id: C:/Users/Hanzala/Desktop/Hanzala College/Github/Final-Year-Project/cybershield/frontend/src/pages/Projects/ActivityTimeline.jsx) in C:/Users/Hanzala/Desktop/Hanzala College/Github/Final-Year-Project/cybershield/frontend/src/routes/AppRoutes.jsx. Does the file exist?
+[2m1:49:35 am[22m [31m[1m[vite][22m[39m [31m[2m(client)[22m[39m Pre-transform error: Failed to load url /src/pages/Projects/TeamMembers.jsx (resolved id: C:/Users/Hanzala/Desktop/Hanzala College/Github/Final-Year-Project/cybershield/frontend/src/pages/Projects/TeamMembers.jsx) in C:/Users/Hanzala/Desktop/Hanzala College/Github/Final-Year-Project/cybershield/frontend/src/routes/AppRoutes.jsx. Does the file exist?
+[2m1:49:36 am[22m [31m[1m[vite][22m[39m [31m[2m(client)[22m[39m Pre-transform error: Failed to load url /src/pages/ThreatDashboard/ThreatDashboard.jsx (resolved id: C:/Users/Hanzala/Desktop/Hanzala College/Github/Final-Year-Project/cybershield/frontend/src/pages/ThreatDashboard/ThreatDashboard.jsx) in C:/Users/Hanzala/Desktop/Hanzala College/Github/Final-Year-Project/cybershield/frontend/src/routes/AppRoutes.jsx. Does the file exist?
+[2m1:49:36 am[22m [31m[1m[vite][22m[39m [31m[2m(client)[22m[39m Pre-transform error: Failed to load url /src/pages/ThreatReports/ReportViewer.jsx (resolved id: C:/Users/Hanzala/Desktop/Hanzala College/Github/Final-Year-Project/cybershield/frontend/src/pages/ThreatReports/ReportViewer.jsx) in C:/Users/Hanzala/Desktop/Hanzala College/Github/Final-Year-Project/cybershield/frontend/src/routes/AppRoutes.jsx. Does the file exist?
+[2m1:49:36 am[22m [31m[1m[vite][22m[39m [31m[2m(client)[22m[39m Pre-transform error: Failed to load url /src/pages/Projects/ProjectDashboard.jsx (resolved id: C:/Users/Hanzala/Desktop/Hanzala College/Github/Final-Year-Project/cybershield/frontend/src/pages/Projects/ProjectDashboard.jsx) in C:/Users/Hanzala/Desktop/Hanzala College/Github/Final-Year-Project/cybershield/frontend/src/routes/AppRoutes.jsx. Does the file exist?
+[2m1:49:36 am[22m [31m[1m[vite][22m[39m [31m[2m(client)[22m[39m Pre-transform error: Failed to load url /src/pages/Projects/ProjectDetails.jsx (resolved id: C:/Users/Hanzala/Desktop/Hanzala College/Github/Final-Year-Project/cybershield/frontend/src/pages/Projects/ProjectDetails.jsx) in C:/Users/Hanzala/Desktop/Hanzala College/Github/Final-Year-Project/cybershield/frontend/src/routes/AppRoutes.jsx. Does the file exist?
+[2m1:49:36 am[22m [31m[1m[vite][22m[39m [31m[2m(client)[22m[39m Pre-transform error: Failed to load url /src/pages/Projects/Projects.jsx (resolved id: C:/Users/Hanzala/Desktop/Hanzala College/Github/Final-Year-Project/cybershield/frontend/src/pages/Projects/Projects.jsx) in C:/Users/Hanzala/Desktop/Hanzala College/Github/Final-Year-Project/cybershield/frontend/src/routes/AppRoutes.jsx. Does the file exist?
+[2m1:49:36 am[22m [31m[1m[vite][22m[39m [31m[2m(client)[22m[39m Pre-transform error: Failed to load url /src/pages/Projects/TeamMembers.jsx (resolved id: C:/Users/Hanzala/Desktop/Hanzala College/Github/Final-Year-Project/cybershield/frontend/src/pages/Projects/TeamMembers.jsx) in C:/Users/Hanzala/Desktop/Hanzala College/Github/Final-Year-Project/cybershield/frontend/src/routes/AppRoutes.jsx. Does the file exist?
+[2m1:49:36 am[22m [31m[1m[vite][22m[39m [31m[2m(client)[22m[39m Pre-transform error: Failed to load url /src/pages/Projects/ActivityTimeline.jsx (resolved id: C:/Users/Hanzala/Desktop/Hanzala College/Github/Final-Year-Project/cybershield/frontend/src/pages/Projects/ActivityTimeline.jsx) in C:/Users/Hanzala/Desktop/Hanzala College/Github/Final-Year-Project/cybershield/frontend/src/routes/AppRoutes.jsx. Does the file exist?
+[2m1:49:36 am[22m [31m[1m[vite][22m[39m [31m[2m(client)[22m[39m Pre-transform error: Failed to load url /src/pages/Projects/VersionHistory.jsx (resolved id: C:/Users/Hanzala/Desktop/Hanzala College/Github/Final-Year-Project/cybershield/frontend/src/pages/Projects/VersionHistory.jsx) in C:/Users/Hanzala/Desktop/Hanzala College/Github/Final-Year-Project/cybershield/frontend/src/routes/AppRoutes.jsx. Does the file exist?
+[2m2:34:08 am[22m [31m[1m[vite][22m[39m [31m[2m(client)[22m[39m Pre-transform error: Failed to resolve import "../contexts/AuthContext" from "src/pages/Dashboard/Dashboard.jsx". Does the file exist?
+  Plugin: [35mvite:import-analysis[39m
+  File: [36mC:/Users/Hanzala/Desktop/Hanzala College/Github/Final-Year-Project/cybershield/frontend/src/pages/Dashboard/Dashboard.jsx[39m:4:24
+[33m  19 |  import { Container, Grid, Box, Typography, Button, Alert, Skeleton } from "@mui/material";
+  20 |  import { Refresh } from "@mui/icons-material";
+  21 |  import { useAuth } from "../contexts/AuthContext";
+     |                           ^
+  22 |  import { getDashboard } from "../services/dashboardService";
+  23 |  import WelcomeCard from "../components/Dashboard/WelcomeCard";[39m
+[2m2:34:09 am[22m [31m[1m[vite][22m[39m [31mInternal server error: Failed to resolve import "../contexts/AuthContext" from "src/pages/Dashboard/Dashboard.jsx". Does the file exist?[39m
+  Plugin: [35mvite:import-analysis[39m
+  File: [36mC:/Users/Hanzala/Desktop/Hanzala College/Github/Final-Year-Project/cybershield/frontend/src/pages/Dashboard/Dashboard.jsx[39m:4:24
+[33m  19 |  import { Container, Grid, Box, Typography, Button, Alert, Skeleton } from "@mui/material";
+  20 |  import { Refresh } from "@mui/icons-material";
+  21 |  import { useAuth } from "../contexts/AuthContext";
+     |                           ^
+  22 |  import { getDashboard } from "../services/dashboardService";
+  23 |  import WelcomeCard from "../components/Dashboard/WelcomeCard";[39m
+      at TransformPluginContext._formatLog (file:///C:/Users/Hanzala/Desktop/Hanzala%20College/Github/Final-Year-Project/cybershield/frontend/node_modules/vite/dist/node/chunks/dep-Dq2t6Dq0.js:42553:41)
+      at TransformPluginContext.error (file:///C:/Users/Hanzala/Desktop/Hanzala%20College/Github/Final-Year-Project/cybershield/frontend/node_modules/vite/dist/node/chunks/dep-Dq2t6Dq0.js:42550:16)
+      at normalizeUrl (file:///C:/Users/Hanzala/Desktop/Hanzala%20College/Github/Final-Year-Project/cybershield/frontend/node_modules/vite/dist/node/chunks/dep-Dq2t6Dq0.js:40529:23)
+      at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+      at async file:///C:/Users/Hanzala/Desktop/Hanzala%20College/Github/Final-Year-Project/cybershield/frontend/node_modules/vite/dist/node/chunks/dep-Dq2t6Dq0.js:40648:37
+      at async Promise.all (index 6)
+      at async TransformPluginContext.transform (file:///C:/Users/Hanzala/Desktop/Hanzala%20College/Github/Final-Year-Project/cybershield/frontend/node_modules/vite/dist/node/chunks/dep-Dq2t6Dq0.js:40575:7)
+      at async EnvironmentPluginContainer.transform (file:///C:/Users/Hanzala/Desktop/Hanzala%20College/Github/Final-Year-Project/cybershield/frontend/node_modules/vite/dist/node/chunks/dep-Dq2t6Dq0.js:42348:18)
+      at async loadAndTransform (file:///C:/Users/Hanzala/Desktop/Hanzala%20College/Github/Final-Year-Project/cybershield/frontend/node_modules/vite/dist/node/chunks/dep-Dq2t6Dq0.js:35740:27)
+      at async viteTransformMiddleware (file:///C:/Users/Hanzala/Desktop/Hanzala%20College/Github/Final-Year-Project/cybershield/frontend/node_modules/vite/dist/node/chunks/dep-Dq2t6Dq0.js:37264:24)
+[2m2:34:19 am[22m [31m[1m[vite][22m[39m [31m[2m(client)[22m[39m Pre-transform error: Failed to resolve import "../contexts/AuthContext" from "src/pages/Dashboard/Dashboard.jsx". Does the file exist?
+  Plugin: [35mvite:import-analysis[39m
+  File: [36mC:/Users/Hanzala/Desktop/Hanzala College/Github/Final-Year-Project/cybershield/frontend/src/pages/Dashboard/Dashboard.jsx[39m:4:24
+[33m  19 |  import { Container, Grid, Box, Typography, Button, Alert, Skeleton } from "@mui/material";
+  20 |  import { Refresh } from "@mui/icons-material";
+  21 |  import { useAuth } from "../contexts/AuthContext";
+     |                           ^
+  22 |  import { getDashboard } from "../services/dashboardService";
+  23 |  import WelcomeCard from "../components/Dashboard/WelcomeCard";[39m
+[2m2:34:19 am[22m [31m[1m[vite][22m[39m [31mInternal server error: Failed to resolve import "../contexts/AuthContext" from "src/pages/Dashboard/Dashboard.jsx". Does the file exist?[39m
+  Plugin: [35mvite:import-analysis[39m
+  File: [36mC:/Users/Hanzala/Desktop/Hanzala College/Github/Final-Year-Project/cybershield/frontend/src/pages/Dashboard/Dashboard.jsx[39m:4:24
+[33m  19 |  import { Container, Grid, Box, Typography, Button, Alert, Skeleton } from "@mui/material";
+  20 |  import { Refresh } from "@mui/icons-material";
+  21 |  import { useAuth } from "../contexts/AuthContext";
+     |                           ^
+  22 |  import { getDashboard } from "../services/dashboardService";
+  23 |  import WelcomeCard from "../components/Dashboard/WelcomeCard";[39m
+      at TransformPluginContext._formatLog (file:///C:/Users/Hanzala/Desktop/Hanzala%20College/Github/Final-Year-Project/cybershield/frontend/node_modules/vite/dist/node/chunks/dep-Dq2t6Dq0.js:42553:41)
+      at TransformPluginContext.error (file:///C:/Users/Hanzala/Desktop/Hanzala%20College/Github/Final-Year-Project/cybershield/frontend/node_modules/vite/dist/node/chunks/dep-Dq2t6Dq0.js:42550:16)
+      at normalizeUrl (file:///C:/Users/Hanzala/Desktop/Hanzala%20College/Github/Final-Year-Project/cybershield/frontend/node_modules/vite/dist/node/chunks/dep-Dq2t6Dq0.js:40529:23)
+      at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+      at async file:///C:/Users/Hanzala/Desktop/Hanzala%20College/Github/Final-Year-Project/cybershield/frontend/node_modules/vite/dist/node/chunks/dep-Dq2t6Dq0.js:40648:37
+      at async Promise.all (index 6)
+      at async TransformPluginContext.transform (file:///C:/Users/Hanzala/Desktop/Hanzala%20College/Github/Final-Year-Project/cybershield/frontend/node_modules/vite/dist/node/chunks/dep-Dq2t6Dq0.js:40575:7)
+      at async EnvironmentPluginContainer.transform (file:///C:/Users/Hanzala/Desktop/Hanzala%20College/Github/Final-Year-Project/cybershield/frontend/node_modules/vite/dist/node/chunks/dep-Dq2t6Dq0.js:42348:18)
+      at async loadAndTransform (file:///C:/Users/Hanzala/Desktop/Hanzala%20College/Github/Final-Year-Project/cybershield/frontend/node_modules/vite/dist/node/chunks/dep-Dq2t6Dq0.js:35740:27)
+      at async viteTransformMiddleware (file:///C:/Users/Hanzala/Desktop/Hanzala%20College/Github/Final-Year-Project/cybershield/frontend/node_modules/vite/dist/node/chunks/dep-Dq2t6Dq0.js:37264:24)
+[2m2:34:58 am[22m [31m[1m[vite][22m[39m [31m[2m(client)[22m[39m Pre-transform error: Failed to resolve import "../contexts/AuthContext" from "src/pages/Dashboard/Dashboard.jsx". Does the file exist?
+  Plugin: [35mvite:import-analysis[39m
+  File: [36mC:/Users/Hanzala/Desktop/Hanzala College/Github/Final-Year-Project/cybershield/frontend/src/pages/Dashboard/Dashboard.jsx[39m:4:24
+[33m  19 |  import { Container, Grid, Box, Typography, Button, Alert, Skeleton } from "@mui/material";
+  20 |  import { Refresh } from "@mui/icons-material";
+  21 |  import { useAuth } from "../contexts/AuthContext";
+     |                           ^
+  22 |  import { getDashboard } from "../services/dashboardService";
+  23 |  import WelcomeCard from "../components/Dashboard/WelcomeCard";[39m
+[2m2:34:58 am[22m [31m[1m[vite][22m[39m [31mInternal server error: Failed to resolve import "../contexts/AuthContext" from "src/pages/Dashboard/Dashboard.jsx". Does the file exist?[39m
+  Plugin: [35mvite:import-analysis[39m
+  File: [36mC:/Users/Hanzala/Desktop/Hanzala College/Github/Final-Year-Project/cybershield/frontend/src/pages/Dashboard/Dashboard.jsx[39m:4:24
+[33m  19 |  import { Container, Grid, Box, Typography, Button, Alert, Skeleton } from "@mui/material";
+  20 |  import { Refresh } from "@mui/icons-material";
+  21 |  import { useAuth } from "../contexts/AuthContext";
+     |                           ^
+  22 |  import { getDashboard } from "../services/dashboardService";
+  23 |  import WelcomeCard from "../components/Dashboard/WelcomeCard";[39m
+      at TransformPluginContext._formatLog (file:///C:/Users/Hanzala/Desktop/Hanzala%20College/Github/Final-Year-Project/cybershield/frontend/node_modules/vite/dist/node/chunks/dep-Dq2t6Dq0.js:42553:41)
+      at TransformPluginContext.error (file:///C:/Users/Hanzala/Desktop/Hanzala%20College/Github/Final-Year-Project/cybershield/frontend/node_modules/vite/dist/node/chunks/dep-Dq2t6Dq0.js:42550:16)
+      at normalizeUrl (file:///C:/Users/Hanzala/Desktop/Hanzala%20College/Github/Final-Year-Project/cybershield/frontend/node_modules/vite/dist/node/chunks/dep-Dq2t6Dq0.js:40529:23)
+      at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+      at async file:///C:/Users/Hanzala/Desktop/Hanzala%20College/Github/Final-Year-Project/cybershield/frontend/node_modules/vite/dist/node/chunks/dep-Dq2t6Dq0.js:40648:37
+      at async Promise.all (index 6)
+      at async TransformPluginContext.transform (file:///C:/Users/Hanzala/Desktop/Hanzala%20College/Github/Final-Year-Project/cybershield/frontend/node_modules/vite/dist/node/chunks/dep-Dq2t6Dq0.js:40575:7)
+      at async EnvironmentPluginContainer.transform (file:///C:/Users/Hanzala/Desktop/Hanzala%20College/Github/Final-Year-Project/cybershield/frontend/node_modules/vite/dist/node/chunks/dep-Dq2t6Dq0.js:42348:18)
+      at async loadAndTransform (file:///C:/Users/Hanzala/Desktop/Hanzala%20College/Github/Final-Year-Project/cybershield/frontend/node_modules/vite/dist/node/chunks/dep-Dq2t6Dq0.js:35740:27)
+      at async viteTransformMiddleware (file:///C:/Users/Hanzala/Desktop/Hanzala%20College/Github/Final-Year-Project/cybershield/frontend/node_modules/vite/dist/node/chunks/dep-Dq2t6Dq0.js:37264:24)
+[2m2:35:13 am[22m [31m[1m[vite][22m[39m [31m[2m(client)[22m[39m Pre-transform error: Failed to resolve import "../contexts/AuthContext" from "src/pages/Dashboard/Dashboard.jsx". Does the file exist?
+  Plugin: [35mvite:import-analysis[39m
+  File: [36mC:/Users/Hanzala/Desktop/Hanzala College/Github/Final-Year-Project/cybershield/frontend/src/pages/Dashboard/Dashboard.jsx[39m:4:24
+[33m  19 |  import { Container, Grid, Box, Typography, Button, Alert, Skeleton } from "@mui/material";
+  20 |  import { Refresh } from "@mui/icons-material";
+  21 |  import { useAuth } from "../contexts/AuthContext";
+     |                           ^
+  22 |  import { getDashboard } from "../services/dashboardService";
+  23 |  import WelcomeCard from "../components/Dashboard/WelcomeCard";[39m
+[2m2:35:13 am[22m [31m[1m[vite][22m[39m [31mInternal server error: Failed to resolve import "../contexts/AuthContext" from "src/pages/Dashboard/Dashboard.jsx". Does the file exist?[39m
+  Plugin: [35mvite:import-analysis[39m
+  File: [36mC:/Users/Hanzala/Desktop/Hanzala College/Github/Final-Year-Project/cybershield/frontend/src/pages/Dashboard/Dashboard.jsx[39m:4:24
+[33m  19 |  import { Container, Grid, Box, Typography, Button, Alert, Skeleton } from "@mui/material";
+  20 |  import { Refresh } from "@mui/icons-material";
+  21 |  import { useAuth } from "../contexts/AuthContext";
+     |                           ^
+  22 |  import { getDashboard } from "../services/dashboardService";
+  23 |  import WelcomeCard from "../components/Dashboard/WelcomeCard";[39m
+      at TransformPluginContext._formatLog (file:///C:/Users/Hanzala/Desktop/Hanzala%20College/Github/Final-Year-Project/cybershield/frontend/node_modules/vite/dist/node/chunks/dep-Dq2t6Dq0.js:42553:41)
+      at TransformPluginContext.error (file:///C:/Users/Hanzala/Desktop/Hanzala%20College/Github/Final-Year-Project/cybershield/frontend/node_modules/vite/dist/node/chunks/dep-Dq2t6Dq0.js:42550:16)
+      at normalizeUrl (file:///C:/Users/Hanzala/Desktop/Hanzala%20College/Github/Final-Year-Project/cybershield/frontend/node_modules/vite/dist/node/chunks/dep-Dq2t6Dq0.js:40529:23)
+      at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+      at async file:///C:/Users/Hanzala/Desktop/Hanzala%20College/Github/Final-Year-Project/cybershield/frontend/node_modules/vite/dist/node/chunks/dep-Dq2t6Dq0.js:40648:37
+      at async Promise.all (index 6)
+      at async TransformPluginContext.transform (file:///C:/Users/Hanzala/Desktop/Hanzala%20College/Github/Final-Year-Project/cybershield/frontend/node_modules/vite/dist/node/chunks/dep-Dq2t6Dq0.js:40575:7)
+      at async EnvironmentPluginContainer.transform (file:///C:/Users/Hanzala/Desktop/Hanzala%20College/Github/Final-Year-Project/cybershield/frontend/node_modules/vite/dist/node/chunks/dep-Dq2t6Dq0.js:42348:18)
+      at async loadAndTransform (file:///C:/Users/Hanzala/Desktop/Hanzala%20College/Github/Final-Year-Project/cybershield/frontend/node_modules/vite/dist/node/chunks/dep-Dq2t6Dq0.js:35740:27)
+      at async viteTransformMiddleware (file:///C:/Users/Hanzala/Desktop/Hanzala%20College/Github/Final-Year-Project/cybershield/frontend/node_modules/vite/dist/node/chunks/dep-Dq2t6Dq0.js:37264:24)
+[2m2:35:28 am[22m [31m[1m[vite][22m[39m [31m[2m(client)[22m[39m Pre-transform error: Failed to resolve import "../contexts/AuthContext" from "src/pages/Dashboard/Dashboard.jsx". Does the file exist?
+  Plugin: [35mvite:import-analysis[39m
+  File: [36mC:/Users/Hanzala/Desktop/Hanzala College/Github/Final-Year-Project/cybershield/frontend/src/pages/Dashboard/Dashboard.jsx[39m:4:24
+[33m  19 |  import { Container, Grid, Box, Typography, Button, Alert, Skeleton } from "@mui/material";
+  20 |  import { Refresh } from "@mui/icons-material";
+  21 |  import { useAuth } from "../contexts/AuthContext";
+     |                           ^
+  22 |  import { getDashboard } from "../services/dashboardService";
+  23 |  import WelcomeCard from "../components/Dashboard/WelcomeCard";[39m
+[2m2:35:28 am[22m [31m[1m[vite][22m[39m [31mInternal server error: Failed to resolve import "../contexts/AuthContext" from "src/pages/Dashboard/Dashboard.jsx". Does the file exist?[39m
+  Plugin: [35mvite:import-analysis[39m
+  File: [36mC:/Users/Hanzala/Desktop/Hanzala College/Github/Final-Year-Project/cybershield/frontend/src/pages/Dashboard/Dashboard.jsx[39m:4:24
+[33m  19 |  import { Container, Grid, Box, Typography, Button, Alert, Skeleton } from "@mui/material";
+  20 |  import { Refresh } from "@mui/icons-material";
+  21 |  import { useAuth } from "../contexts/AuthContext";
+     |                           ^
+  22 |  import { getDashboard } from "../services/dashboardService";
+  23 |  import WelcomeCard from "../components/Dashboard/WelcomeCard";[39m
+      at TransformPluginContext._formatLog (file:///C:/Users/Hanzala/Desktop/Hanzala%20College/Github/Final-Year-Project/cybershield/frontend/node_modules/vite/dist/node/chunks/dep-Dq2t6Dq0.js:42553:41)
+      at TransformPluginContext.error (file:///C:/Users/Hanzala/Desktop/Hanzala%20College/Github/Final-Year-Project/cybershield/frontend/node_modules/vite/dist/node/chunks/dep-Dq2t6Dq0.js:42550:16)
+      at normalizeUrl (file:///C:/Users/Hanzala/Desktop/Hanzala%20College/Github/Final-Year-Project/cybershield/frontend/node_modules/vite/dist/node/chunks/dep-Dq2t6Dq0.js:40529:23)
+      at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+      at async file:///C:/Users/Hanzala/Desktop/Hanzala%20College/Github/Final-Year-Project/cybershield/frontend/node_modules/vite/dist/node/chunks/dep-Dq2t6Dq0.js:40648:37
+      at async Promise.all (index 6)
+      at async TransformPluginContext.transform (file:///C:/Users/Hanzala/Desktop/Hanzala%20College/Github/Final-Year-Project/cybershield/frontend/node_modules/vite/dist/node/chunks/dep-Dq2t6Dq0.js:40575:7)
+      at async EnvironmentPluginContainer.transform (file:///C:/Users/Hanzala/Desktop/Hanzala%20College/Github/Final-Year-Project/cybershield/frontend/node_modules/vite/dist/node/chunks/dep-Dq2t6Dq0.js:42348:18)
+      at async loadAndTransform (file:///C:/Users/Hanzala/Desktop/Hanzala%20College/Github/Final-Year-Project/cybershield/frontend/node_modules/vite/dist/node/chunks/dep-Dq2t6Dq0.js:35740:27)
+      at async viteTransformMiddleware (file:///C:/Users/Hanzala/Desktop/Hanzala%20College/Github/Final-Year-Project/cybershield/frontend/node_modules/vite/dist/node/chunks/dep-Dq2t6Dq0.js:37264:24)
+[2m2:35:39 am[22m [31m[1m[vite][22m[39m [31m[2m(client)[22m[39m Pre-transform error: Failed to resolve import "../contexts/AuthContext" from "src/pages/Dashboard/Dashboard.jsx". Does the file exist?
+  Plugin: [35mvite:import-analysis[39m
+  File: [36mC:/Users/Hanzala/Desktop/Hanzala College/Github/Final-Year-Project/cybershield/frontend/src/pages/Dashboard/Dashboard.jsx[39m:4:24
+[33m  19 |  import { Container, Grid, Box, Typography, Button, Alert, Skeleton } from "@mui/material";
+  20 |  import { Refresh } from "@mui/icons-material";
+  21 |  import { useAuth } from "../contexts/AuthContext";
+     |                           ^
+  22 |  import { getDashboard } from "../services/dashboardService";
+  23 |  import WelcomeCard from "../components/Dashboard/WelcomeCard";[39m
+[2m2:35:39 am[22m [31m[1m[vite][22m[39m [31mInternal server error: Failed to resolve import "../contexts/AuthContext" from "src/pages/Dashboard/Dashboard.jsx". Does the file exist?[39m
+  Plugin: [35mvite:import-analysis[39m
+  File: [36mC:/Users/Hanzala/Desktop/Hanzala College/Github/Final-Year-Project/cybershield/frontend/src/pages/Dashboard/Dashboard.jsx[39m:4:24
+[33m  19 |  import { Container, Grid, Box, Typography, Button, Alert, Skeleton } from "@mui/material";
+  20 |  import { Refresh } from "@mui/icons-material";
+  21 |  import { useAuth } from "../contexts/AuthContext";
+     |                           ^
+  22 |  import { getDashboard } from "../services/dashboardService";
+  23 |  import WelcomeCard from "../components/Dashboard/WelcomeCard";[39m
+      at TransformPluginContext._formatLog (file:///C:/Users/Hanzala/Desktop/Hanzala%20College/Github/Final-Year-Project/cybershield/frontend/node_modules/vite/dist/node/chunks/dep-Dq2t6Dq0.js:42553:41)
+      at TransformPluginContext.error (file:///C:/Users/Hanzala/Desktop/Hanzala%20College/Github/Final-Year-Project/cybershield/frontend/node_modules/vite/dist/node/chunks/dep-Dq2t6Dq0.js:42550:16)
+      at normalizeUrl (file:///C:/Users/Hanzala/Desktop/Hanzala%20College/Github/Final-Year-Project/cybershield/frontend/node_modules/vite/dist/node/chunks/dep-Dq2t6Dq0.js:40529:23)
+      at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+      at async file:///C:/Users/Hanzala/Desktop/Hanzala%20College/Github/Final-Year-Project/cybershield/frontend/node_modules/vite/dist/node/chunks/dep-Dq2t6Dq0.js:40648:37
+      at async Promise.all (index 6)
+      at async TransformPluginContext.transform (file:///C:/Users/Hanzala/Desktop/Hanzala%20College/Github/Final-Year-Project/cybershield/frontend/node_modules/vite/dist/node/chunks/dep-Dq2t6Dq0.js:40575:7)
+      at async EnvironmentPluginContainer.transform (file:///C:/Users/Hanzala/Desktop/Hanzala%20College/Github/Final-Year-Project/cybershield/frontend/node_modules/vite/dist/node/chunks/dep-Dq2t6Dq0.js:42348:18)
+      at async loadAndTransform (file:///C:/Users/Hanzala/Desktop/Hanzala%20College/Github/Final-Year-Project/cybershield/frontend/node_modules/vite/dist/node/chunks/dep-Dq2t6Dq0.js:35740:27)
+      at async viteTransformMiddleware (file:///C:/Users/Hanzala/Desktop/Hanzala%20College/Github/Final-Year-Project/cybershield/frontend/node_modules/vite/dist/node/chunks/dep-Dq2t6Dq0.js:37264:24)
+[2m2:38:34 am[22m [31m[1m[vite][22m[39m [31m[2m(client)[22m[39m Pre-transform error: Failed to resolve import "../components/Dashboard/WelcomeCard" from "src/pages/Dashboard/Dashboard.jsx". Does the file exist?
+  Plugin: [35mvite:import-analysis[39m
+  File: [36mC:/Users/Hanzala/Desktop/Hanzala College/Github/Final-Year-Project/cybershield/frontend/src/pages/Dashboard/Dashboard.jsx[39m:7:24
+[33m  21 |  import { useAuth } from "../../contexts/AuthContext";
+  22 |  import { getDashboard } from "../../services/dashboardService";
+  23 |  import WelcomeCard from "../components/Dashboard/WelcomeCard";
+     |                           ^
+  24 |  import StatsCards from "../components/Dashboard/StatsCards";
+  25 |  import QuickActions from "../components/Dashboard/QuickActions";[39m
+[2m2:38:34 am[22m [31m[1m[vite][22m[39m [31mInternal server error: Failed to resolve import "../components/Dashboard/WelcomeCard" from "src/pages/Dashboard/Dashboard.jsx". Does the file exist?[39m
+  Plugin: [35mvite:import-analysis[39m
+  File: [36mC:/Users/Hanzala/Desktop/Hanzala College/Github/Final-Year-Project/cybershield/frontend/src/pages/Dashboard/Dashboard.jsx[39m:7:24
+[33m  21 |  import { useAuth } from "../../contexts/AuthContext";
+  22 |  import { getDashboard } from "../../services/dashboardService";
+  23 |  import WelcomeCard from "../components/Dashboard/WelcomeCard";
+     |                           ^
+  24 |  import StatsCards from "../components/Dashboard/StatsCards";
+  25 |  import QuickActions from "../components/Dashboard/QuickActions";[39m
+      at TransformPluginContext._formatLog (file:///C:/Users/Hanzala/Desktop/Hanzala%20College/Github/Final-Year-Project/cybershield/frontend/node_modules/vite/dist/node/chunks/dep-Dq2t6Dq0.js:42553:41)
+      at TransformPluginContext.error (file:///C:/Users/Hanzala/Desktop/Hanzala%20College/Github/Final-Year-Project/cybershield/frontend/node_modules/vite/dist/node/chunks/dep-Dq2t6Dq0.js:42550:16)
+      at normalizeUrl (file:///C:/Users/Hanzala/Desktop/Hanzala%20College/Github/Final-Year-Project/cybershield/frontend/node_modules/vite/dist/node/chunks/dep-Dq2t6Dq0.js:40529:23)
+      at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+      at async file:///C:/Users/Hanzala/Desktop/Hanzala%20College/Github/Final-Year-Project/cybershield/frontend/node_modules/vite/dist/node/chunks/dep-Dq2t6Dq0.js:40648:37
+      at async Promise.all (index 8)
+      at async TransformPluginContext.transform (file:///C:/Users/Hanzala/Desktop/Hanzala%20College/Github/Final-Year-Project/cybershield/frontend/node_modules/vite/dist/node/chunks/dep-Dq2t6Dq0.js:40575:7)
+      at async EnvironmentPluginContainer.transform (file:///C:/Users/Hanzala/Desktop/Hanzala%20College/Github/Final-Year-Project/cybershield/frontend/node_modules/vite/dist/node/chunks/dep-Dq2t6Dq0.js:42348:18)
+      at async loadAndTransform (file:///C:/Users/Hanzala/Desktop/Hanzala%20College/Github/Final-Year-Project/cybershield/frontend/node_modules/vite/dist/node/chunks/dep-Dq2t6Dq0.js:35740:27)
+      at async viteTransformMiddleware (file:///C:/Users/Hanzala/Desktop/Hanzala%20College/Github/Final-Year-Project/cybershield/frontend/node_modules/vite/dist/node/chunks/dep-Dq2t6Dq0.js:37264:24)
+[2m2:39:03 am[22m [31m[1m[vite][22m[39m [31m[2m(client)[22m[39m Pre-transform error: C:\Users\Hanzala\Desktop\Hanzala College\Github\Final-Year-Project\cybershield\frontend\src\components\Dashboard\QuickActions.jsx: Unexpected token (49:18)
+
+[0m [90m 47 |[39m                     border[33m:[39m [32m"1px solid rgba(148,163,184,0.2)"[39m[33m,[39m
+ [90m 48 |[39m                     [32m"&:hover"[39m[33m:[39m { borderColor[33m:[39m a[33m.[39mcolor[33m,[39m bgcolor[33m:[39m [32m`${a.color}0f`[39m } }[33m,[39m
+[31m[1m>[22m[39m[90m 49 |[39m                   }}
+ [90m    |[39m                   [31m[1m^[22m[39m
+ [90m 50 |[39m                 [33m>[39m
+ [90m 51 |[39m                   [33m<[39m[33mBox[39m sx[33m=[39m{{ color[33m:[39m a[33m.[39mcolor }}[33m>[39m{a[33m.[39micon}[33m<[39m[33m/[39m[33mBox[39m[33m>[39m
+ [90m 52 |[39m                   [33m<[39m[33mTypography[39m variant[33m=[39m[32m"caption"[39m fontWeight[33m=[39m{[35m600[39m} align[33m=[39m[32m"center"[39m[33m>[39m[0m
+  Plugin: [35mvite:react-babel[39m
+  File: [36mC:/Users/Hanzala/Desktop/Hanzala College/Github/Final-Year-Project/cybershield/frontend/src/components/Dashboard/QuickActions.jsx[39m:49:18
+[33m  47 |                      border: "1px solid rgba(148,163,184,0.2)",
+  48 |                      "&:hover": { borderColor: a.color, bgcolor: `${a.color}0f` } },
+  49 |                    }}
+     |                    ^
+  50 |                  >
+  51 |                    <Box sx={{ color: a.color }}>{a.icon}</Box>[39m
+[2m2:39:03 am[22m [31m[1m[vite][22m[39m [31mInternal server error: C:\Users\Hanzala\Desktop\Hanzala College\Github\Final-Year-Project\cybershield\frontend\src\components\Dashboard\QuickActions.jsx: Unexpected token (49:18)
+
+[0m [90m 47 |[31m                     border[33m:[31m [32m"1px solid rgba(148,163,184,0.2)"[31m[33m,[31m
+ [90m 48 |[31m                     [32m"&:hover"[31m[33m:[31m { borderColor[33m:[31m a[33m.[31mcolor[33m,[31m bgcolor[33m:[31m [32m`${a.color}0f`[31m } }[33m,[31m
+[31m[1m>[22m[31m[90m 49 |[31m                   }}
+ [90m    |[31m                   [31m[1m^[22m[31m
+ [90m 50 |[31m                 [33m>[31m
+ [90m 51 |[31m                   [33m<[31m[33mBox[31m sx[33m=[31m{{ color[33m:[31m a[33m.[31mcolor }}[33m>[31m{a[33m.[31micon}[33m<[31m[33m/[31m[33mBox[31m[33m>[31m
+ [90m 52 |[31m                   [33m<[31m[33mTypography[31m variant[33m=[31m[32m"caption"[31m fontWeight[33m=[31m{[35m600[31m} align[33m=[31m[32m"center"[31m[33m>[31m[0m[39m
+  Plugin: [35mvite:react-babel[39m
+  File: [36mC:/Users/Hanzala/Desktop/Hanzala College/Github/Final-Year-Project/cybershield/frontend/src/components/Dashboard/QuickActions.jsx[39m:49:18
+[33m  47 |                      border: "1px solid rgba(148,163,184,0.2)",
+  48 |                      "&:hover": { borderColor: a.color, bgcolor: `${a.color}0f` } },
+  49 |                    }}
+     |                    ^
+  50 |                  >
+  51 |                    <Box sx={{ color: a.color }}>{a.icon}</Box>[39m
+      at constructor (C:\Users\Hanzala\Desktop\Hanzala College\Github\Final-Year-Project\cybershield\frontend\node_modules\@babel\parser\lib\index.js:365:19)
+      at JSXParserMixin.raise (C:\Users\Hanzala\Desktop\Hanzala College\Github\Final-Year-Project\cybershield\frontend\node_modules\@babel\parser\lib\index.js:6616:19)
+      at JSXParserMixin.unexpected (C:\Users\Hanzala\Desktop\Hanzala College\Github\Final-Year-Project\cybershield\frontend\node_modules\@babel\parser\lib\index.js:6636:16)
+      at JSXParserMixin.parseExprAtom (C:\Users\Hanzala\Desktop\Hanzala College\Github\Final-Year-Project\cybershield\frontend\node_modules\@babel\parser\lib\index.js:11459:22)
+      at JSXParserMixin.parseExprAtom (C:\Users\Hanzala\Desktop\Hanzala College\Github\Final-Year-Project\cybershield\frontend\node_modules\@babel\parser\lib\index.js:4776:20)
+      at JSXParserMixin.parseExprSubscripts (C:\Users\Hanzala\Desktop\Hanzala College\Github\Final-Year-Project\cybershield\frontend\node_modules\@babel\parser\lib\index.js:11098:23)
+      at JSXParserMixin.parseUpdate (C:\Users\Hanzala\Desktop\Hanzala College\Github\Final-Year-Project\cybershield\frontend\node_modules\@babel\parser\lib\index.js:11083:21)
+      at JSXParserMixin.parseMaybeUnary (C:\Users\Hanzala\Desktop\Hanzala College\Github\Final-Year-Project\cybershield\frontend\node_modules\@babel\parser\lib\index.js:11063:23)
+      at JSXParserMixin.parseMaybeUnaryOrPrivate (C:\Users\Hanzala\Desktop\Hanzala College\Github\Final-Year-Project\cybershield\frontend\node_modules\@babel\parser\lib\index.js:10916:61)
+      at JSXParserMixin.parseExprOps (C:\Users\Hanzala\Desktop\Hanzala College\Github\Final-Year-Project\cybershield\frontend\node_modules\@babel\parser\lib\index.js:10921:23)
+      at JSXParserMixin.parseMaybeConditional (C:\Users\Hanzala\Desktop\Hanzala College\Github\Final-Year-Project\cybershield\frontend\node_modules\@babel\parser\lib\index.js:10898:23)
+      at JSXParserMixin.parseMaybeAssign (C:\Users\Hanzala\Desktop\Hanzala College\Github\Final-Year-Project\cybershield\frontend\node_modules\@babel\parser\lib\index.js:10848:21)
+      at JSXParserMixin.parseExpressionBase (C:\Users\Hanzala\Desktop\Hanzala College\Github\Final-Year-Project\cybershield\frontend\node_modules\@babel\parser\lib\index.js:10806:36)
+      at C:\Users\Hanzala\Desktop\Hanzala College\Github\Final-Year-Project\cybershield\frontend\node_modules\@babel\parser\lib\index.js:10797:39
+      at JSXParserMixin.allowInAnd (C:\Users\Hanzala\Desktop\Hanzala College\Github\Final-Year-Project\cybershield\frontend\node_modules\@babel\parser\lib\index.js:12443:12)
+      at JSXParserMixin.parseExpression (C:\Users\Hanzala\Desktop\Hanzala College\Github\Final-Year-Project\cybershield\frontend\node_modules\@babel\parser\lib\index.js:10797:17)
+      at JSXParserMixin.jsxParseExpressionContainer (C:\Users\Hanzala\Desktop\Hanzala College\Github\Final-Year-Project\cybershield\frontend\node_modules\@babel\parser\lib\index.js:4644:31)
+      at JSXParserMixin.jsxParseAttributeValue (C:\Users\Hanzala\Desktop\Hanzala College\Github\Final-Year-Project\cybershield\frontend\node_modules\@babel\parser\lib\index.js:4616:21)
+      at JSXParserMixin.jsxParseAttribute (C:\Users\Hanzala\Desktop\Hanzala College\Github\Final-Year-Project\cybershield\frontend\node_modules\@babel\parser\lib\index.js:4665:38)
+      at JSXParserMixin.jsxParseOpeningElementAfterName (C:\Users\Hanzala\Desktop\Hanzala College\Github\Final-Year-Project\cybershield\frontend\node_modules\@babel\parser\lib\index.js:4679:28)
+      at JSXParserMixin.jsxParseOpeningElementAt (C:\Users\Hanzala\Desktop\Hanzala College\Github\Final-Year-Project\cybershield\frontend\node_modules\@babel\parser\lib\index.js:4674:17)
+      at JSXParserMixin.jsxParseElementAt (C:\Users\Hanzala\Desktop\Hanzala College\Github\Final-Year-Project\cybershield\frontend\node_modules\@babel\parser\lib\index.js:4698:33)
+      at JSXParserMixin.jsxParseElementAt (C:\Users\Hanzala\Desktop\Hanzala College\Github\Final-Year-Project\cybershield\frontend\node_modules\@babel\parser\lib\index.js:4710:32)
+      at JSXParserMixin.jsxParseElementAt (C:\Users\Hanzala\Desktop\Hanzala College\Github\Final-Year-Project\cybershield\frontend\node_modules\@babel\parser\lib\index.js:4710:32)
+      at JSXParserMixin.jsxParseElement (C:\Users\Hanzala\Desktop\Hanzala College\Github\Final-Year-Project\cybershield\frontend\node_modules\@babel\parser\lib\index.js:4761:17)
+      at JSXParserMixin.parseExprAtom (C:\Users\Hanzala\Desktop\Hanzala College\Github\Final-Year-Project\cybershield\frontend\node_modules\@babel\parser\lib\index.js:4771:19)
+      at JSXParserMixin.parseExprSubscripts (C:\Users\Hanzala\Desktop\Hanzala College\Github\Final-Year-Project\cybershield\frontend\node_modules\@babel\parser\lib\index.js:11098:23)
+      at JSXParserMixin.parseUpdate (C:\Users\Hanzala\Desktop\Hanzala College\Github\Final-Year-Project\cybershield\frontend\node_modules\@babel\parser\lib\index.js:11083:21)
+      at JSXParserMixin.parseMaybeUnary (C:\Users\Hanzala\Desktop\Hanzala College\Github\Final-Year-Project\cybershield\frontend\node_modules\@babel\parser\lib\index.js:11063:23)
+      at JSXParserMixin.parseMaybeUnaryOrPrivate (C:\Users\Hanzala\Desktop\Hanzala College\Github\Final-Year-Project\cybershield\frontend\node_modules\@babel\parser\lib\index.js:10916:61)
+      at JSXParserMixin.parseExprOps (C:\Users\Hanzala\Desktop\Hanzala College\Github\Final-Year-Project\cybershield\frontend\node_modules\@babel\parser\lib\index.js:10921:23)
+      at JSXParserMixin.parseMaybeConditional (C:\Users\Hanzala\Desktop\Hanzala College\Github\Final-Year-Project\cybershield\frontend\node_modules\@babel\parser\lib\index.js:10898:23)
+      at JSXParserMixin.parseMaybeAssign (C:\Users\Hanzala\Desktop\Hanzala College\Github\Final-Year-Project\cybershield\frontend\node_modules\@babel\parser\lib\index.js:10848:21)
+      at C:\Users\Hanzala\Desktop\Hanzala College\Github\Final-Year-Project\cybershield\frontend\node_modules\@babel\parser\lib\index.js:10817:39
+      at JSXParserMixin.allowInAnd (C:\Users\Hanzala\Desktop\Hanzala College\Github\Final-Year-Project\cybershield\frontend\node_modules\@babel\parser\lib\index.js:12443:12)
+      at JSXParserMixin.parseMaybeAssignAllowIn (C:\Users\Hanzala\Desktop\Hanzala College\Github\Final-Year-Project\cybershield\frontend\node_modules\@babel\parser\lib\index.js:10817:17)
+      at JSXParserMixin.parseMaybeAssignAllowInOrVoidPattern (C:\Users\Hanzala\Desktop\Hanzala College\Github\Final-Year-Project\cybershield\frontend\node_modules\@babel\parser\lib\index.js:12510:17)
+      at JSXParserMixin.parseParenAndDistinguishExpression (C:\Users\Hanzala\Desktop\Hanzala College\Github\Final-Year-Project\cybershield\frontend\node_modules\@babel\parser\lib\index.js:11692:28)
+      at JSXParserMixin.parseExprAtom (C:\Users\Hanzala\Desktop\Hanzala College\Github\Final-Year-Project\cybershield\frontend\node_modules\@babel\parser\lib\index.js:11348:23)
+      at JSXParserMixin.parseExprAtom (C:\Users\Hanzala\Desktop\Hanzala College\Github\Final-Year-Project\cybershield\frontend\node_modules\@babel\parser\lib\index.js:4776:20)
+      at JSXParserMixin.parseExprSubscripts (C:\Users\Hanzala\Desktop\Hanzala College\Github\Final-Year-Project\cybershield\frontend\node_modules\@babel\parser\lib\index.js:11098:23)
+      at JSXParserMixin.parseUpdate (C:\Users\Hanzala\Desktop\Hanzala College\Github\Final-Year-Project\cybershield\frontend\node_modules\@babel\parser\lib\index.js:11083:21)
+      at JSXParserMixin.parseMaybeUnary (C:\Users\Hanzala\Desktop\Hanzala College\Github\Final-Year-Project\cybershield\frontend\node_modules\@babel\parser\lib\index.js:11063:23)
+      at JSXParserMixin.parseMaybeUnaryOrPrivate (C:\Users\Hanzala\Desktop\Hanzala College\Github\Final-Year-Project\cybershield\frontend\node_modules\@babel\parser\lib\index.js:10916:61)
+      at JSXParserMixin.parseExprOps (C:\Users\Hanzala\Desktop\Hanzala College\Github\Final-Year-Project\cybershield\frontend\node_modules\@babel\parser\lib\index.js:10921:23)
+      at JSXParserMixin.parseMaybeConditional (C:\Users\Hanzala\Desktop\Hanzala College\Github\Final-Year-Project\cybershield\frontend\node_modules\@babel\parser\lib\index.js:10898:23)
+      at JSXParserMixin.parseMaybeAssign (C:\Users\Hanzala\Desktop\Hanzala College\Github\Final-Year-Project\cybershield\frontend\node_modules\@babel\parser\lib\index.js:10848:21)
+      at JSXParserMixin.parseFunctionBody (C:\Users\Hanzala\Desktop\Hanzala College\Github\Final-Year-Project\cybershield\frontend\node_modules\@babel\parser\lib\index.js:12110:24)
+      at JSXParserMixin.parseArrowExpression (C:\Users\Hanzala\Desktop\Hanzala College\Github\Final-Year-Project\cybershield\frontend\node_modules\@babel\parser\lib\index.js:12092:10)
+      at JSXParserMixin.parseParenAndDistinguishExpression (C:\Users\Hanzala\Desktop\Hanzala College\Github\Final-Year-Project\cybershield\frontend\node_modules\@babel\parser\lib\index.js:11704:12)
+[2m2:39:11 am[22m [31m[1m[vite][22m[39m [31mInternal server error: C:\Users\Hanzala\Desktop\Hanzala College\Github\Final-Year-Project\cybershield\frontend\src\components\Dashboard\QuickActions.jsx: Unexpected token (49:18)
+
+[0m [90m 47 |[31m                     border[33m:[31m [32m"1px solid rgba(148,163,184,0.2)"[31m[33m,[31m
+ [90m 48 |[31m                     [32m"&:hover"[31m[33m:[31m { borderColor[33m:[31m a[33m.[31mcolor[33m,[31m bgcolor[33m:[31m [32m`${a.color}0f`[31m } }[33m,[31m
+[31m[1m>[22m[31m[90m 49 |[31m                   }}
+ [90m    |[31m                   [31m[1m^[22m[31m
+ [90m 50 |[31m                 [33m>[31m
+ [90m 51 |[31m                   [33m<[31m[33mBox[31m sx[33m=[31m{{ color[33m:[31m a[33m.[31mcolor }}[33m>[31m{a[33m.[31micon}[33m<[31m[33m/[31m[33mBox[31m[33m>[31m
+ [90m 52 |[31m                   [33m<[31m[33mTypography[31m variant[33m=[31m[32m"caption"[31m fontWeight[33m=[31m{[35m600[31m} align[33m=[31m[32m"center"[31m[33m>[31m[0m[39m
+  Plugin: [35mvite:react-babel[39m
+  File: [36mC:/Users/Hanzala/Desktop/Hanzala College/Github/Final-Year-Project/cybershield/frontend/src/components/Dashboard/QuickActions.jsx[39m:49:18
+[33m  47 |                      border: "1px solid rgba(148,163,184,0.2)",
+  48 |                      "&:hover": { borderColor: a.color, bgcolor: `${a.color}0f` } },
+  49 |                    }}
+     |                    ^
+  50 |                  >
+  51 |                    <Box sx={{ color: a.color }}>{a.icon}</Box>[39m
+      at constructor (C:\Users\Hanzala\Desktop\Hanzala College\Github\Final-Year-Project\cybershield\frontend\node_modules\@babel\parser\lib\index.js:365:19)
+      at JSXParserMixin.raise (C:\Users\Hanzala\Desktop\Hanzala College\Github\Final-Year-Project\cybershield\frontend\node_modules\@babel\parser\lib\index.js:6616:19)
+      at JSXParserMixin.unexpected (C:\Users\Hanzala\Desktop\Hanzala College\Github\Final-Year-Project\cybershield\frontend\node_modules\@babel\parser\lib\index.js:6636:16)
+      at JSXParserMixin.parseExprAtom (C:\Users\Hanzala\Desktop\Hanzala College\Github\Final-Year-Project\cybershield\frontend\node_modules\@babel\parser\lib\index.js:11459:22)
+      at JSXParserMixin.parseExprAtom (C:\Users\Hanzala\Desktop\Hanzala College\Github\Final-Year-Project\cybershield\frontend\node_modules\@babel\parser\lib\index.js:4776:20)
+      at JSXParserMixin.parseExprSubscripts (C:\Users\Hanzala\Desktop\Hanzala College\Github\Final-Year-Project\cybershield\frontend\node_modules\@babel\parser\lib\index.js:11098:23)
+      at JSXParserMixin.parseUpdate (C:\Users\Hanzala\Desktop\Hanzala College\Github\Final-Year-Project\cybershield\frontend\node_modules\@babel\parser\lib\index.js:11083:21)
+      at JSXParserMixin.parseMaybeUnary (C:\Users\Hanzala\Desktop\Hanzala College\Github\Final-Year-Project\cybershield\frontend\node_modules\@babel\parser\lib\index.js:11063:23)
+      at JSXParserMixin.parseMaybeUnaryOrPrivate (C:\Users\Hanzala\Desktop\Hanzala College\Github\Final-Year-Project\cybershield\frontend\node_modules\@babel\parser\lib\index.js:10916:61)
+      at JSXParserMixin.parseExprOps (C:\Users\Hanzala\Desktop\Hanzala College\Github\Final-Year-Project\cybershield\frontend\node_modules\@babel\parser\lib\index.js:10921:23)
+      at JSXParserMixin.parseMaybeConditional (C:\Users\Hanzala\Desktop\Hanzala College\Github\Final-Year-Project\cybershield\frontend\node_modules\@babel\parser\lib\index.js:10898:23)
+      at JSXParserMixin.parseMaybeAssign (C:\Users\Hanzala\Desktop\Hanzala College\Github\Final-Year-Project\cybershield\frontend\node_modules\@babel\parser\lib\index.js:10848:21)
+      at JSXParserMixin.parseExpressionBase (C:\Users\Hanzala\Desktop\Hanzala College\Github\Final-Year-Project\cybershield\frontend\node_modules\@babel\parser\lib\index.js:10806:36)
+      at C:\Users\Hanzala\Desktop\Hanzala College\Github\Final-Year-Project\cybershield\frontend\node_modules\@babel\parser\lib\index.js:10797:39
+      at JSXParserMixin.allowInAnd (C:\Users\Hanzala\Desktop\Hanzala College\Github\Final-Year-Project\cybershield\frontend\node_modules\@babel\parser\lib\index.js:12443:12)
+      at JSXParserMixin.parseExpression (C:\Users\Hanzala\Desktop\Hanzala College\Github\Final-Year-Project\cybershield\frontend\node_modules\@babel\parser\lib\index.js:10797:17)
+      at JSXParserMixin.jsxParseExpressionContainer (C:\Users\Hanzala\Desktop\Hanzala College\Github\Final-Year-Project\cybershield\frontend\node_modules\@babel\parser\lib\index.js:4644:31)
+      at JSXParserMixin.jsxParseAttributeValue (C:\Users\Hanzala\Desktop\Hanzala College\Github\Final-Year-Project\cybershield\frontend\node_modules\@babel\parser\lib\index.js:4616:21)
+      at JSXParserMixin.jsxParseAttribute (C:\Users\Hanzala\Desktop\Hanzala College\Github\Final-Year-Project\cybershield\frontend\node_modules\@babel\parser\lib\index.js:4665:38)
+      at JSXParserMixin.jsxParseOpeningElementAfterName (C:\Users\Hanzala\Desktop\Hanzala College\Github\Final-Year-Project\cybershield\frontend\node_modules\@babel\parser\lib\index.js:4679:28)
+      at JSXParserMixin.jsxParseOpeningElementAt (C:\Users\Hanzala\Desktop\Hanzala College\Github\Final-Year-Project\cybershield\frontend\node_modules\@babel\parser\lib\index.js:4674:17)
+      at JSXParserMixin.jsxParseElementAt (C:\Users\Hanzala\Desktop\Hanzala College\Github\Final-Year-Project\cybershield\frontend\node_modules\@babel\parser\lib\index.js:4698:33)
+      at JSXParserMixin.jsxParseElementAt (C:\Users\Hanzala\Desktop\Hanzala College\Github\Final-Year-Project\cybershield\frontend\node_modules\@babel\parser\lib\index.js:4710:32)
+      at JSXParserMixin.jsxParseElementAt (C:\Users\Hanzala\Desktop\Hanzala College\Github\Final-Year-Project\cybershield\frontend\node_modules\@babel\parser\lib\index.js:4710:32)
+      at JSXParserMixin.jsxParseElement (C:\Users\Hanzala\Desktop\Hanzala College\Github\Final-Year-Project\cybershield\frontend\node_modules\@babel\parser\lib\index.js:4761:17)
+      at JSXParserMixin.parseExprAtom (C:\Users\Hanzala\Desktop\Hanzala College\Github\Final-Year-Project\cybershield\frontend\node_modules\@babel\parser\lib\index.js:4771:19)
+      at JSXParserMixin.parseExprSubscripts (C:\Users\Hanzala\Desktop\Hanzala College\Github\Final-Year-Project\cybershield\frontend\node_modules\@babel\parser\lib\index.js:11098:23)
+      at JSXParserMixin.parseUpdate (C:\Users\Hanzala\Desktop\Hanzala College\Github\Final-Year-Project\cybershield\frontend\node_modules\@babel\parser\lib\index.js:11083:21)
+      at JSXParserMixin.parseMaybeUnary (C:\Users\Hanzala\Desktop\Hanzala College\Github\Final-Year-Project\cybershield\frontend\node_modules\@babel\parser\lib\index.js:11063:23)
+      at JSXParserMixin.parseMaybeUnaryOrPrivate (C:\Users\Hanzala\Desktop\Hanzala College\Github\Final-Year-Project\cybershield\frontend\node_modules\@babel\parser\lib\index.js:10916:61)
+      at JSXParserMixin.parseExprOps (C:\Users\Hanzala\Desktop\Hanzala College\Github\Final-Year-Project\cybershield\frontend\node_modules\@babel\parser\lib\index.js:10921:23)
+      at JSXParserMixin.parseMaybeConditional (C:\Users\Hanzala\Desktop\Hanzala College\Github\Final-Year-Project\cybershield\frontend\node_modules\@babel\parser\lib\index.js:10898:23)
+      at JSXParserMixin.parseMaybeAssign (C:\Users\Hanzala\Desktop\Hanzala College\Github\Final-Year-Project\cybershield\frontend\node_modules\@babel\parser\lib\index.js:10848:21)
+      at C:\Users\Hanzala\Desktop\Hanzala College\Github\Final-Year-Project\cybershield\frontend\node_modules\@babel\parser\lib\index.js:10817:39
+      at JSXParserMixin.allowInAnd (C:\Users\Hanzala\Desktop\Hanzala College\Github\Final-Year-Project\cybershield\frontend\node_modules\@babel\parser\lib\index.js:12443:12)
+      at JSXParserMixin.parseMaybeAssignAllowIn (C:\Users\Hanzala\Desktop\Hanzala College\Github\Final-Year-Project\cybershield\frontend\node_modules\@babel\parser\lib\index.js:10817:17)
+      at JSXParserMixin.parseMaybeAssignAllowInOrVoidPattern (C:\Users\Hanzala\Desktop\Hanzala College\Github\Final-Year-Project\cybershield\frontend\node_modules\@babel\parser\lib\index.js:12510:17)
+      at JSXParserMixin.parseParenAndDistinguishExpression (C:\Users\Hanzala\Desktop\Hanzala College\Github\Final-Year-Project\cybershield\frontend\node_modules\@babel\parser\lib\index.js:11692:28)
+      at JSXParserMixin.parseExprAtom (C:\Users\Hanzala\Desktop\Hanzala College\Github\Final-Year-Project\cybershield\frontend\node_modules\@babel\parser\lib\index.js:11348:23)
+      at JSXParserMixin.parseExprAtom (C:\Users\Hanzala\Desktop\Hanzala College\Github\Final-Year-Project\cybershield\frontend\node_modules\@babel\parser\lib\index.js:4776:20)
+      at JSXParserMixin.parseExprSubscripts (C:\Users\Hanzala\Desktop\Hanzala College\Github\Final-Year-Project\cybershield\frontend\node_modules\@babel\parser\lib\index.js:11098:23)
+      at JSXParserMixin.parseUpdate (C:\Users\Hanzala\Desktop\Hanzala College\Github\Final-Year-Project\cybershield\frontend\node_modules\@babel\parser\lib\index.js:11083:21)
+      at JSXParserMixin.parseMaybeUnary (C:\Users\Hanzala\Desktop\Hanzala College\Github\Final-Year-Project\cybershield\frontend\node_modules\@babel\parser\lib\index.js:11063:23)
+      at JSXParserMixin.parseMaybeUnaryOrPrivate (C:\Users\Hanzala\Desktop\Hanzala College\Github\Final-Year-Project\cybershield\frontend\node_modules\@babel\parser\lib\index.js:10916:61)
+      at JSXParserMixin.parseExprOps (C:\Users\Hanzala\Desktop\Hanzala College\Github\Final-Year-Project\cybershield\frontend\node_modules\@babel\parser\lib\index.js:10921:23)
+      at JSXParserMixin.parseMaybeConditional (C:\Users\Hanzala\Desktop\Hanzala College\Github\Final-Year-Project\cybershield\frontend\node_modules\@babel\parser\lib\index.js:10898:23)
+      at JSXParserMixin.parseMaybeAssign (C:\Users\Hanzala\Desktop\Hanzala College\Github\Final-Year-Project\cybershield\frontend\node_modules\@babel\parser\lib\index.js:10848:21)
+      at JSXParserMixin.parseFunctionBody (C:\Users\Hanzala\Desktop\Hanzala College\Github\Final-Year-Project\cybershield\frontend\node_modules\@babel\parser\lib\index.js:12110:24)
+      at JSXParserMixin.parseArrowExpression (C:\Users\Hanzala\Desktop\Hanzala College\Github\Final-Year-Project\cybershield\frontend\node_modules\@babel\parser\lib\index.js:12092:10)
+      at JSXParserMixin.parseParenAndDistinguishExpression (C:\Users\Hanzala\Desktop\Hanzala College\Github\Final-Year-Project\cybershield\frontend\node_modules\@babel\parser\lib\index.js:11704:12)
+^C

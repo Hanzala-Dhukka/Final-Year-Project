@@ -3,9 +3,9 @@ from pathlib import Path
 import os
 from pydantic_settings import BaseSettings
 
-# Load .env from the project root regardless of the current working directory
-PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
-load_dotenv(dotenv_path=PROJECT_ROOT / ".env", override=True)
+# Load .env from the backend directory regardless of the current working directory
+BACKEND_ROOT = Path(__file__).resolve().parent.parent.parent
+load_dotenv(dotenv_path=BACKEND_ROOT / ".env", override=True)
 
 # Module-level variables as requested
 MONGO_URI = os.getenv("MONGO_URI")
@@ -53,7 +53,7 @@ class Settings(BaseSettings):
     AI_MAX_TOKENS: int = int(os.getenv("AI_MAX_TOKENS", "2048"))
 
     model_config = {
-        "env_file": ".env",
+        "env_file": str(BACKEND_ROOT / ".env"),
         "extra": "ignore"
     }
 
