@@ -93,6 +93,7 @@ export default function AppRoutes() {
             <Route path="settings" element={<Settings />} />
             <Route path="security-checklist" element={<SecurityChecklist />} />
             <Route path="ai-checklist" element={<AIChecklist />} />
+            <Route path="compliance" element={<ComplianceDashboard />} />
           </Route>
         </Route>
 
