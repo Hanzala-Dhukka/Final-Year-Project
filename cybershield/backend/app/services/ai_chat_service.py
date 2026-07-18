@@ -1,14 +1,14 @@
 """
 AI Security Assistant service.
 
-Handles conversation/message persistence in MongoDB and Gemini calls.
+Handles conversation/message persistence in MongoDB and Groq calls.
 Mirrors the functions described in Module 5.1:
   create_conversation, save_message, send_to_gemini, store_ai_reply,
   get_history, get_conversations, delete_chat
 
 Module 5.2 extends this with context-awareness: the active project and context
 domain (general/github_scan/threat_report/owasp/quiz/glossary) are tracked per
-user and injected into the Gemini prompt via the context service.
+user and injected into the Groq prompt via the context service.
 """
 from typing import Optional
 
@@ -200,7 +200,7 @@ async def delete_chat(user_id: str, conversation_id: str) -> bool:
     return True
 
 
-# ── Gemini integration ───────────────────────────────────────────────────────
+# ── Groq integration ─────────────────────────────────────────────────────────
 async def send_to_gemini(
     user_id: str,
     conversation_id: str,
@@ -209,9 +209,9 @@ async def send_to_gemini(
     context_type: str = "general",
 ) -> str:
     """
-    Send the user message (with context) to Gemini and return the reply text.
+    Send the user message (with context) to the Groq model and return the reply text.
 
-    Falls back to a friendly offline message when Gemini is not configured.
+    Falls back to a friendly offline message when the Groq API key is not configured.
 
     Args:
         user_id: Owner id (used to load history for context).
@@ -231,8 +231,8 @@ async def send_to_gemini(
 
     if not is_available():
         return (
-            "I'm currently running in offline mode because the Gemini API key is "
-            "not configured on the server. Please configure `GEMINI_API_KEY` to "
+            "I'm currently running in offline mode because the Groq API key is "
+            "not configured on the server. Please configure `GROQ_API_KEY` to "
             "enable AI responses.\n\nIn the meantime, here are some topics to "
             "explore: OWASP Top 10, secure coding, authentication, and threat modeling."
         )

@@ -347,7 +347,7 @@ async def health_check():
     
     return {
         "status": "healthy" if model else "fallback_mode",
-        "provider": "Gemini" if model else "Rule-Based",
+        "provider": "Groq" if model else "Rule-Based",
         "features": {
             "conversation_memory": True,
             "file_upload": True,

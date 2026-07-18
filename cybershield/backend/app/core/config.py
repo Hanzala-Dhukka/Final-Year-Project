@@ -3,11 +3,13 @@ Configuration module for CyberShield application.
 Loads environment variables and provides reusable settings.
 """
 from dotenv import load_dotenv
+from pathlib import Path
 import os
 from pydantic_settings import BaseSettings
 
-# Load environment variables from .env file
-load_dotenv(override=True)
+# Load .env from the backend directory regardless of the current working directory
+_BACKEND_ROOT = Path(__file__).resolve().parent.parent.parent
+load_dotenv(dotenv_path=_BACKEND_ROOT / ".env", override=True)
 
 
 class Settings(BaseSettings):
@@ -48,15 +50,15 @@ class Settings(BaseSettings):
     # Frontend
     FRONTEND_URL: str = os.getenv("FRONTEND_URL", "http://localhost:5173")
     
-    # Gemini AI
-    GEMINI_API_KEY: str = os.getenv("GEMINI_API_KEY") or ""
-    AI_PROVIDER: str = os.getenv("AI_PROVIDER", "gemini")
-    AI_MODEL: str = os.getenv("AI_MODEL", "gemini-2.5-flash")
+    # Groq AI
+    GROQ_API_KEY: str = os.getenv("GROQ_API_KEY") or ""
+    AI_PROVIDER: str = os.getenv("AI_PROVIDER", "groq")
+    AI_MODEL: str = os.getenv("AI_MODEL", "llama-3.3-70b-versatile")
     AI_TEMPERATURE: float = float(os.getenv("AI_TEMPERATURE", "0.2"))
     AI_MAX_TOKENS: int = int(os.getenv("AI_MAX_TOKENS", "2048"))
     
     model_config = {
-        "env_file": ".env",
+        "env_file": str(_BACKEND_ROOT / ".env"),
         "extra": "ignore"
     }
 

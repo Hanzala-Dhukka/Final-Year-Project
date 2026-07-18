@@ -217,7 +217,7 @@ async def generate_project_checklist(user_id: str, project_id: str) -> Dict:
     doc = {
         "project_id": str(project_id),
         "user_id": str(user_id),
-        "generated_by": "gemini" if is_available() else "fallback",
+        "generated_by": "groq" if is_available() else "fallback",
         "risk_score": risk_score,
         "estimated_risk_after": estimated_risk_after,
         "items": [it.dict() for it in items],
@@ -325,7 +325,7 @@ def _serialise(doc: Dict) -> Dict:
     out = {
         "id": str(doc["_id"]),
         "project_id": doc.get("project_id"),
-        "generated_by": doc.get("generated_by", "gemini"),
+        "generated_by": doc.get("generated_by", "groq"),
         "risk_score": doc.get("risk_score"),
         "estimated_risk_after": doc.get("estimated_risk_after"),
         "ai_summary": doc.get("ai_summary"),

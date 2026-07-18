@@ -16,10 +16,10 @@ EMAIL_USER = os.getenv("EMAIL_USER")
 EMAIL_PASSWORD = os.getenv("EMAIL_PASSWORD")
 GITHUB_TOKEN = os.getenv("GITHUB_TOKEN")
 
-# Gemini AI
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
-AI_PROVIDER = os.getenv("AI_PROVIDER", "gemini")
-AI_MODEL = os.getenv("AI_MODEL", "gemini-2.5-flash")
+# Groq AI
+GROQ_API_KEY = os.getenv("GROQ_API_KEY")
+AI_PROVIDER = os.getenv("AI_PROVIDER", "groq")
+AI_MODEL = os.getenv("AI_MODEL", "llama-3.3-70b-versatile")
 AI_TEMPERATURE = float(os.getenv("AI_TEMPERATURE", "0.2"))
 AI_MAX_TOKENS = int(os.getenv("AI_MAX_TOKENS", "2048"))
 
@@ -45,10 +45,10 @@ class Settings(BaseSettings):
     EMAIL_USER: str = os.getenv("EMAIL_USER") or ""
     EMAIL_PASSWORD: str = os.getenv("EMAIL_PASSWORD") or ""
 
-    # Gemini AI
-    GEMINI_API_KEY: str = os.getenv("GEMINI_API_KEY") or ""
-    AI_PROVIDER: str = os.getenv("AI_PROVIDER", "gemini")
-    AI_MODEL: str = os.getenv("AI_MODEL", "gemini-2.5-flash")
+    # Groq AI
+    GROQ_API_KEY: str = os.getenv("GROQ_API_KEY") or ""
+    AI_PROVIDER: str = os.getenv("AI_PROVIDER", "groq")
+    AI_MODEL: str = os.getenv("AI_MODEL", "llama-3.3-70b-versatile")
     AI_TEMPERATURE: float = float(os.getenv("AI_TEMPERATURE", "0.2"))
     AI_MAX_TOKENS: int = int(os.getenv("AI_MAX_TOKENS", "2048"))
 

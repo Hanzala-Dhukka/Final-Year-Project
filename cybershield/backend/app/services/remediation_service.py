@@ -46,14 +46,14 @@ def _safe_json(text: str) -> dict:
 
 
 def _fallback_solution(finding: str, severity: str, technology: str) -> dict:
-    """Offline remediation when Gemini is unavailable (spec Step 17 robustness)."""
+    """Offline remediation when Groq is unavailable (spec Step 17 robustness)."""
     return {
         "vulnerability": finding,
         "severity": severity or "Medium",
         "category": "",
         "explanation": (
-            "Gemini is not configured, so this is a rule-based placeholder. "
-            "Set GEMINI_API_KEY to receive a full AI remediation."
+            "Groq is not configured, so this is a rule-based placeholder. "
+            "Set GROQ_API_KEY to receive a full AI remediation."
         ),
         "impact": ["Potential compromise of confidentiality/integrity/availability."],
         "root_cause": "See the flagged code and the secure-coding guidance below.",

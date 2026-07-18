@@ -314,9 +314,9 @@ async def generate_hint(topic: str, payload: str, hint_number: int, skill_level:
     
     # Generate AI response
     ai_response = await generate_ai_response(prompt, project_context)
-    
+
     # Parse response
-    if ai_response.get("provider") == "Gemini":
+    if ai_response.get("provider") != "Fallback":
         answer = ai_response.get("answer", {})
         if isinstance(answer, dict):
             return {
@@ -327,7 +327,7 @@ async def generate_hint(topic: str, payload: str, hint_number: int, skill_level:
                 "example": answer.get("example", ""),
                 "encouragement": answer.get("encouragement", "Keep trying!"),
                 "next_hint_available": hint_number < 3,
-                "provider": "Gemini",
+                "provider": ai_response.get("provider", "Groq"),
                 "skill_level": skill_level
             }
     
@@ -432,9 +432,9 @@ async def generate_practice_question(topic: str, skill_level: str, question_type
     
     # Generate AI response
     ai_response = await generate_ai_response(prompt, project_context)
-    
+
     # Parse response
-    if ai_response.get("provider") == "Gemini":
+    if ai_response.get("provider") != "Fallback":
         answer = ai_response.get("answer", {})
         if isinstance(answer, dict):
             return {
@@ -445,7 +445,7 @@ async def generate_practice_question(topic: str, skill_level: str, question_type
                 "explanation": answer.get("explanation", ""),
                 "difficulty": answer.get("difficulty", "Medium"),
                 "skill_level": skill_level,
-                "provider": "Gemini"
+                "provider": ai_response.get("provider", "Groq")
             }
     
     # Fallback question

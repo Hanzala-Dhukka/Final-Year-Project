@@ -1,3 +1,4 @@
+
 """
 Static OWASP Top 10 → finding category mapping (Module 6.3).
 

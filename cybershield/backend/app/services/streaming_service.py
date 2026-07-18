@@ -6,7 +6,6 @@ from app.services.memory_service import get_conversation, append_message, build_
 from app.services.gemini_service import get_model
 from app.services.prompt_builder import build_prompt
 from app.config.settings import settings
-import google.generativeai as genai
 
 
 class StreamingService:
@@ -44,7 +43,7 @@ class StreamingService:
             # Build prompt with context
             prompt = build_prompt(full_question, project_context)
             
-            # Get Gemini model
+            # Get Groq model
             model = get_model()
             if not model:
                 yield json.dumps({
@@ -52,40 +51,37 @@ class StreamingService:
                     "content": "AI service unavailable. Using fallback mode."
                 })
                 return
-            
-            # Configure generation
-            generation_config = {
-                "temperature": settings.AI_TEMPERATURE,
-                "max_output_tokens": settings.AI_MAX_TOKENS,
-            }
-            
+
             # Generate streaming response
-            response = model.generate_content(
-                prompt,
-                generation_config=generation_config,
-                stream=True
+            stream = await model.chat.completions.create(
+                model=settings.AI_MODEL,
+                messages=[{"role": "user", "content": prompt}],
+                temperature=settings.AI_TEMPERATURE,
+                max_tokens=settings.AI_MAX_TOKENS,
+                stream=True,
             )
-            
+
             full_response = ""
-            
-            for chunk in response:
-                if chunk.text:
-                    full_response += chunk.text
+
+            async for chunk in stream:
+                delta = chunk.choices[0].delta.content if chunk.choices else None
+                if delta:
+                    full_response += delta
                     yield json.dumps({
                         "type": "chunk",
-                        "content": chunk.text
+                        "content": delta
                     })
-            
+
             # Send completion signal
             yield json.dumps({
                 "type": "complete",
                 "content": full_response
             })
-            
+
             # Save to conversation history
             append_message(conversation_id, "user", question)
             append_message(conversation_id, "assistant", full_response, metadata={
-                "provider": "Gemini",
+                "provider": "Groq",
                 "model": settings.AI_MODEL,
                 "timestamp": datetime.utcnow().isoformat()
             })
@@ -134,13 +130,12 @@ Only return the JSON array, no other text:"""
                     "Show me code examples",
                     "What are the best practices?"
                 ]
-            
-            response = model.generate_content(
-                prompt,
-                generation_config={
-                    "temperature": 0.7,
-                    "max_output_tokens": 200
-                }
+
+            response = await model.chat.completions.create(
+                model=settings.AI_MODEL,
+                messages=[{"role": "user", "content": prompt}],
+                temperature=0.7,
+                max_tokens=200,
             )
             
             # Parse response
