@@ -4,6 +4,7 @@ from app.services.chatbot_service import save_chat, get_chat_history
 from app.services.gemini_service import generate_ai_response
 from app.services.context_builder import build_context
 from app.services.google_sheets_service import save_chat_to_sheet
+from app.config.settings import settings
 
 router = APIRouter()
 
@@ -80,7 +81,7 @@ async def get_history(project_id: str):
 @router.get("/health")
 async def health_check():
     """
-    Check if Gemini AI is available
+    Check if Groq AI is available
     
     Returns:
         Health status of the AI service
@@ -90,6 +91,6 @@ async def health_check():
     
     return {
         "status": "healthy" if model else "fallback_mode",
-        "provider": "Gemini" if model else "Rule-Based",
-        "model": "gemini-2.5-flash" if model else "rule-based"
+        "provider": "Groq" if model else "Rule-Based",
+        "model": settings.AI_MODEL if model else "rule-based"
     }

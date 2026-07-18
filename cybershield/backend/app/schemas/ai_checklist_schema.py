@@ -21,7 +21,7 @@ class GeneratedChecklistOut(BaseModel):
     """A stored generated checklist document."""
     id: str
     project_id: str
-    generated_by: str = "gemini"
+    generated_by: str = "groq"
     risk_score: Optional[int] = None
     estimated_risk_after: Optional[int] = None
     items: List[ChecklistTask] = Field(default_factory=list)
@@ -42,7 +42,7 @@ class RegenerateChecklistIn(BaseModel):
 class GenerateChecklistOut(BaseModel):
     """Response for generate / regenerate."""
     project_id: str
-    generated_by: str = "gemini"
+    generated_by: str = "groq"
     risk_score: Optional[int] = None
     estimated_risk_after: Optional[int] = None
     items: List[ChecklistTask] = Field(default_factory=list)

@@ -32,7 +32,7 @@ async def analyze_with_ai(data: Dict[str, Any], user_id: str = None) -> Dict[str
         raw = await ai_service.generate_threat_model(data)
         parsed = ai_service.parse_ai_response(raw)
         ai_payload = ai_service.validate_ai_response(parsed, data)
-        provider = "Gemini"
+        provider = "Groq"
         model = settings.AI_MODEL
     except Exception as e:  # timeout, API error, invalid JSON, validation error
         traceback.print_exc()

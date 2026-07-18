@@ -1,79 +1,85 @@
+import asyncio
 import json
 import time
-import warnings
 from typing import Dict, Any, Optional
 
-# Try to import Gemini AI, fallback to None if not available
+# Use the Groq SDK (synchronous client). It calls chat.completions with the
+# model configured via GROQ_API_KEY / AI_MODEL in settings. The blocking call
+# is dispatched on a worker thread to keep the event loop responsive.
 try:
-    # Try new package first (google.genai)
-    try:
-        from google import genai
-        GEMINI_AVAILABLE = True
-        USING_NEW_API = True
-    except ImportError:
-        # Fallback to old package (google.generativeai) - suppress deprecation warning
-        warnings.filterwarnings('ignore', category=FutureWarning, module='google.generativeai')
-        import google.generativeai as genai
-        GEMINI_AVAILABLE = True
-        USING_NEW_API = False
+    from groq import Groq
+    GROQ_AVAILABLE = True
 except ImportError:
-    print("Warning: google-generativeai not installed. Using fallback mode.")
-    genai = None
-    GEMINI_AVAILABLE = False
-    USING_NEW_API = False
+    print("Warning: groq not installed. Using fallback mode.")
+    Groq = None
+    GROQ_AVAILABLE = False
 
 from app.config.settings import settings
 
 
-# Initialize Gemini client once at module level
-_genai_configured = False
-_model = None
+# Initialize Groq client once at module level
+_groq_configured = False
+_client = None
 
 
-def initialize_gemini():
+def initialize_groq():
     """
-    Initialize Gemini AI client
-    Should be called once when application starts
+    Initialize the Groq AI client.
+
+    Reads the API key from settings.GROQ_API_KEY. Returns None (fallback mode)
+    when the package is not installed or no key is configured.
     """
-    global _genai_configured, _model
-    
-    if _genai_configured:
-        return _model
-    
+    global _groq_configured, _client
+
+    if _groq_configured:
+        return _client
+
     try:
-        # Check if Gemini is available
-        if not GEMINI_AVAILABLE or genai is None:
-            print("Warning: Gemini AI not available (package not installed). Using fallback mode.")
+        if not GROQ_AVAILABLE or Groq is None:
+            print("Warning: Groq not available (package not installed). Using fallback mode.")
             return None
-        
-        if not settings.GEMINI_API_KEY or settings.GEMINI_API_KEY == "your-gemini-api-key-here":
-            print("Warning: GEMINI_API_KEY not set. Using fallback mode.")
+
+        key = settings.GROQ_API_KEY
+        if not key or key == "your-groq-api-key-here":
+            print("Warning: GROQ_API_KEY not set. Using fallback mode.")
             return None
-        
-        # Configure Gemini based on API version
-        if USING_NEW_API:
-            # New API (google.genai)
-            _model = genai.GenerativeModel(settings.AI_MODEL)
-        else:
-            # Old API (google.generativeai)
-            genai.configure(api_key=settings.GEMINI_API_KEY)
-            _model = genai.GenerativeModel(settings.AI_MODEL)
-        
-        _genai_configured = True
-        print(f"✅ Gemini AI initialized successfully with model: {settings.AI_MODEL}")
-        return _model
-    
+
+        _client = Groq(api_key=key)
+        print(f"Groq AI initialized with model: {settings.AI_MODEL}")
+
+        _groq_configured = True
+        return _client
+
     except Exception as e:
-        print(f"Error initializing Gemini: {str(e)}")
+        print(f"Error initializing Groq: {str(e)}")
         return None
 
 
 def get_model():
-    """Get or initialize the Gemini model"""
-    global _model
-    if _model is None:
-        _model = initialize_gemini()
-    return _model
+    """Get or initialize the Groq client."""
+    global _client
+    if _client is None:
+        _client = initialize_groq()
+    return _client
+
+
+async def _generate_content(prompt: str):
+    """Generate content via the configured Groq client.
+
+    Returns the raw text of the completion (or None if unavailable).
+    """
+    client = get_model()
+    if client is None:
+        return None
+
+    response = await asyncio.to_thread(
+        client.chat.completions.create,
+        model=settings.AI_MODEL,
+        messages=[{"role": "user", "content": prompt}],
+        temperature=settings.AI_TEMPERATURE,
+        max_tokens=settings.AI_MAX_TOKENS,
+    )
+    return response.choices[0].message.content or ""
 
 
 async def generate_ai_response(
@@ -82,21 +88,21 @@ async def generate_ai_response(
     max_retries: int = 3
 ) -> Dict[str, Any]:
     """
-    Generate AI response using Gemini
-    
+    Generate AI response using Groq
+
     Args:
         question: User's question
         project_context: Project context including threats, risk, etc.
         max_retries: Maximum number of retries on failure
-        
+
     Returns:
         Dictionary with AI response or fallback response
     """
-    model = get_model()
-    
-    if not model:
+    client = get_model()
+
+    if not client:
         # Fallback to rule-based chatbot
-        print("Gemini not available, using fallback mode")
+        print("Groq not available, using fallback mode")
         from app.services.chatbot_service import generate_answer as fallback_answer
         fallback = fallback_answer(question, project_context.get("project_id"))
         return {
@@ -108,28 +114,27 @@ async def generate_ai_response(
                 "business_impact": "N/A",
                 "recommendation": fallback["answer"],
                 "implementation_steps": [],
-                "secure_code": "# Configure Gemini API key for AI-powered responses"
+                "secure_code": "# Configure GROQ_API_KEY for AI-powered responses"
             }
         }
-    
+
     try:
         # Build prompt with context
         from app.services.prompt_builder import build_prompt
         prompt = build_prompt(question, project_context)
-        
+
         # Generate response with retry logic
         for attempt in range(max_retries):
             try:
                 start_time = time.time()
-                
-                # Generate response (API is the same for both versions)
-                response = model.generate_content(prompt)
-                
+
+                response_text = await _generate_content(prompt)
+
                 response_time = time.time() - start_time
-                
+
                 # Parse JSON response
-                response_text = response.text.strip()
-                
+                response_text = response_text.strip()
+
                 # Try to extract JSON from response
                 try:
                     # Remove markdown code blocks if present
@@ -137,20 +142,20 @@ async def generate_ai_response(
                         response_text = response_text.split("```json")[1].split("```")[0].strip()
                     elif "```" in response_text:
                         response_text = response_text.split("```")[1].split("```")[0].strip()
-                    
+
                     answer_data = json.loads(response_text)
-                    
+
                     return {
-                        "provider": "Gemini",
+                        "provider": "Groq",
                         "model": settings.AI_MODEL,
                         "response_time": round(response_time, 2),
                         "answer": answer_data
                     }
-                
+
                 except json.JSONDecodeError:
                     # If JSON parsing fails, wrap the text response
                     return {
-                        "provider": "Gemini",
+                        "provider": "Groq",
                         "model": settings.AI_MODEL,
                         "response_time": round(response_time, 2),
                         "answer": {
@@ -162,17 +167,17 @@ async def generate_ai_response(
                             "secure_code": ""
                         }
                     }
-            
+
             except Exception as e:
                 if attempt < max_retries - 1:
                     wait_time = 2 ** attempt  # Exponential backoff
-                    print(f"Gemini API error (attempt {attempt + 1}/{max_retries}): {str(e)}. Retrying in {wait_time}s...")
+                    print(f"Groq API error (attempt {attempt + 1}/{max_retries}): {str(e)}. Retrying in {wait_time}s...")
                     time.sleep(wait_time)
                 else:
                     raise e
-    
+
     except Exception as e:
-        print(f"Gemini API failed after {max_retries} retries: {str(e)}")
+        print(f"Groq API failed after {max_retries} retries: {str(e)}")
         # Fallback to rule-based chatbot
         from app.services.chatbot_service import generate_answer as fallback_answer
         fallback = fallback_answer(question, project_context.get("project_id"))
@@ -186,7 +191,7 @@ async def generate_ai_response(
                 "business_impact": "N/A",
                 "recommendation": fallback["answer"],
                 "implementation_steps": [],
-                "secure_code": "# Configure Gemini API key for AI-powered responses"
+                "secure_code": "# Configure GROQ_API_KEY for AI-powered responses"
             }
         }
 
@@ -198,18 +203,18 @@ async def generate_daily_explanation(
 ) -> str:
     """
     Generate AI explanation for daily challenge
-    
+
     Args:
         category: Challenge category (e.g., "SQL Injection")
         title: Challenge title
         user_answer: User's submitted answer
-    
+
     Returns:
         Explanation string
     """
-    model = get_model()
-    
-    if not model:
+    client = get_model()
+
+    if not client:
         # Return fallback explanation
         return f"""
 Today's challenge demonstrated {category}.
@@ -229,7 +234,7 @@ Many major breaches have occurred due to {category} vulnerabilities, including t
 Related OWASP Category:
 A03:2021 - Injection
 """
-    
+
     try:
         prompt = f"""
 You are a cybersecurity expert explaining a daily challenge to a learner.
@@ -252,10 +257,10 @@ Provide a comprehensive explanation in this format:
 
 Keep the explanation educational, clear, and actionable. Use bullet points and code examples where appropriate.
 """
-        
-        response = model.generate_content(prompt)
-        return response.text.strip()
-        
+
+        response_text = await _generate_content(prompt)
+        return response_text.strip()
+
     except Exception as e:
         print(f"Error generating daily explanation: {str(e)}")
         return f"""
