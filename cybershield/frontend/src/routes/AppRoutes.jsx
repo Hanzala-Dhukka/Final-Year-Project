@@ -38,6 +38,8 @@ import Profile from "../pages/Profile/Profile";
 import Settings from "../pages/Settings/Settings";
 import SecurityChecklist from "../pages/SecurityChecklist/SecurityChecklist";
 import AIChecklist from "../pages/AIChecklist/AIChecklist";
+import ComplianceDashboard from "../pages/Compliance/ComplianceDashboard";
+import ExecutiveDashboard from "../pages/ExecutiveDashboard/ExecutiveDashboard";
 
 import Login from "../pages/Login/Login";
 import Register from "../pages/Register/Register";

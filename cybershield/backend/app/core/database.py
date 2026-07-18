@@ -106,7 +106,8 @@ async def ensure_collections():
         "checklist_progress",
         "generated_checklists",
         "compliance_reports",
-        "compliance_history"
+        "compliance_history",
+        "analytics_snapshots"
     ]
     
     for collection_name in required_collections:

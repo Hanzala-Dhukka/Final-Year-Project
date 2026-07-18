@@ -20,7 +20,8 @@ import {
   People,
   Assessment,
   VerifiedUser,
-  Policy
+  Policy,
+  Insights
 } from "@mui/icons-material";
 
 export const menuItems = [
@@ -28,6 +29,12 @@ export const menuItems = [
     title: "Dashboard",
     icon: <Dashboard />,
     path: "/dashboard",
+    roles: ["student", "admin"]
+  },
+  {
+    title: "Executive Dashboard",
+    icon: <Insights />,
+    path: "/executive",
     roles: ["student", "admin"]
   },
 
