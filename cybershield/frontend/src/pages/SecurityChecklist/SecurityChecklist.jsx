@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
 import checklistApi from "../../api/checklistApi";
-import projectApi from "../../api/projectApi";
+import { projectApi } from "../../api/projectApi";
 import ChecklistCard from "../../components/Checklist/ChecklistCard";
 import ChecklistProgress from "../../components/Checklist/ChecklistProgress";
 import ChecklistFilter from "../../components/Checklist/ChecklistFilter";

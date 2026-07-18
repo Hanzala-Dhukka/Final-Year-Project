@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
 import aiChecklistApi from "../../api/aiChecklistApi";
-import projectApi from "../../api/projectApi";
+import { projectApi } from "../../api/projectApi";
 import ChecklistSummary from "../../components/Checklist/ChecklistSummary";
 import AIChecklistCard from "../../components/Checklist/AIChecklistCard";
 import ProgressTracker from "../../components/Checklist/ProgressTracker";

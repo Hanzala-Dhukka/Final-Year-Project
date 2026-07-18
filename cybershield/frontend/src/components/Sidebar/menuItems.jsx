@@ -19,7 +19,8 @@ import {
   AdminPanelSettings,
   People,
   Assessment,
-  VerifiedUser
+  VerifiedUser,
+  Policy
 } from "@mui/icons-material";
 
 export const menuItems = [
@@ -56,6 +57,12 @@ export const menuItems = [
         title: "Security Checklist",
         icon: <VerifiedUser />,
         path: "/security-checklist",
+        roles: ["student", "admin"]
+      },
+      {
+        title: "Compliance Center",
+        icon: <Policy />,
+        path: "/compliance",
         roles: ["student", "admin"]
       }
     ]

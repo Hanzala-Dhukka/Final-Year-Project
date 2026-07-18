@@ -34,6 +34,7 @@ from app.api.remediation_routes import router as remediation_router
 from app.api.copilot_routes import router as security_copilot_router
 from app.routes.checklist_routes import router as checklist_router
 from app.api.ai_checklist_routes import router as ai_checklist_router
+from app.routes.compliance_routes import router as compliance_router
 from app.services.scheduler import scheduler
 from app.services.monitoring_jobs import monitor_targets
 
@@ -98,6 +99,8 @@ app.include_router(security_copilot_router, prefix="/api/v1/copilot", tags=["AI 
 app.include_router(checklist_router, tags=["Security Checklist"])
 # ── AI-Powered Dynamic Checklist (Module 6.2) ──────────────────────────────
 app.include_router(ai_checklist_router, tags=["AI Checklist"])
+# ── Compliance Center (Module 6.3) ─────────────────────────────────────────
+app.include_router(compliance_router, tags=["Compliance Center"])
 
 
 # ── Health check ──────────────────────────────────────────────────────────────
