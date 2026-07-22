@@ -1,0 +1,72 @@
+.cl-page {
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: 32px 24px 80px;
+}
+.cl-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 32px;
+}
+.cl-header h1 {
+  font-size: 30px;
+  font-weight: 700;
+  margin: 0;
+  color: var(--text-primary, #f1f5f9);
+}
+.cl-header p {
+  color: var(--text-secondary, #94a3b8);
+  margin: 4px 0 0;
+}
+.cl-section {
+  margin-bottom: 40px;
+  padding: 24px;
+  border: 1px solid var(--border-color, rgba(148, 163, 184, 0.12));
+  border-radius: var(--radius-xl, 16px);
+  background: var(--card-bg, #111827);
+}
+.cl-section__head h2 {
+  font-size: 20px;
+  font-weight: 600;
+  margin: 0;
+  color: var(--text-primary, #f1f5f9);
+}
+.cl-section__head p {
+  color: var(--text-secondary, #94a3b8);
+  font-size: 13px;
+  margin: 4px 0 20px;
+}
+.cl-section__body {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+.cl-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+}
+.cl-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 16px;
+}
+.cl-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.cl-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 16px;
+}
+.cl-progress {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 24px;
+}

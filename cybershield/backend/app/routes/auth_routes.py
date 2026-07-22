@@ -5,6 +5,7 @@ from fastapi import APIRouter, HTTPException, Depends, status, Request
 from pydantic import BaseModel
 from datetime import datetime, timezone, timedelta
 from typing import Optional
+import secrets
 from app.models.user_model import UserCreate, UserLogin, UserResponse, TokenResponse
 from app.models.reset_token_model import PasswordResetRequest, PasswordResetConfirm, PasswordResetResponse
 from app.repositories.user_repository import user_repository
@@ -14,7 +15,7 @@ from app.services.email_service import email_service
 from app.services.token_service import token_service
 from app.services.refresh_service import refresh_service
 from app.services.session_service import session_service
-from app.services.auth_service import verify_email, logout_all_devices
+from app.services.auth_service import logout_all_devices
 from app.utils.security import create_access_token, create_refresh_token, get_current_user
 from app.core.config import settings
 
@@ -43,7 +44,11 @@ async def register(user_data: UserCreate):
         
         # Hash password
         password_hash = password_service.hash_password(user_data.password)
-        
+
+        # Generate verification token + 24h expiry
+        verification_token = secrets.token_urlsafe(32)
+        token_expiry = datetime.now(timezone.utc) + timedelta(hours=24)
+
         # Create user data
         user_dict = {
             "name": user_data.name,
@@ -51,11 +56,21 @@ async def register(user_data: UserCreate):
             "password_hash": password_hash,
             "role": "student",
             "is_verified": False,
+            "verification_token": verification_token,
+            "token_expiry": token_expiry,
             "account_status": "active",
+            # Onboarding defaults — new users start the onboarding flow
+            "first_login": True,
+            "profile_completed": False,
+            "skill_level": "",
+            "learning_goals": [],
+            "dashboard_tour_completed": False,
+            "avatar": "",
+            "bio": "",
             "created_at": datetime.now(timezone.utc),
             "last_login": None
         }
-        
+
         # Create user
         user_id = await user_repository.create_user(user_dict)
         if not user_id:
@@ -63,10 +78,18 @@ async def register(user_data: UserCreate):
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail="Failed to create user"
             )
-        
+
         # Get created user
         user = await user_repository.get_user_by_id(user_id)
-        
+
+        # Send verification email (required for activation)
+        try:
+            await email_service.send_verification_email(
+                user_data.email, verification_token, user_data.name
+            )
+        except Exception as e:
+            print(f"Failed to send verification email: {e}")
+
         # Send welcome email (optional)
         try:
             await email_service.send_welcome_email(user_data.email, user_data.name)
@@ -79,6 +102,13 @@ async def register(user_data: UserCreate):
             email=user["email"],
             role=user.get("role", "student"),
             is_verified=user.get("is_verified", False),
+            first_login=user.get("first_login", True),
+            profile_completed=user.get("profile_completed", False),
+            skill_level=user.get("skill_level", ""),
+            learning_goals=user.get("learning_goals", []),
+            dashboard_tour_completed=user.get("dashboard_tour_completed", False),
+            avatar=user.get("avatar"),
+            bio=user.get("bio"),
             created_at=user["created_at"]
         )
         
@@ -130,6 +160,13 @@ async def login(credentials: UserLogin, request: Request):
                 detail="Account is disabled"
             )
         
+        # Block login until the email address is verified
+        if not user.get("is_verified", False):
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Please verify your email before logging in"
+            )
+        
         print(f"LOGIN: Password verified, creating tokens...")
         # Create tokens
         user_id = str(user["_id"])
@@ -170,7 +207,8 @@ async def login(credentials: UserLogin, request: Request):
             access_token=access_token,
             refresh_token=refresh_token,
             token_type="bearer",
-            expires_in=settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60
+            expires_in=settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60,
+            first_login=user.get("first_login", False)
         )
         
     except HTTPException:
@@ -302,14 +340,102 @@ async def verify_email_endpoint(token: str):
     Verify a user's email using the verification token sent by email.
     """
     try:
-        result = await verify_email(token)
-        return result
+        user = await user_repository.get_user_by_verification_token(token)
+        if not user:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Invalid or expired verification token"
+            )
+
+        # Token expiry handling
+        token_expiry = user.get("token_expiry")
+        if token_expiry and token_expiry < datetime.now(timezone.utc):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Verification token has expired. Please request a new one."
+            )
+
+        # Already verified — treat as success to avoid confusing the user
+        if user.get("is_verified", False):
+            return {"success": True, "message": "Email already verified"}
+
+        # Mark email as verified and clear the token
+        update_success = await user_repository.update_user(str(user["_id"]), {
+            "is_verified": True,
+            "verification_token": None,
+            "token_expiry": None,
+            "updated_at": datetime.now(timezone.utc)
+        })
+        if not update_success:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Failed to verify email"
+            )
+
+        return {"success": True, "message": "Email verified successfully"}
     except HTTPException:
         raise
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Email verification failed: {str(e)}"
+        )
+
+
+class ResendVerificationRequest(BaseModel):
+    email: str
+
+
+@router.post("/resend-verification", response_model=PasswordResetResponse)
+async def resend_verification(request: ResendVerificationRequest):
+    """
+    Resend a verification email with a fresh token + expiry.
+    """
+    try:
+        user = await user_repository.get_user_by_email(request.email)
+
+        # Always return success to avoid user enumeration
+        if not user:
+            return PasswordResetResponse(
+                message="If an account exists, a verification email has been sent"
+            )
+
+        # No need to resend if already verified
+        if user.get("is_verified", False):
+            return PasswordResetResponse(
+                message="This email is already verified. You can log in."
+            )
+
+        # Generate a new verification token + 24h expiry
+        verification_token = secrets.token_urlsafe(32)
+        token_expiry = datetime.now(timezone.utc) + timedelta(hours=24)
+
+        update_success = await user_repository.update_user(str(user["_id"]), {
+            "verification_token": verification_token,
+            "token_expiry": token_expiry,
+            "updated_at": datetime.now(timezone.utc)
+        })
+        if not update_success:
+            return PasswordResetResponse(
+                message="If an account exists, a verification email has been sent"
+            )
+
+        try:
+            await email_service.send_verification_email(
+                email=user["email"],
+                verification_token=verification_token,
+                user_name=user["name"]
+            )
+        except Exception as e:
+            print(f"Failed to send verification email: {e}")
+
+        return PasswordResetResponse(
+            message="If an account exists, a verification email has been sent"
+        )
+    except Exception as e:
+        # Still return success to avoid user enumeration
+        return PasswordResetResponse(
+            message="If an account exists, a verification email has been sent"
         )
 
 
@@ -441,5 +567,12 @@ async def get_current_user_info(current_user: dict = Depends(get_current_user)):
         email=current_user["email"],
         role=current_user.get("role", "student"),
         is_verified=current_user.get("is_verified", False),
+        first_login=current_user.get("first_login", False),
+        profile_completed=current_user.get("profile_completed", False),
+        skill_level=current_user.get("skill_level", ""),
+        learning_goals=current_user.get("learning_goals", []),
+        dashboard_tour_completed=current_user.get("dashboard_tour_completed", False),
+        avatar=current_user.get("avatar"),
+        bio=current_user.get("bio"),
         created_at=current_user["created_at"]
     )

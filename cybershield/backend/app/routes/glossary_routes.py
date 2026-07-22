@@ -1,32 +1,7 @@
-from fastapi import APIRouter
-from app.data.glossary import GLOSSARY
+"""
+Backwards-compatible re-export of the Glossary router (Module 7.3).
 
-router = APIRouter(
-    prefix="/api/v1/glossary",
-    tags=["Glossary"]
-)
-
-@router.get("/")
-async def get_glossary():
-    """Get the full glossary of cybersecurity terms."""
-    return GLOSSARY
-
-@router.get("/search")
-async def search_glossary(term: str):
-    """Search for a specific term in the glossary."""
-    results = [
-        item
-        for item in GLOSSARY
-        if term.lower() in item["term"].lower()
-    ]
-    return results
-
-@router.get("/progress")
-async def get_glossary_progress():
-    """Learning progress for the glossary (total terms available)."""
-    total = len(GLOSSARY)
-    return {
-        "terms_learned": 0,
-        "total_terms": total,
-        "percentage": 0,
-    }
+The implementation now lives in app.api.glossary_routes; this module re-exports
+its router so existing main.py imports keep working.
+"""
+from app.api.glossary_routes import router  # noqa: F401

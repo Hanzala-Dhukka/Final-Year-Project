@@ -1,0 +1,81 @@
+/* ============================================================
+   Forgot / Reset Password (Module B3)
+   Reuses the shared register design system, then layers on the
+   recovery-specific pieces (brand row, shield icon, centered link).
+   ============================================================ */
+@import "../Register/register.css";
+
+/* Full-screen auth shell (same as login/register) */
+.fp-page {
+  position: relative;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--cs-bg, #0f172a);
+  overflow: hidden;
+}
+.fp-page .cyber-background {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+}
+.fp-page .cs-auth-form {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2.5rem 1.5rem;
+}
+
+/* Brand row (logo + wordmark) */
+.fp-brand {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin-bottom: 1.5rem;
+}
+.fp-wordmark {
+  font-size: 1.25rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: var(--cs-text, #f1f5f9);
+}
+
+/* Shield/lock icon above the heading */
+.fp-icon {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  margin: 0 auto 0.9rem;
+  border-radius: 12px;
+  background: rgba(56, 189, 248, 0.12);
+  color: var(--cs-accent, #38bdf8);
+}
+
+/* Centered inline link (remember password / back to login) */
+.cs-link--center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  margin-top: 1rem;
+  width: 100%;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  font-size: 0.88rem;
+  color: var(--cs-link, #7dd3fc);
+  font-family: inherit;
+}
+.cs-link--center:hover {
+  text-decoration: underline;
+}
+
+/* Spacing helper for success-state buttons */
+.cs-mt {
+  margin-top: 1.25rem;
+}

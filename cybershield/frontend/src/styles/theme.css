@@ -1,0 +1,84 @@
+/* CyberShield Theme System
+   - The ThemeProvider writes --<token> custom properties onto <html> per mode.
+   - This file provides the smooth transition layer + semantic aliases +
+     theme-aware scrollbars. It does NOT hard-code colors. */
+
+/* Smooth theme transition: background, color, border, shadow, fill, stroke.
+   Applied globally so switching themes animates at 250ms with no flash. */
+*,
+*::before,
+*::after {
+  transition: background-color var(--duration-base, 250ms)
+      cubic-bezier(0.4, 0, 0.2, 1),
+    border-color var(--duration-base, 250ms) cubic-bezier(0.4, 0, 0.2, 1),
+    box-shadow var(--duration-base, 250ms) cubic-bezier(0.4, 0, 0.2, 1),
+    color var(--duration-base, 250ms) cubic-bezier(0.4, 0, 0.2, 1),
+    fill var(--duration-base, 250ms) cubic-bezier(0.4, 0, 0.2, 1),
+    stroke var(--duration-base, 250ms) cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Semantic aliases so existing components referencing the old names keep
+   working under both themes. */
+:root {
+  --bg-primary: var(--bgPrimary);
+  --bg-secondary: var(--bgSecondary);
+  --card-bg: var(--cardBg);
+  --navbar-bg: var(--navbarBg);
+  --sidebar-bg: var(--sidebarBg);
+  --text-primary: var(--textPrimary);
+  --text-secondary: var(--textSecondary);
+  --primary: var(--primary);
+  --secondary: var(--bgSecondary);
+  --success: var(--success);
+  --warning: var(--warning);
+  --danger: var(--danger);
+  --info: var(--info);
+  --border-color: var(--borderColor);
+  --shadow: var(--shadow);
+  --glow: var(--glow);
+
+  /* Motion (duplicated from variables.css to avoid a FOUC before variables load) */
+  --duration-base: 250ms;
+  --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Theme-aware scrollbar (Chrome/Edge/Safari) */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--scrollbarThumb) var(--scrollbarTrack);
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--scrollbarTrack);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--scrollbarThumb);
+  border-radius: 999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--scrollbarThumbHover);
+}
+
+/* Base surface defaults driven by the active theme */
+html,
+body,
+#root {
+  background: var(--bgPrimary);
+  color: var(--textPrimary);
+}
+
+/* Respect users who prefer reduced motion: disable the transition sweep. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition: none !important;
+  }
+}

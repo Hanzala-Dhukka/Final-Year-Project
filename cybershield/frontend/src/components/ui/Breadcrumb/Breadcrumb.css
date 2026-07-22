@@ -1,0 +1,26 @@
+.cs-breadcrumb {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  font-size: 13px;
+}
+.cs-breadcrumb__item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.cs-breadcrumb__link {
+  color: var(--text-secondary, #94a3b8);
+  transition: color 150ms var(--ease-in-out, ease);
+}
+.cs-breadcrumb__link:hover {
+  color: var(--primary, #2563eb);
+}
+.cs-breadcrumb__current {
+  color: var(--text-primary, #f1f5f9);
+  font-weight: 500;
+}
+.cs-breadcrumb__sep {
+  color: var(--text-muted, #64748b);
+}

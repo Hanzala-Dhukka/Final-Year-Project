@@ -1,0 +1,157 @@
+/* ===== Animated card ===== */
+.cs-anim-card {
+  background: var(--card-bg, #111827);
+  border: 1px solid var(--border-color, rgba(148, 163, 184, 0.12));
+  border-radius: var(--radius-lg, 12px);
+  transition: box-shadow 250ms var(--ease-in-out, ease),
+    border-color 250ms var(--ease-in-out, ease);
+  will-change: transform;
+}
+.cs-anim-card:hover {
+  box-shadow: var(--shadow, 0 4px 16px rgba(0, 0, 0, 0.45));
+  border-color: var(--border-strong, rgba(148, 163, 184, 0.24));
+}
+
+/* ===== Loading overlay ===== */
+.cs-loading-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 2000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-overlay, rgba(15, 23, 42, 0.6));
+  backdrop-filter: blur(4px);
+}
+.cs-loading-overlay__panel {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 28px 36px;
+  background: var(--card-bg, #111827);
+  border: 1px solid var(--border-color, rgba(148, 163, 184, 0.12));
+  border-radius: var(--radius-lg, 12px);
+  box-shadow: var(--shadow, 0 4px 16px rgba(0, 0, 0, 0.45));
+  color: var(--text-secondary, #94a3b8);
+}
+.cs-loading-overlay__msg {
+  font-size: 14px;
+  text-align: center;
+  max-width: 280px;
+}
+
+/* ===== Toasts ===== */
+.cs-toast-stack {
+  position: fixed;
+  top: 84px;
+  right: 24px;
+  z-index: 2100;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  pointer-events: none;
+}
+.cs-toast {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  width: 340px;
+  max-width: calc(100vw - 32px);
+  padding: 14px 16px;
+  border-radius: var(--radius-md, 8px);
+  background: var(--card-bg, #111827);
+  border: 1px solid var(--border-color, rgba(148, 163, 184, 0.12));
+  box-shadow: var(--shadow, 0 4px 16px rgba(0, 0, 0, 0.45));
+  pointer-events: auto;
+}
+.cs-toast__icon {
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+.cs-toast--success .cs-toast__icon {
+  color: var(--success, #10b981);
+}
+.cs-toast--error .cs-toast__icon {
+  color: var(--danger, #ef4444);
+}
+.cs-toast--warning .cs-toast__icon {
+  color: var(--warning, #f59e0b);
+}
+.cs-toast--info .cs-toast__icon {
+  color: var(--info, #3b82f6);
+}
+.cs-toast__body {
+  flex: 1;
+  min-width: 0;
+}
+.cs-toast__title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary, #f1f5f9);
+}
+.cs-toast__msg {
+  font-size: 13px;
+  color: var(--text-secondary, #94a3b8);
+}
+.cs-toast__close {
+  border: none;
+  background: none;
+  color: var(--text-muted, #64748b);
+  cursor: pointer;
+  display: inline-flex;
+}
+.cs-toast__close:hover {
+  color: var(--text-primary, #f1f5f9);
+}
+
+/* ===== Success animation ===== */
+.cs-success__ring {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  filter: drop-shadow(0 0 12px rgba(16, 185, 129, 0.35));
+}
+.cs-success__xp {
+  margin-top: 8px;
+  font-weight: 700;
+  color: var(--success, #10b981);
+}
+.cs-success__label {
+  margin-top: 4px;
+  color: var(--text-secondary, #94a3b8);
+  font-size: 14px;
+}
+
+/* ===== Shake (error feedback) ===== */
+.cs-shake {
+  animation: cs-shake 0.4s var(--ease-in-out, ease);
+}
+@keyframes cs-shake {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  20% {
+    transform: translateX(-6px);
+  }
+  40% {
+    transform: translateX(6px);
+  }
+  60% {
+    transform: translateX(-4px);
+  }
+  80% {
+    transform: translateX(4px);
+  }
+}
+
+/* ===== Reduced motion ===== */
+@media (prefers-reduced-motion: reduce) {
+  .cs-shake {
+    animation: none;
+  }
+  .cs-anim-card {
+    transition: none;
+  }
+}

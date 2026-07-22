@@ -55,6 +55,24 @@ class UserRepository:
             print(f"Error getting user by email: {e}")
             return None
     
+    async def get_user_by_verification_token(self, token: str) -> Optional[Dict[str, Any]]:
+        """
+        Get user by email verification token.
+        
+        Args:
+            token: Verification token stored on the user document
+            
+        Returns:
+            User document if found, None otherwise
+        """
+        try:
+            collection = get_collection(self.collection_name)
+            user = await collection.find_one({"verification_token": token})
+            return user
+        except Exception as e:
+            print(f"Error getting user by verification token: {e}")
+            return None
+    
     async def get_user_by_id(self, user_id: str) -> Optional[Dict[str, Any]]:
         """
         Get user by ID.

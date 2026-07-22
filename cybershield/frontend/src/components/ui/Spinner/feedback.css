@@ -1,0 +1,140 @@
+.cs-spinner {
+  display: inline-flex;
+  color: var(--primary, #2563eb);
+}
+.cs-spin {
+  animation: cs-spin-rot 0.7s linear infinite;
+}
+@keyframes cs-spin-rot {
+  to {
+    transform: rotate(360deg);
+  }
+}
+.cs-spinner-fullscreen {
+  position: fixed;
+  inset: 0;
+  z-index: 2000;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  background: var(--bg-overlay, rgba(15, 23, 42, 0.72));
+  color: var(--text-secondary, #94a3b8);
+}
+.cs-spinner-label {
+  font-size: 14px;
+}
+
+/* Progress */
+.cs-progress {
+  width: 100%;
+}
+.cs-progress__track {
+  width: 100%;
+  height: 8px;
+  background: var(--border-strong, rgba(148, 163, 184, 0.24));
+  border-radius: 999px;
+  overflow: hidden;
+}
+.cs-progress__bar {
+  height: 100%;
+  border-radius: 999px;
+  background: var(--primary, #2563eb);
+  transition: width 350ms var(--ease-in-out, ease);
+}
+.cs-progress__bar--success {
+  background: var(--success, #10b981);
+}
+.cs-progress__bar--warning {
+  background: var(--warning, #f59e0b);
+}
+.cs-progress__bar--danger {
+  background: var(--danger, #ef4444);
+}
+.cs-progress__bar--info {
+  background: var(--info, #3b82f6);
+}
+.cs-progress__label {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  color: var(--text-secondary, #94a3b8);
+  margin-bottom: 6px;
+}
+
+/* Circular progress */
+.cs-progress-circular {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.cs-progress-circular__text {
+  position: absolute;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary, #f1f5f9);
+}
+
+/* Step progress */
+.cs-steps {
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+.cs-step {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  flex: 1;
+  position: relative;
+}
+.cs-step__dot {
+  width: 32px;
+  height: 32px;
+  border-radius: 999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 600;
+  background: var(--card-bg, #111827);
+  border: 2px solid var(--border-strong, rgba(148, 163, 184, 0.24));
+  color: var(--text-secondary, #94a3b8);
+  z-index: 1;
+}
+.cs-step__line {
+  position: absolute;
+  top: 16px;
+  left: 50%;
+  width: 100%;
+  height: 2px;
+  background: var(--border-strong, rgba(148, 163, 184, 0.24));
+  z-index: 0;
+}
+.cs-step:last-child .cs-step__line {
+  display: none;
+}
+.cs-step--active .cs-step__dot {
+  border-color: var(--primary, #2563eb);
+  color: var(--primary, #2563eb);
+}
+.cs-step--done .cs-step__dot {
+  background: var(--primary, #2563eb);
+  border-color: var(--primary, #2563eb);
+  color: #fff;
+}
+.cs-step--done .cs-step__line {
+  background: var(--primary, #2563eb);
+}
+.cs-step__label {
+  font-size: 12px;
+  color: var(--text-secondary, #94a3b8);
+  text-align: center;
+}
+.cs-step--active .cs-step__label {
+  color: var(--text-primary, #f1f5f9);
+  font-weight: 600;
+}

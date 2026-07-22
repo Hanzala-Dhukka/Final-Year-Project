@@ -1,0 +1,105 @@
+/* Shared styles for Checkbox, Radio, Switch */
+
+.cs-control {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  color: var(--text-primary, #f1f5f9);
+  font-size: 14px;
+  user-select: none;
+}
+.cs-control--disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.cs-control input {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+/* Checkbox + Radio box */
+.cs-control__box {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border: 1.5px solid var(--border-strong, rgba(148, 163, 184, 0.24));
+  background: var(--card-bg, #111827);
+  transition: background-color 150ms var(--ease-in-out, ease),
+    border-color 150ms var(--ease-in-out, ease);
+  flex-shrink: 0;
+}
+.cs-control__box--check {
+  border-radius: 5px;
+}
+.cs-control__box--radio {
+  border-radius: 999px;
+}
+.cs-control input:focus-visible + .cs-control__box {
+  outline: 2px solid var(--primary, #2563eb);
+  outline-offset: 2px;
+}
+.cs-control input:checked + .cs-control__box--check {
+  background: var(--primary, #2563eb);
+  border-color: var(--primary, #2563eb);
+}
+.cs-control input:checked + .cs-control__box--radio {
+  border-color: var(--primary, #2563eb);
+}
+.cs-control__box--radio .cs-control__dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: var(--primary, #2563eb);
+  transform: scale(0);
+  transition: transform 150ms var(--ease-in-out, ease);
+}
+.cs-control input:checked + .cs-control__box--radio .cs-control__dot {
+  transform: scale(1);
+}
+.cs-control__check {
+  color: #fff;
+  opacity: 0;
+  transform: scale(0.6);
+  transition: all 150ms var(--ease-in-out, ease);
+}
+.cs-control input:checked + .cs-control__box--check .cs-control__check {
+  opacity: 1;
+  transform: scale(1);
+}
+
+/* Switch */
+.cs-switch {
+  position: relative;
+  width: 40px;
+  height: 22px;
+  border-radius: 999px;
+  background: var(--border-strong, rgba(148, 163, 184, 0.24));
+  transition: background-color 250ms var(--ease-in-out, ease);
+  flex-shrink: 0;
+}
+.cs-switch__thumb {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 18px;
+  height: 18px;
+  border-radius: 999px;
+  background: #fff;
+  transition: transform 250ms var(--ease-in-out, ease);
+}
+.cs-control input:checked ~ .cs-switch {
+  background: var(--primary, #2563eb);
+}
+.cs-control input:checked ~ .cs-switch .cs-switch__thumb {
+  transform: translateX(18px);
+}
+.cs-control input:focus-visible ~ .cs-switch {
+  outline: 2px solid var(--primary, #2563eb);
+  outline-offset: 2px;
+}

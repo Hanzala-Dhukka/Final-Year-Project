@@ -63,8 +63,8 @@ def get_model():
     return _client
 
 
-async def _generate_content(prompt: str):
-    """Generate content via the configured Groq client.
+async def _generate_content(prompt: str, retries: int = 2):
+    """Generate content via the configured Groq client with rate limit retry & fallback model.
 
     Returns the raw text of the completion (or None if unavailable).
     """
@@ -72,14 +72,56 @@ async def _generate_content(prompt: str):
     if client is None:
         return None
 
-    response = await asyncio.to_thread(
-        client.chat.completions.create,
-        model=settings.AI_MODEL,
-        messages=[{"role": "user", "content": prompt}],
-        temperature=settings.AI_TEMPERATURE,
-        max_tokens=settings.AI_MAX_TOKENS,
-    )
-    return response.choices[0].message.content or ""
+    model_to_use = settings.AI_MODEL
+    for attempt in range(retries + 1):
+        try:
+            response = await asyncio.to_thread(
+                client.chat.completions.create,
+                model=model_to_use,
+                messages=[{"role": "user", "content": prompt}],
+                temperature=settings.AI_TEMPERATURE,
+                max_tokens=settings.AI_MAX_TOKENS,
+            )
+            return response.choices[0].message.content or ""
+        except Exception as e:
+            err_msg = str(e).lower()
+            if ("rate_limit" in err_msg or "429" in err_msg) and attempt < retries:
+                # Switch to faster 8b model if 70b rate-limited
+                if "70b" in model_to_use:
+                    model_to_use = "llama-3.1-8b-instant"
+                await asyncio.sleep(1.5)
+                continue
+            print(f"Notice: Groq API call handled fallback ({e})")
+            return None
+
+
+def call_groq_sync(prompt: str, max_tokens: int = None, retries: int = 2) -> str | None:
+    """Synchronous Groq call with rate limit retry & fallback model."""
+    client = get_model()
+    if client is None:
+        return None
+
+    model_to_use = settings.AI_MODEL
+    for attempt in range(retries + 1):
+        try:
+            response = client.chat.completions.create(
+                model=model_to_use,
+                messages=[{"role": "user", "content": prompt}],
+                temperature=settings.AI_TEMPERATURE,
+                max_tokens=max_tokens or settings.AI_MAX_TOKENS,
+            )
+            return response.choices[0].message.content or ""
+        except Exception as e:
+            err_msg = str(e).lower()
+            if ("rate_limit" in err_msg or "429" in err_msg) and attempt < retries:
+                if "70b" in model_to_use:
+                    model_to_use = "llama-3.1-8b-instant"
+                time.sleep(1.5)
+                continue
+            print(f"Notice: Groq sync call handled fallback ({e})")
+            return None
+
+
 
 
 async def generate_ai_response(

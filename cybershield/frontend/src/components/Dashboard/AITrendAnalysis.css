@@ -1,0 +1,34 @@
+.ata-widget { display:flex; flex-direction:column; gap:14px; }
+.ata-header { display:flex; justify-content:space-between; align-items:center; }
+.ata-title-row { display:flex; align-items:center; gap:8px; }
+.ata-title  { margin:0; font-size:1.1rem; font-weight:600; color:var(--text-primary,#f8fafc); }
+.ata-refresh { background:none; border:1px solid rgba(255,255,255,.1); border-radius:6px;
+  color:var(--text-secondary,#94a3b8); font-size:.9rem; padding:3px 8px; cursor:pointer; }
+.ata-loading,.ata-error { display:flex; align-items:center; gap:8px; padding:16px;
+  color:var(--text-secondary,#94a3b8); font-size:.875rem; }
+.ata-spinner { display:inline-block; width:14px; height:14px; border:2px solid rgba(99,102,241,.3);
+  border-top-color:#6366f1; border-radius:50%; animation:ataSpin .8s linear infinite; }
+@keyframes ataSpin { to { transform:rotate(360deg); } }
+.ata-overall { display:flex; align-items:center; gap:8px; padding:10px 14px; border-radius:10px;
+  font-size:.9rem; font-weight:600; }
+.ata-trend--good   { background:rgba(34,197,94,.1); color:#4ade80; }
+.ata-trend--bad    { background:rgba(239,68,68,.1); color:#fca5a5; }
+.ata-trend--stable { background:rgba(100,116,139,.1); color:#94a3b8; }
+.ata-summary { font-size:.875rem; color:var(--text-secondary,#94a3b8); margin:0; }
+.ata-highlights { list-style:none; padding:0; margin:0; display:flex; flex-direction:column; gap:8px; }
+.ata-highlight { display:flex; align-items:center; gap:10px; padding:8px 12px;
+  background:rgba(255,255,255,.03); border-radius:8px; }
+.ata-dir    { font-size:1rem; font-weight:700; width:18px; text-align:center; }
+.dir--good   { color:#4ade80; }
+.dir--bad    { color:#f87171; }
+.dir--stable { color:#94a3b8; }
+.ata-metric { flex:1; font-size:.85rem; color:var(--text-primary,#f8fafc); }
+.ata-change { font-size:.8rem; font-weight:600; color:var(--text-secondary,#94a3b8); }
+.ata-forecast { padding:10px 14px; background:rgba(99,102,241,.08);
+  border:1px solid rgba(99,102,241,.2); border-radius:10px; }
+.ata-forecast-label { font-size:.7rem; font-weight:700; text-transform:uppercase;
+  letter-spacing:.05em; color:#a5b4fc; margin:0 0 4px; display:block; }
+.ata-forecast p { margin:0; font-size:.85rem; color:var(--text-secondary,#cbd5e1); }
+.ata-rec { display:flex; align-items:flex-start; gap:8px; padding:10px 14px;
+  background:rgba(234,179,8,.07); border:1px solid rgba(234,179,8,.2);
+  border-radius:10px; font-size:.85rem; color:#fde047; }

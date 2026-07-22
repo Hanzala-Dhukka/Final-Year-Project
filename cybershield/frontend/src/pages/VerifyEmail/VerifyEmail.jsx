@@ -76,7 +76,9 @@ function VerifyEmail() {
                 Go to Login
               </button>
               <button
-                onClick={() => navigate("/resend-verification")}
+                onClick={() => navigate("/resend-verification", {
+                  state: { email: "" }
+                })}
                 className="w-full bg-gray-200 text-gray-700 px-6 py-2 rounded-md hover:bg-gray-300"
               >
                 Resend Verification Email

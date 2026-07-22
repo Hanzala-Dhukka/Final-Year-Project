@@ -3,6 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.config.settings import settings
 from app.routes.auth_routes import router as auth_router
+from app.routes.onboarding_routes import router as onboarding_router
 from app.routes.security_routes import router as security_router
 from app.routes.scan_routes import router as scan_router
 from app.routes.github_routes import router as github_router
@@ -23,6 +24,8 @@ from app.routers.copilot_routes import router as copilot_router
 from app.routers.defense_routes import router as defense_router
 from app.routers.lab_routes import router as lab_router
 from app.routes.owasp_routes import router as owasp_simulate_router
+from app.api.owasp_routes import router as owasp_module_router
+from app.api.achievement_routes import router as gamification_router
 from app.routes.threat_dashboard_routes import router as threat_dashboard_router
 from app.api.project_routes import router as project_router
 from app.api.workspace_routes import router as workspace_router
@@ -35,8 +38,16 @@ from app.api.copilot_routes import router as security_copilot_router
 from app.routes.checklist_routes import router as checklist_router
 from app.api.ai_checklist_routes import router as ai_checklist_router
 from app.routes.compliance_routes import router as compliance_router
+from app.routes.notification_routes import router as notification_router
 from app.services.scheduler import scheduler
 from app.services.monitoring_jobs import monitor_targets
+from app.routes.scheduler_routes import router as automation_router
+from app.services.scheduler_service import register_scheduler_jobs
+from app.dashboard.routes import router as dashboard_module_router
+from app.routes.dashboard_routes import router as dashboard_aggregator_router
+from app.websocket.dashboard_ws import router as dashboard_ws_router
+from app.ai.routes import router as ai_dashboard_router
+
 
 # ── App instance ─────────────────────────────────────────────────────────────
 app = FastAPI(
@@ -58,6 +69,7 @@ app.add_middleware(
 
 # ── Routers ───────────────────────────────────────────────────────────────────
 app.include_router(auth_router, prefix="/api/v1/auth", tags=["Authentication"])
+app.include_router(onboarding_router, prefix="/api/v1/onboarding", tags=["Onboarding"])
 app.include_router(session_router, prefix="/api/v1/auth", tags=["Sessions"])
 app.include_router(security_router, prefix="/api/v1/security", tags=["Security Analyzer"])
 app.include_router(scan_router, prefix="/api/v1/scan", tags=["Scan"])
@@ -73,6 +85,10 @@ app.include_router(quiz_router)
 app.include_router(glossary_router)
 # owasp_routes already carries its own prefix "/api/v1/owasp" internally — do NOT add it here
 app.include_router(owasp_simulate_router, tags=["OWASP Simulator"])
+# Module 7.4 OWASP Simulator (labs/start/attack/defense/daily/history/progress)
+app.include_router(owasp_module_router)
+# Module 7.5 Gamification (progress/achievements/badges/certificates/leaderboard/activity/goals)
+app.include_router(gamification_router)
 app.include_router(progress_router, prefix="/api/v1", tags=["Progress"])
 app.include_router(threat_dashboard_router, prefix="/api/v1/threat-dashboard", tags=["Threat Dashboard"])
 app.include_router(project_router, prefix="/api/v1/projects", tags=["Projects"])
@@ -101,6 +117,40 @@ app.include_router(checklist_router, tags=["Security Checklist"])
 app.include_router(ai_checklist_router, tags=["AI Checklist"])
 # ── Compliance Center (Module 6.3) ─────────────────────────────────────────
 app.include_router(compliance_router, tags=["Compliance Center"])
+# ── Notifications (Module 6.5) ───────────────────────────────────────────────
+app.include_router(notification_router, tags=["Notifications"])
+# ── Security Notifications, Automation & Scheduled Monitoring (Module 6.5) ──
+app.include_router(automation_router, tags=["Automation & Scheduler"])
+# ── Dashboard Architecture (Module C1 & C2) ────────────────────────────────
+app.include_router(dashboard_module_router, prefix="", tags=["Dashboard"])
+app.include_router(dashboard_module_router, prefix="/api", tags=["Dashboard"])
+app.include_router(dashboard_module_router, prefix="/api/v1", tags=["Dashboard"])
+app.include_router(dashboard_aggregator_router, prefix="/api/v1", tags=["Dashboard Aggregator"])
+# ── Real-time WebSocket (Module C3) ────────────────────────────────────────
+app.include_router(dashboard_ws_router, tags=["WebSocket"])
+# ── AI Dashboard (Module D1) ────────────────────────────────────────────────
+app.include_router(ai_dashboard_router, prefix="/api/v1", tags=["AI Dashboard"])
+
+from fastapi import WebSocket, WebSocketDisconnect
+from app.websocket.manager import manager as _ws_manager
+
+@app.websocket("/ws/dashboard")
+async def root_ws_dashboard(websocket: WebSocket):
+    """Root-level /ws/dashboard — delegates to the shared ConnectionManager."""
+    token: str = websocket.query_params.get("token", "")
+    await _ws_manager.connect(websocket)
+    try:
+        await websocket.send_json({
+            "event": "connected",
+            "message": "Real-time dashboard stream connected",
+        })
+        while True:
+            await websocket.receive_text()
+            await websocket.send_json({"event": "pong"})
+    except (WebSocketDisconnect, Exception):
+        await _ws_manager.disconnect(websocket)
+
+
 
 
 # ── Health check ──────────────────────────────────────────────────────────────
@@ -130,6 +180,8 @@ async def startup():
         "interval",
         minutes=30
     )
+    # Register Module 6.5 automation / notification jobs
+    register_scheduler_jobs()
     # Start the scheduler
     scheduler.start()
     print("Scheduler started. Monitoring jobs scheduled every 30 minutes.")

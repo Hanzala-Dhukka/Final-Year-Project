@@ -3,17 +3,20 @@ import ReactDOM from "react-dom/client";
 
 import App from "./App";
 
-import "@fontsource/poppins";
-
 import "./styles/global.css";
 import "./styles/variables.css";
+import "./styles/theme.css";
 
-import { ThemeProvider } from "@mui/material/styles";
-
-import theme from "./styles/theme";
+import { ThemeProvider } from "./theme/ThemeProvider";
+import MuiThemeBridge from "./theme/MuiThemeBridge";
+import { ToastProvider } from "./components/Animation/ToastProvider";
 
 ReactDOM.createRoot(document.getElementById("root")).render(
-  <ThemeProvider theme={theme}>
-    <App />
+  <ThemeProvider>
+    <MuiThemeBridge>
+      <ToastProvider>
+        <App />
+      </ToastProvider>
+    </MuiThemeBridge>
   </ThemeProvider>
 );

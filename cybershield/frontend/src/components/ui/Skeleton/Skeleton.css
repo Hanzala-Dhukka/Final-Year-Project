@@ -1,0 +1,44 @@
+.cs-skeleton {
+  display: block;
+  background: linear-gradient(
+    90deg,
+    var(--border-color, rgba(148, 163, 184, 0.12)) 25%,
+    var(--surface-hover, #1a2438) 37%,
+    var(--border-color, rgba(148, 163, 184, 0.12)) 63%
+  );
+  background-size: 400% 100%;
+  border-radius: var(--radius-sm, 4px);
+  animation: cs-shimmer 1.4s ease infinite;
+}
+@keyframes cs-shimmer {
+  0% {
+    background-position: 100% 0;
+  }
+  100% {
+    background-position: -100% 0;
+  }
+}
+.cs-skeleton--text {
+  height: 12px;
+  border-radius: 4px;
+  margin-bottom: 8px;
+}
+.cs-skeleton--circle {
+  border-radius: 999px;
+}
+.cs-skeleton--rectangle {
+  border-radius: var(--radius-md, 8px);
+}
+.cs-skeleton-group {
+  display: flex;
+  flex-direction: column;
+}
+.cs-skeleton-card {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 20px;
+  background: var(--card-bg, #111827);
+  border: 1px solid var(--border-color, rgba(148, 163, 184, 0.12));
+  border-radius: var(--radius-lg, 12px);
+}

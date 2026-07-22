@@ -1,55 +1,51 @@
-import { Card, CardContent, Typography, Box, Skeleton, LinearProgress } from "@mui/material";
+import { Zap, Award, Target } from "lucide-react";
 
-// Learning progress bars (Module 3.2 — Step 11).
-const COLORS = ["#6366f1", "#0ea5e9", "#22c55e", "#f97316", "#e11d48"];
-
-export default function LearningProgress({ progress, loading }) {
-  const p = progress || {};
-
-  if (loading) {
-    return (
-      <Card>
-        <CardContent>
-          <Skeleton variant="rounded" height={120} />
-        </CardContent>
-      </Card>
-    );
-  }
-
-  const bars = [
-    { label: "Glossary", value: p.glossary ?? 0 },
-    { label: "OWASP", value: p.owasp ?? 0 },
-    { label: "Quiz", value: p.quiz ?? 0 },
-    { label: "Labs", value: p.labs ?? 0 },
-    { label: "Threat Modeling", value: p.threat_modeling ?? 0 },
-  ];
+export default function LearningProgress({
+  progress = 65,
+  xp = 1820,
+  level = 4,
+  nextLevelXp = 2500
+}) {
+  const currentLevelMinXp = (level - 1) * 500;
+  const xpInCurrentLevel = xp - currentLevelMinXp;
+  const totalXpForCurrentLevel = nextLevelXp - currentLevelMinXp;
+  const calculatedPct = Math.min(
+    100,
+    Math.max(0, Math.round((xpInCurrentLevel / (totalXpForCurrentLevel || 1)) * 100))
+  );
 
   return (
-    <Card>
-      <CardContent>
-        <Typography variant="h6" fontWeight={700} gutterBottom>
-          Learning Progress
-        </Typography>
-        {bars.map((b, i) => (
-          <Box key={b.label} sx={{ mb: 1.2 }}>
-            <Box sx={{ display: "flex", justifyContent: "space-between" }}>
-              <Typography variant="body2">{b.label}</Typography>
-              <Typography variant="body2" color="text.secondary">
-                {b.value}%
-              </Typography>
-            </Box>
-            <LinearProgress
-              variant="determinate"
-              value={b.value}
-              sx={{
-                height: 7,
-                borderRadius: 4,
-                "& .MuiLinearProgress-bar": { backgroundColor: COLORS[i % COLORS.length] },
-              }}
-            />
-          </Box>
-        ))}
-      </CardContent>
-    </Card>
+    <div className="widget-card learning-progress-widget">
+      <div className="widget-header">
+        <div className="header-title">
+          <Zap className="widget-icon" />
+          <h3>Learning Progress</h3>
+        </div>
+        <span className="level-badge">Level {level}</span>
+      </div>
+
+      <div className="progress-metrics">
+        <div className="metric">
+          <span className="label">Current XP</span>
+          <span className="value">{xp} XP</span>
+        </div>
+        <div className="metric">
+          <span className="label">Next Level Target</span>
+          <span className="value">{nextLevelXp} XP</span>
+        </div>
+      </div>
+
+      <div className="progress-bar-container">
+        <div
+          className="progress-bar-fill"
+          style={{ width: `${calculatedPct || progress}%` }}
+        />
+      </div>
+
+      <div className="progress-footer">
+        <span>{calculatedPct || progress}% complete</span>
+        <span>{nextLevelXp - xp} XP to Level {level + 1}</span>
+      </div>
+    </div>
   );
 }

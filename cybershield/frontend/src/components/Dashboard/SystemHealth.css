@@ -1,0 +1,37 @@
+.sh-widget { display: flex; flex-direction: column; gap: 16px; min-height: 0; }
+.sh-header  { display: flex; justify-content: space-between; align-items: center; }
+.sh-title-row { display: flex; align-items: center; gap: 8px; }
+.sh-icon  { font-size: 1.1rem; }
+.sh-title { margin: 0; font-size: 1.1rem; font-weight: 600; color: var(--text-primary, #f8fafc); }
+.sh-loading { padding: 20px; text-align: center; color: var(--text-secondary, #94a3b8); font-size: 0.85rem; }
+
+.sh-status { display: flex; align-items: center; gap: 6px; font-size: 0.78rem; font-weight: 600;
+              padding: 3px 10px; border-radius: 20px; }
+.sh-status--ok   { background: rgba(34,197,94,.12); color: #4ade80; }
+.sh-status--warn { background: rgba(234,179,8,.12);  color: #fde047; }
+.sh-status-dot   { width: 8px; height: 8px; border-radius: 50%; background: currentColor; flex-shrink: 0; }
+.sh-status--ok .sh-status-dot { animation: shPulse 2s ease-in-out infinite; }
+@keyframes shPulse { 0%,100%{opacity:1} 50%{opacity:.3} }
+
+.sh-status-bar { display: flex; justify-content: flex-end; margin-bottom: 8px; }
+
+.sh-gauges { display: flex; flex-direction: column; gap: 14px; }
+.sh-gauge  {}
+.sh-gauge-label { display: flex; justify-content: space-between; align-items: center;
+                   font-size: 0.82rem; color: var(--text-secondary, #94a3b8); margin-bottom: 5px; }
+.sh-gauge-pct { font-weight: 700; }
+.sh-gauge-pct--ok       { color: #4ade80; }
+.sh-gauge-pct--warning  { color: #fde047; }
+.sh-gauge-pct--critical { color: #f87171; }
+
+.sh-gauge-track { height: 10px; background: rgba(255,255,255,.07); border-radius: 6px; overflow: hidden; }
+.sh-gauge-fill  { height: 100%; border-radius: 6px; transition: width .6s ease; }
+.sh-gauge-fill--ok       { background: linear-gradient(90deg, #22c55e, #4ade80); }
+.sh-gauge-fill--warning  { background: linear-gradient(90deg, #eab308, #fde047); }
+.sh-gauge-fill--critical { background: linear-gradient(90deg, #dc2626, #ef4444); }
+
+.sh-footer { display: flex; justify-content: space-between; align-items: center;
+              font-size: 0.8rem; color: var(--text-secondary, #94a3b8); flex-wrap: wrap; gap: 8px; }
+.sh-uptime { display: flex; align-items: center; gap: 6px; }
+.sh-uptime strong { color: var(--text-primary, #f8fafc); }
+.sh-updated { font-size: 0.72rem; opacity: .6; }

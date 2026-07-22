@@ -1,0 +1,87 @@
+.dashboard-grid {
+  width: 100%;
+  min-height: 600px;
+}
+
+.layout {
+  background: var(--bg-secondary, #f8f9fa);
+  border-radius: 12px;
+  padding: 10px;
+}
+
+.layout > div {
+  background: transparent !important;
+}
+
+.layout > div[data-grid] {
+  transition: all 0.2s ease;
+}
+
+.layout > div[data-grid]:hover {
+  z-index: 10;
+}
+
+.layout > div[data-grid].react-draggable-dragging {
+  z-index: 100;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+}
+
+.layout > div[data-grid].react-resizable {
+  z-index: 50;
+}
+
+.react-resizable-handle {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 16px;
+  height: 16px;
+  background: linear-gradient(135deg, transparent 50%, var(--primary-color, #3b82f6) 50%);
+  cursor: se-resize;
+  border-radius: 0 0 8px 0;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.react-resizable:hover .react-resizable-handle {
+  opacity: 1;
+}
+
+.react-draggable-dragging .react-resizable-handle {
+  opacity: 1;
+}
+
+/* Grid layout responsiveness */
+@media (max-width: 1200px) {
+  .layout {
+    width: 100%;
+  }
+}
+
+@media (max-width: 768px) {
+  .layout {
+    padding: 5px;
+  }
+
+  .react-resizable-handle {
+    width: 24px;
+    height: 24px;
+  }
+}
+
+/* Placeholder for empty grid */
+.layout:empty::before {
+  content: "Drag widgets here to customize your dashboard";
+  display: block;
+  text-align: center;
+  padding: 60px 20px;
+  color: var(--text-muted, #888);
+  font-size: 1rem;
+}
+
+/* Dark mode */
+@media (prefers-color-scheme: dark) {
+  .layout {
+    background: var(--bg-secondary-dark, #1a1a2e);
+  }
+}

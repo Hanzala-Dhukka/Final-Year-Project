@@ -1,188 +1,389 @@
-import { useState } from "react";
+import { useState, useId, useEffect, useRef } from "react";
 import { useNavigate, useLocation, Link } from "react-router-dom";
+import { motion, AnimatePresence } from "framer-motion";
+import {
+  Mail,
+  Lock,
+  Eye,
+  EyeOff,
+  AlertCircle,
+  ArrowRight,
+  Shield,
+  ShieldCheck,
+  BookOpen,
+  BrainCircuit,
+  FileBarChart,
+  Moon,
+  Sun,
+  Check,
+} from "lucide-react";
+import toast from "react-hot-toast";
 import { useAuth } from "../../contexts/AuthContext";
+import { useTheme } from "../../theme/useTheme";
 import CyberShieldLogo from "../../components/Auth/CyberShieldLogo";
+import CyberBackground from "../../components/Auth/CyberBackground";
+import AnimatedShield from "../../components/Auth/AnimatedShield";
+import SecurityStats from "../../components/Auth/SecurityStats";
+import SecureLoader from "../../components/Auth/SecureLoader";
+import {
+  cardEntrance,
+  brandEntrance,
+  successPop,
+} from "../../animations/authAnimations";
+import "./Login.css";
 
-function Login() {
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const MIN_PASSWORD_LENGTH = 8;
+const REMEMBER_KEY = "cs_remember_me";
+
+const FEATURES = [
+  { icon: ShieldCheck, title: "GitHub Scanner", desc: "Continuous SAST analysis" },
+  { icon: BookOpen, title: "OWASP Labs", desc: "Practice real attacks" },
+  { icon: BrainCircuit, title: "AI Threat Modeling", desc: "Generate security models" },
+  { icon: FileBarChart, title: "Security Reports", desc: "Audit-ready dashboards" },
+];
+
+const TYPING_PHRASES = [
+  "Securing your session…",
+  "AI threat detection active.",
+  "Zero-trust architecture ready.",
+  "Continuous monitoring enabled.",
+];
+
+const TIPS = [
+  "Enable MFA for all administrator accounts.",
+  "Rotate secrets immediately if a repo goes public.",
+  "Scan dependencies on every pull request.",
+  "Apply least-privilege to API tokens by default.",
+  "Treat every dependency as code — scan it.",
+];
+
+/** Minimal typewriter hook (transform/opacity only — no layout cost). */
+function useTypingEffect(phrases, speed = 45, pause = 1600) {
+  const [text, setText] = useState("");
+  const idx = useRef(0);
+  const char = useRef(0);
+  useEffect(() => {
+    let timer;
+    const tick = () => {
+      const phrase = phrases[idx.current % phrases.length];
+      if (char.current <= phrase.length) {
+        setText(phrase.slice(0, char.current));
+        char.current += 1;
+        timer = setTimeout(tick, speed);
+      } else {
+        timer = setTimeout(() => {
+          char.current = 0;
+          idx.current += 1;
+          tick();
+        }, pause);
+      }
+    };
+    tick();
+    return () => clearTimeout(timer);
+  }, [phrases, speed, pause]);
+  return text;
+}
+
+/**
+ * Login page (Module B1.1) — premium cybersecurity auth experience.
+ * Cyber background + animated shield + live stats + secure-session loader.
+ */
+export default function Login() {
   const navigate = useNavigate();
   const location = useLocation();
   const { login } = useAuth();
+  const { isDark, toggleTheme } = useTheme();
 
-  const [formData, setFormData] = useState({
-    email: "",
-    password: "",
-    remember_me: false,
-  });
-  const [error, setError] = useState("");
+  const emailId = useId();
+  const pwId = useId();
+
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [rememberMe, setRememberMe] = useState(
+    () => localStorage.getItem(REMEMBER_KEY) === "true"
+  );
+  const [showPassword, setShowPassword] = useState(false);
+  const [errors, setErrors] = useState({});
+  const [touched, setTouched] = useState({});
+  const [serverError, setServerError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [success, setSuccess] = useState(false);
+  const [tipIndex, setTipIndex] = useState(0);
 
-  const handleChange = (e) => {
-    const value =
-      e.target.type === "checkbox" ? e.target.checked : e.target.value;
-    setFormData({ ...formData, [e.target.name]: value });
+  const typing = useTypingEffect(TYPING_PHRASES);
+
+  // Rotate the security tip every 5s.
+  useEffect(() => {
+    const id = setInterval(() => setTipIndex((i) => (i + 1) % TIPS.length), 5000);
+    return () => clearInterval(id);
+  }, []);
+
+  const validate = () => {
+    const next = {};
+    if (!email.trim()) next.email = "Email is required.";
+    else if (!EMAIL_RE.test(email.trim())) next.email = "Enter a valid email address.";
+    if (!password) next.password = "Password is required.";
+    else if (password.length < MIN_PASSWORD_LENGTH)
+      next.password = `Password must be at least ${MIN_PASSWORD_LENGTH} characters.`;
+    setErrors(next);
+    return next;
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError("");
+    const next = validate();
+    setTouched({ email: true, password: true });
+    if (Object.keys(next).length) return;
+    if (loading) return;
+
+    setServerError("");
     setLoading(true);
     try {
-      await login(formData);
-      const from = location.state?.from?.pathname || "/dashboard";
-      navigate(from, { replace: true });
+      await login({ email: email.trim(), password, remember_me: rememberMe });
+      try {
+        if (rememberMe) localStorage.setItem(REMEMBER_KEY, "true");
+        else localStorage.removeItem(REMEMBER_KEY);
+      } catch {}
+      setSuccess(true);
+      toast.success("Identity verified — welcome back!");
+      setTimeout(() => {
+        // First-time users go through onboarding; everyone else to dashboard.
+        if (response.first_login) {
+          navigate("/onboarding", { replace: true });
+        } else {
+          const from = location.state?.from?.pathname || "/dashboard";
+          navigate(from, { replace: true });
+        }
+      }, 1400);
     } catch (err) {
-      setError(err.response?.data?.detail || "Login failed. Please try again.");
-    } finally {
+      const status = err.response?.status;
+      let message = "Incorrect email or password. Please try again.";
+      if (err.code === "ERR_NETWORK" || !err.response)
+        message = "Unable to reach the server. Check your connection.";
+      else if (status === 503)
+        message = "Service temporarily unavailable. Please try again shortly.";
+      else if (status === 403)
+        message = "Account not verified. Please check your email.";
+      setServerError(message);
       setLoading(false);
     }
   };
 
+  const emailError = touched.email ? errors.email : undefined;
+  const passwordError = touched.password ? errors.password : undefined;
+
   return (
-    <div className="min-h-screen w-full flex bg-slate-50">
-      {/* Left brand panel (hidden on small screens) */}
-      <div className="hidden lg:flex lg:w-1/2 cs-gradient-bg relative overflow-hidden items-center justify-center">
-        {/* Floating decorative shield */}
-        <div className="absolute cs-float opacity-90">
-          <div className="relative">
-            <span className="absolute inset-0 cs-pulse-ring rounded-full bg-sky-400/40" />
-            <CyberShieldLogo size={120} light />
-          </div>
+    <div className="login-page">
+      <CyberBackground />
+
+      {/* Theme toggle */}
+      <button
+        type="button"
+        className="login-theme-toggle"
+        onClick={toggleTheme}
+        aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"}
+      >
+        {isDark ? <Sun size={18} /> : <Moon size={18} />}
+      </button>
+
+      {/* LEFT — branding */}
+      <motion.div className="login-left" {...brandEntrance}>
+        <div className="login-brand">
+          <AnimatedShield size={40} />
+          <span className="login-brand-name">CyberShield</span>
         </div>
 
-        <div className="relative z-10 text-center px-10 cs-animate-fade-in">
-          <div className="flex items-center justify-center gap-3 mb-6">
-            <CyberShieldLogo size={44} light />
-            <span className="text-3xl font-extrabold text-white tracking-tight">
-              CyberShield
-            </span>
-          </div>
-          <h1 className="text-white text-4xl font-bold leading-tight max-w-md mx-auto">
-            Your AI-Powered Security Companion
-          </h1>
-          <p className="text-sky-100/80 mt-4 max-w-sm mx-auto">
-            Scan code, assess threats, and learn secure practices — all in one
-            place.
-          </p>
+        <h1>
+          Secure Your Code.
+          <br />
+          Protect Your Future.
+        </h1>
+        <p className="login-subtitle">
+          AI-powered DevSecOps platform for secure software development.
+        </p>
 
-          {/* Feature bullets */}
-          <div className="mt-10 grid grid-cols-1 gap-3 text-left max-w-sm mx-auto">
-            {[
-              "AI Code Review & Vulnerability Detection",
-              "GitHub Security Scanner",
-              "Threat Reports & OWASP Simulator",
-            ].map((f) => (
-              <div
-                key={f}
-                className="flex items-center gap-3 bg-white/10 backdrop-blur-sm rounded-lg px-4 py-3"
-              >
-                <span className="h-2 w-2 rounded-full bg-sky-300" />
-                <span className="text-white text-sm">{f}</span>
-              </div>
-            ))}
-          </div>
+        <div className="login-typing" aria-hidden="true">
+          {typing}
+          <span className="caret" />
         </div>
 
-        {/* Soft glow blobs */}
-        <div className="absolute -top-20 -left-20 h-72 w-72 rounded-full bg-sky-400/20 blur-3xl" />
-        <div className="absolute -bottom-24 -right-16 h-80 w-80 rounded-full bg-blue-500/20 blur-3xl" />
-      </div>
+        <SecurityStats />
 
-      {/* Right form panel */}
-      <div className="flex w-full lg:w-1/2 items-center justify-center p-6">
-        <div className="w-full max-w-md cs-animate-fade-up">
-          {/* Mobile logo */}
-          <div className="lg:hidden flex items-center justify-center gap-2 mb-8">
-            <CyberShieldLogo size={36} />
-            <span className="text-2xl font-extrabold text-slate-800">
-              CyberShield
-            </span>
-          </div>
-
-          <div className="bg-white rounded-2xl shadow-xl border border-slate-100 p-8">
-            <h2 className="text-2xl font-bold text-slate-800">Welcome back</h2>
-            <p className="text-slate-500 text-sm mt-1">
-              Sign in to continue to your dashboard.
-            </p>
-
-            {error && (
-              <div className="mt-4 bg-red-50 border border-red-200 text-red-600 text-sm rounded-lg px-4 py-2.5">
-                {error}
+        <div className="feature-list">
+          {FEATURES.map((f) => {
+            const Icon = f.icon;
+            return (
+              <div className="feature-card" key={f.title}>
+                <span className="feature-icon">
+                  <Icon size={18} />
+                </span>
+                <div>
+                  <h4>{f.title}</h4>
+                  <p>{f.desc}</p>
+                </div>
               </div>
-            )}
+            );
+          })}
+        </div>
 
-            <form onSubmit={handleSubmit} className="mt-6 space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-slate-600 mb-1">
-                  Email
-                </label>
-                <input
-                  type="email"
-                  name="email"
-                  required
-                  placeholder="you@example.com"
-                  value={formData.email}
-                  onChange={handleChange}
-                  className="w-full border border-slate-300 rounded-lg px-4 py-2.5 text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-slate-600 mb-1">
-                  Password
-                </label>
-                <input
-                  type="password"
-                  name="password"
-                  required
-                  placeholder="••••••••"
-                  value={formData.password}
-                  onChange={handleChange}
-                  className="w-full border border-slate-300 rounded-lg px-4 py-2.5 text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
-                />
-              </div>
-
-              <div className="flex items-center justify-between text-sm">
-                <label className="flex items-center gap-2 text-slate-600 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    name="remember_me"
-                    checked={formData.remember_me}
-                    onChange={handleChange}
-                    className="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
-                  />
-                  <span>Remember me</span>
-                </label>
-                <Link
-                  to="/forgot-password"
-                  className="text-blue-600 hover:underline"
-                >
-                  Forgot password?
-                </Link>
-              </div>
-
-              <button
-                type="submit"
-                disabled={loading}
-                className="w-full bg-gradient-to-r from-blue-600 to-sky-500 text-white font-semibold py-2.5 rounded-lg shadow-md hover:from-blue-700 hover:to-sky-600 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2 disabled:opacity-60 transition"
-              >
-                {loading ? "Signing in…" : "Sign In"}
-              </button>
-            </form>
-          </div>
-
-          <p className="text-center text-sm text-slate-500 mt-6">
-            Don't have an account?{" "}
-            <Link
-              to="/register"
-              className="text-blue-600 font-semibold hover:underline"
+        <div className="login-tip" aria-live="polite">
+          <span className="login-tip-badge">Tip</span>
+          <AnimatePresence mode="wait">
+            <motion.p
+              key={tipIndex}
+              className="login-tip-text"
+              initial={{ opacity: 0, y: 6 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.35 }}
             >
-              Create one
-            </Link>
-          </p>
+              {TIPS[tipIndex]}
+            </motion.p>
+          </AnimatePresence>
         </div>
+      </motion.div>
+
+      {/* RIGHT — login card */}
+      <div className="login-right">
+        <motion.div className="login-card" {...cardEntrance}>
+          <AnimatePresence mode="wait">
+            {success ? (
+              <motion.div
+                key="success"
+                className="login-success"
+                variants={successPop}
+                initial="initial"
+                animate="animate"
+              >
+                <div className="login-success-check">
+                  <Check size={32} strokeWidth={3} />
+                </div>
+                <p className="login-success-title">Identity Verified</p>
+                <p className="login-success-sub">Redirecting to Dashboard…</p>
+              </motion.div>
+            ) : (
+              <motion.div key="form" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+                <div className="login-card-head">
+                  <Shield className="login-card-shield" size={22} />
+                  <h2>
+                    Welcome Back <span aria-hidden="true">👋</span>
+                  </h2>
+                  <p>Sign in to continue to your dashboard.</p>
+                </div>
+
+                <AnimatePresence>
+                  {serverError && (
+                    <motion.div
+                      className="login-alert"
+                      role="alert"
+                      initial={{ opacity: 0, y: -8 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -8 }}
+                    >
+                      <AlertCircle size={18} />
+                      <span>{serverError}</span>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+
+                <form onSubmit={handleSubmit} noValidate>
+                  <div className="form-group">
+                    <label htmlFor={emailId}>Email</label>
+                    <div
+                      className="form-field"
+                      style={{ borderColor: emailError ? "#f87171" : undefined }}
+                    >
+                      <Mail size={18} className="form-field-icon" />
+                      <input
+                        id={emailId}
+                        type="email"
+                        className="form-input"
+                        placeholder="you@example.com"
+                        value={email}
+                        autoFocus
+                        autoComplete="email"
+                        aria-invalid={!!emailError}
+                        disabled={loading}
+                        onChange={(e) => setEmail(e.target.value)}
+                        onBlur={() => {
+                          setTouched((t) => ({ ...t, email: true }));
+                          validate();
+                        }}
+                      />
+                    </div>
+                    {emailError && <p className="form-error">{emailError}</p>}
+                  </div>
+
+                  <div className="form-group">
+                    <label htmlFor={pwId}>Password</label>
+                    <div
+                      className="form-field password-wrapper"
+                      style={{ borderColor: passwordError ? "#f87171" : undefined }}
+                    >
+                      <Lock size={18} className="form-field-icon" />
+                      <input
+                        id={pwId}
+                        type={showPassword ? "text" : "password"}
+                        className="form-input"
+                        placeholder="••••••••"
+                        value={password}
+                        autoComplete="current-password"
+                        aria-invalid={!!passwordError}
+                        disabled={loading}
+                        onChange={(e) => setPassword(e.target.value)}
+                        onBlur={() => {
+                          setTouched((t) => ({ ...t, password: true }));
+                          validate();
+                        }}
+                      />
+                      <button
+                        type="button"
+                        className="password-toggle"
+                        onClick={() => setShowPassword((s) => !s)}
+                        aria-label={showPassword ? "Hide password" : "Show password"}
+                      >
+                        {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                      </button>
+                    </div>
+                    {passwordError && <p className="form-error">{passwordError}</p>}
+                  </div>
+
+                  <div className="login-options">
+                    <label className="login-remember">
+                      <input
+                        type="checkbox"
+                        checked={rememberMe}
+                        onChange={(e) => setRememberMe(e.target.checked)}
+                        disabled={loading}
+                      />
+                      <span>Remember me</span>
+                    </label>
+                    <Link to="/forgot-password">Forgot Password?</Link>
+                  </div>
+
+                  <button type="submit" className="login-button" disabled={loading}>
+                    {loading ? (
+                      <SecureLoader />
+                    ) : (
+                      <>
+                        Sign In <ArrowRight size={18} />
+                      </>
+                    )}
+                  </button>
+                </form>
+
+                <p className="login-switch">
+                  Don&apos;t have an account?{" "}
+                  <Link to="/register" className="login-link-strong">
+                    Create Account
+                  </Link>
+                </p>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </motion.div>
       </div>
     </div>
   );
 }
-
-export default Login;

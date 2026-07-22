@@ -5,7 +5,7 @@ Generates personalized learning roadmap using Gemini AI
 from typing import Dict, Any, List, Optional
 from datetime import datetime
 from app.services.analytics_service import AnalyticsService
-from app.services.gemini_service import get_model
+from app.services.gemini_service import _generate_content
 
 
 class RoadmapService:
@@ -85,12 +85,8 @@ class RoadmapService:
     async def _get_ai_recommendations(cls, completed: List[str], 
                                        weak: List[str],
                                        analytics: Dict[str, Any]) -> List[str]:
-        """Get AI-powered recommendations using Gemini"""
+        """Get AI-powered recommendations using Groq"""
         try:
-            model = get_model()
-            if not model:
-                return []
-            
             prompt = f"""You are a cybersecurity learning advisor. Create a personalized learning path.
 
 Completed Topics: {', '.join(completed) if completed else 'None'}
@@ -109,19 +105,26 @@ Create a learning path that:
 Return only a JSON array of topic names in recommended order:
 ["topic1", "topic2", "topic3"]"""
             
-            response = model.generate_content(prompt)
-            response_text = response.text.strip()
+            response_text = await _generate_content(prompt)
+            if not response_text:
+                return []
+            response_text = response_text.strip()
             
-            # Parse JSON response
-            import json
-            if "```json" in response_text:
+            # Parse JSON response using regex matching for [...] array pattern
+            import json, re
+            match = re.search(r'\[.*\]', response_text, re.DOTALL)
+            if match:
+                response_text = match.group(0).strip()
+            elif "```json" in response_text:
                 response_text = response_text.split("```json")[1].split("```")[0].strip()
+            elif "```" in response_text:
+                response_text = response_text.split("```")[1].split("```")[0].strip()
             
             recommendations = json.loads(response_text)
             return recommendations if isinstance(recommendations, list) else []
             
         except Exception as e:
-            print(f"Error getting AI recommendations: {e}")
+            print(f"Notice: AI recommendations fallback used ({e})")
             return []
     
     @classmethod
