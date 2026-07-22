@@ -1,110 +1,326 @@
-import { useEffect, useState } from "react";
-import { Container, Grid, Box, Typography, Button, Alert, Skeleton } from "@mui/material";
-import { Refresh } from "@mui/icons-material";
-import { useAuth } from "../../contexts/AuthContext";
-import { getDashboard } from "../../services/dashboardService";
+import { useEffect, useState, useRef, useCallback } from "react";
+import { motion } from "framer-motion";
 
-import WelcomeCard from "../../components/Dashboard/WelcomeCard";
-import StatsCards from "../../components/Dashboard/StatsCards";
-import QuickActions from "../../components/Dashboard/QuickActions";
-import SecurityGauge from "../../components/Dashboard/SecurityGauge";
-import RecentScans from "../../components/Dashboard/RecentScans";
-import RecentReports from "../../components/Dashboard/RecentReports";
-import QuizProgress from "../../components/Dashboard/QuizProgress";
-import LearningProgress from "../../components/Dashboard/LearningProgress";
-import ActivityTimeline from "../../components/Dashboard/ActivityTimeline";
-import DailyChallengeCard from "../../components/Dashboard/DailyChallengeCard";
+// API
+import {
+  getDashboardOverview,
+  getDashboardPreferences,
+  saveDashboardPreferences,
+  resetDashboardPreferences,
+} from "../../api/dashboardApi";
+
+// Existing stat / chart widgets
+import DashboardHeader from "../../components/Dashboard/DashboardHeader";
+import DashboardStats from "../../components/Dashboard/DashboardStats";
+import SecurityScore from "../../components/Dashboard/SecurityScore";
+import VulnerabilityTrend from "../../components/Dashboard/VulnerabilityTrend";
+import ThreatDistribution from "../../components/Dashboard/ThreatDistribution";
+import LiveThreatFeed from "../../components/Dashboard/LiveThreatFeed";
+import SystemHealth from "../../components/Dashboard/SystemHealth";
+import AIInsightCard from "../../components/Dashboard/AIInsightCard";
+import SkeletonLoader from "../../components/ui/SkeletonLoader";
+
+// Common card wrapper
+import DashboardCard from "../../components/Common/DashboardCard";
+
+// Customisation components
+import DashboardFilters from "../../components/Dashboard/DashboardFilters";
+import WidgetSelector from "../../components/Dashboard/WidgetSelector";
+import ExportDashboard from "../../components/Dashboard/ExportDashboard";
+import ResetDashboard from "../../components/Dashboard/ResetDashboard";
+import CommandPalette from "../../components/Dashboard/CommandPalette";
+import AIAssistantButton from "../../components/Dashboard/AIAssistantButton";
+
+import "./dashboard.css";
+
+const DEFAULT_FILTERS = { project: "All", severity: "All", date: "7 Days" };
 
 export default function Dashboard() {
-  const { user } = useAuth();
+  const dashboardRef = useRef(null);
+  const socketRef = useRef(null);
+
+  // Data state
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
+  const [refreshing, setRefreshing] = useState(false);
+  const [error, setError] = useState(null);
 
-  const load = async () => {
-    if (!user?._id) return;
-    setLoading(true);
-    setError("");
+  // Preferences state
+  const [hiddenWidgets, setHiddenWidgets] = useState([]);
+  const [filters, setFilters] = useState(DEFAULT_FILTERS);
+
+  // UI state
+  const [cmdOpen, setCmdOpen] = useState(false);
+  const [selectorOpen, setSelectorOpen] = useState(false);
+
+  // ── Load dashboard data ─────────────────────────────────────────────────────
+  const loadDashboard = useCallback(async (isBackground = false) => {
     try {
-      const { data: res } = await getDashboard(user._id);
-      setData(res || {});
-    } catch (e) {
-      setError("Unable to load dashboard.");
+      if (!isBackground) setLoading(true);
+      else setRefreshing(true);
+      setError(null);
+      const result = await getDashboardOverview();
+      setData(result);
+    } catch (err) {
+      console.error("Dashboard fetch error:", err);
+      if (!data) setError("Failed to load dashboard data");
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
-  };
+  }, [data]);
+
+  // ── Load preferences ────────────────────────────────────────────────────────
+  const loadPreferences = useCallback(async () => {
+    try {
+      const prefs = await getDashboardPreferences();
+      if (Array.isArray(prefs?.hidden_widgets)) setHiddenWidgets(prefs.hidden_widgets);
+      if (prefs?.filters) setFilters(prefs.filters);
+    } catch (err) {
+      console.warn("Could not load preferences, using defaults:", err);
+    }
+  }, []);
+
+  // ── WebSocket live updates ──────────────────────────────────────────────────
+  const setupWebSocket = useCallback(() => {
+    try {
+      const ws = new WebSocket("ws://localhost:8000/ws/dashboard");
+      socketRef.current = ws;
+      ws.onmessage = (event) => {
+        try {
+          const payload = JSON.parse(event.data);
+          if (payload.event === "dashboard_update" || payload.event === "scan_completed") {
+            loadDashboard(true);
+          }
+        } catch { /* non-JSON frame — ignore */ }
+      };
+      ws.onerror = () => { /* silent — WS is non-critical */ };
+    } catch { /* silent */ }
+  }, [loadDashboard]);
 
   useEffect(() => {
-    load();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user?._id]);
+    loadDashboard();
+    loadPreferences();
+    setupWebSocket();
+
+    // Ctrl+K global listener
+    const handleGlobalKey = (e) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === "k") {
+        e.preventDefault();
+        setCmdOpen((prev) => !prev);
+      }
+    };
+    document.addEventListener("keydown", handleGlobalKey);
+
+    const interval = setInterval(() => loadDashboard(true), 30_000);
+
+    return () => {
+      clearInterval(interval);
+      document.removeEventListener("keydown", handleGlobalKey);
+      socketRef.current?.close();
+    };
+  }, [loadDashboard, loadPreferences, setupWebSocket]);
+
+  // ── Filters ─────────────────────────────────────────────────────────────────
+  const handleFiltersChange = async (newFilters) => {
+    setFilters(newFilters);
+    try {
+      await saveDashboardPreferences({ filters: newFilters });
+    } catch { /* silent */ }
+  };
+
+  // ── Hidden widgets ───────────────────────────────────────────────────────────
+  const handleWidgetVisibilityChange = async (newHidden) => {
+    setHiddenWidgets(newHidden);
+    setSelectorOpen(false);
+    try {
+      await saveDashboardPreferences({ hidden_widgets: newHidden });
+    } catch { /* silent */ }
+  };
+
+  // ── Reset layout ─────────────────────────────────────────────────────────────
+  const handleReset = async () => {
+    try {
+      await resetDashboardPreferences();
+    } catch { /* silent */ }
+    setHiddenWidgets([]);
+    setFilters(DEFAULT_FILTERS);
+  };
+
+  // ── Loading skeleton ─────────────────────────────────────────────────────────
+  if (loading) {
+    return (
+      <div className="dashboard-page">
+        <div className="dashboard-container">
+          <SkeletonLoader variant="text" width="40%" height="2.5rem" />
+          <div className="stats-grid-skeleton">
+            {[...Array(4)].map((_, i) => (
+              <SkeletonLoader key={i} variant="card" height="100px" />
+            ))}
+          </div>
+          <div className="skeleton-row-2">
+            <SkeletonLoader variant="card" height="300px" />
+            <SkeletonLoader variant="card" height="300px" />
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error && !data) {
+    return (
+      <div className="dashboard-page">
+        <div className="dashboard-container">
+          <div className="error-card">
+            <p>{error}</p>
+            <button onClick={() => loadDashboard()}>Retry</button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  const aiPayload = {
+    critical: data?.critical ?? 2,
+    high: data?.high ?? 5,
+    medium: data?.medium ?? 9,
+    low: data?.low ?? 21,
+    security_score: data?.security_score ?? 82,
+    scans: data?.scans ?? 41,
+    projects: data?.projects ?? 6,
+    learning_progress: data?.learning_progress ?? 65,
+    xp: data?.xp ?? 1820,
+    level: data?.level ?? 4,
+    vulnerability_trend: data?.vulnerability_trend ?? [],
+    weekly_scans: data?.weekly_scans ?? [],
+  };
 
   return (
-    <Container maxWidth="xl" sx={{ py: 4 }}>
-      {error && (
-        <Alert
-          severity="error"
-          action={
-            <Button color="inherit" size="small" startIcon={<Refresh />} onClick={load}>
-              Retry
-            </Button>
-          }
-          sx={{ mb: 2 }}
-        >
-          {error}
-        </Alert>
-      )}
+    <motion.div
+      className="dashboard-page"
+      id="dashboard"
+      ref={dashboardRef}
+      initial={{ opacity: 0, y: 15 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.4 }}
+    >
+      <DashboardHeader
+        username={data?.username || "Hanzala"}
+        lastUpdated={data?.updated_at}
+        lastScanTime={data?.last_scan_time || "10:32 AM"}
+        rank={data?.rank || "Silver"}
+        onRefresh={() => loadDashboard(true)}
+        isRefreshing={refreshing}
+      />
 
-      {/* Welcome */}
-      <Box sx={{ mb: 3 }}>
-        <WelcomeCard user={data?.user} loading={loading} />
-      </Box>
+      <div className="dashboard-container">
+        <div className="dashboard-section">
+          <DashboardStats
+            projects={data?.projects ?? 6}
+            scans={data?.scans ?? 41}
+            threats={data?.threats ?? 7}
+            xp={data?.xp ?? 1820}
+          />
+        </div>
 
-      {/* Stats */}
-      <Box sx={{ mb: 3 }}>
-        <StatsCards stats={data?.stats} loading={loading} />
-      </Box>
+        {/* ── Toolbar: filters + actions ─────────────────────────────────────── */}
+        <div className="dashboard-toolbar">
+          <DashboardFilters filters={filters} setFilters={handleFiltersChange} />
 
-      {/* Quick Actions + Security Gauge */}
-      <Grid container spacing={3} sx={{ mb: 3 }}>
-        <Grid item xs={12} md={7}>
-          <QuickActions loading={loading} />
-        </Grid>
-        <Grid item xs={12} md={5}>
-          <SecurityGauge score={data?.stats?.security_score} loading={loading} />
-        </Grid>
-      </Grid>
+          <div className="dashboard-toolbar-actions">
+            <div className="widget-selector-wrapper">
+              <button
+                className="toolbar-btn"
+                onClick={() => setSelectorOpen((v) => !v)}
+                aria-label="Customize widgets"
+                aria-expanded={selectorOpen}
+              >
+                ⚙️ Widgets
+              </button>
+              {selectorOpen && (
+                <div className="widget-selector-dropdown-wrap">
+                  <WidgetSelector
+                    hiddenWidgets={hiddenWidgets}
+                    onSave={handleWidgetVisibilityChange}
+                  />
+                </div>
+              )}
+            </div>
 
-      {/* Recent Scans */}
-      <Box sx={{ mb: 3 }}>
-        <RecentScans scans={data?.recent_scans} loading={loading} />
-      </Box>
+            <button
+              className="toolbar-btn toolbar-btn--cmd"
+              onClick={() => setCmdOpen(true)}
+              aria-label="Open command palette (Ctrl+K)"
+              title="Ctrl + K"
+            >
+              ⌨️ <span>Ctrl K</span>
+            </button>
 
-      {/* Recent Reports */}
-      <Box sx={{ mb: 3 }}>
-        <RecentReports reports={data?.recent_reports} loading={loading} />
-      </Box>
+            <ExportDashboard dashboardRef={dashboardRef} />
+            <ResetDashboard onReset={handleReset} />
+          </div>
+        </div>
 
-      {/* Quiz + Learning Progress */}
-      <Grid container spacing={3} sx={{ mb: 3 }}>
-        <Grid item xs={12} md={6}>
-          <QuizProgress progress={data?.quiz_progress} loading={loading} />
-        </Grid>
-        <Grid item xs={12} md={6}>
-          <LearningProgress progress={data?.learning_progress} loading={loading} />
-        </Grid>
-      </Grid>
+        {/* ── Dashboard Grid ─────────────────────────────────────────────────── */}
+        <div className="dashboard-grid">
+          {!hiddenWidgets.includes("security") && (
+            <DashboardCard title="Security Score" className="security-score">
+              <SecurityScore score={data?.security_score ?? 82} />
+            </DashboardCard>
+          )}
 
-      {/* Activity + Daily Challenge */}
-      <Grid container spacing={3}>
-        <Grid item xs={12} md={8}>
-          <ActivityTimeline activity={data?.recent_activity} loading={loading} />
-        </Grid>
-        <Grid item xs={12} md={4}>
-          <DailyChallengeCard challenge={data?.daily_challenge} loading={loading} />
-        </Grid>
-      </Grid>
-    </Container>
+          {!hiddenWidgets.includes("threat") && (
+            <DashboardCard title="Threat Distribution" className="threat-chart">
+              <ThreatDistribution
+                critical={data?.critical ?? 2}
+                high={data?.high ?? 5}
+                medium={data?.medium ?? 9}
+                low={data?.low ?? 21}
+              />
+            </DashboardCard>
+          )}
+
+          {!hiddenWidgets.includes("vulnerability") && (
+            <DashboardCard title="Vulnerability Trend" className="vulnerability-chart">
+              <VulnerabilityTrend data={data?.vulnerability_trend || []} />
+            </DashboardCard>
+          )}
+
+          {!hiddenWidgets.includes("livefeed") && (
+            <DashboardCard title="Live Security Events" className="live-feed">
+              <LiveThreatFeed maxItems={10} />
+            </DashboardCard>
+          )}
+
+          {!hiddenWidgets.includes("systemhealth") && (
+            <DashboardCard title="System Health" className="system-health">
+              <SystemHealth />
+            </DashboardCard>
+          )}
+
+          {!hiddenWidgets.includes("ai") && (
+            <DashboardCard title="AI Assistant" className="ai-card">
+              <AIInsightCard securityData={aiPayload} />
+            </DashboardCard>
+          )}
+        </div>
+      </div>
+
+      <CommandPalette
+        isOpen={cmdOpen}
+        onClose={() => setCmdOpen(false)}
+        onRefresh={() => loadDashboard(true)}
+      />
+
+      <AIAssistantButton
+        dashboardContext={{
+          security_score: data?.security_score,
+          critical: data?.critical,
+          high: data?.high,
+          medium: data?.medium,
+          low: data?.low,
+        }}
+      />
+    </motion.div>
   );
 }

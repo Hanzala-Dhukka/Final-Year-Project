@@ -1,18 +1,55 @@
+/* ============================================================
+   CyberShield design tokens (Module B2 fix)
+   Explicit, high-contrast variables solve the "invisible text"
+   and "poor input" problems on dark surfaces.
+   Dark is the default; light overrides via [data-theme="light"].
+   ============================================================ */
+
 :root {
-  --primary: #2563EB;
-  --secondary: #1E40AF;
+  /* Surfaces */
+  --bg-primary: #0f172a;
+  --bg-secondary: #1e293b;
+  --card-bg: rgba(17, 24, 39, 0.8);
 
-  --success: #10B981;
-  --warning: #F59E0B;
-  --danger: #EF4444;
+  /* Text — light on dark, always readable */
+  --text-primary: #f8fafc;
+  --text-secondary: #cbd5e1;
 
-  --background: #F5F7FA;
-  --paper: #FFFFFF;
+  /* Inputs */
+  --input-bg: #1e293b;
+  --input-border: #334155;
+  --input-text: #f8fafc;
+  --input-placeholder: #94a3b8;
 
-  --text: #1F2937;
-  --text-light: #6B7280;
+  /* Brand / accent */
+  --primary: #2563eb;
+  --primary-hover: #1d4ed8;
+  --danger: #ef4444;
+  --success: #22c55e;
+  --warning: #f59e0b;
 
-  --border: #E5E7EB;
+  /* Radii & misc */
+  --radius-input: 12px;
+  --radius-card: 24px;
+}
 
-  --radius: 12px;
+/* Light theme — readable text + visible borders on white */
+[data-theme="light"] {
+  --bg-primary: #f1f5f9;
+  --bg-secondary: #e2e8f0;
+  --card-bg: rgba(255, 255, 255, 0.85);
+
+  --text-primary: #0f172a;
+  --text-secondary: #475569;
+
+  --input-bg: #ffffff;
+  --input-border: #cbd5e1;
+  --input-text: #0f172a;
+  --input-placeholder: #64748b;
+
+  --primary: #2563eb;
+  --primary-hover: #1d4ed8;
+  --danger: #dc2626;
+  --success: #16a34a;
+  --warning: #d97706;
 }

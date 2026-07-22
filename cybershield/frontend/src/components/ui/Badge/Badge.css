@@ -1,0 +1,43 @@
+.cs-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 2px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.5;
+  white-space: nowrap;
+}
+
+.cs-badge__dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: currentColor;
+}
+
+.cs-badge--success {
+  background: var(--success-soft, rgba(16, 185, 129, 0.12));
+  color: var(--success, #10b981);
+}
+.cs-badge--danger {
+  background: var(--danger-soft, rgba(239, 68, 68, 0.12));
+  color: var(--danger, #ef4444);
+}
+.cs-badge--warning {
+  background: var(--warning-soft, rgba(245, 158, 11, 0.12));
+  color: var(--warning, #f59e0b);
+}
+.cs-badge--info {
+  background: var(--info-soft, rgba(59, 130, 246, 0.12));
+  color: var(--info, #3b82f6);
+}
+.cs-badge--primary {
+  background: rgba(37, 99, 235, 0.12);
+  color: var(--primary, #2563eb);
+}
+.cs-badge--secondary {
+  background: var(--neutral-soft, rgba(100, 116, 139, 0.12));
+  color: var(--text-secondary, #94a3b8);
+}

@@ -1,0 +1,82 @@
+/* ============================================================
+   Shared auth components (Module B3)
+   PasswordStrength + PasswordInput — reusable across the
+   forgot/reset flows. Uses the global --cs-* design tokens.
+   ============================================================ */
+
+.cs-pwd-field {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  background: var(--cs-field-bg);
+  border: 1px solid var(--cs-field-border);
+  border-radius: 12px;
+  padding: 0 0.85rem;
+  transition: border-color 0.18s ease, box-shadow 0.18s ease;
+}
+.cs-pwd-field:focus-within {
+  border-color: var(--cs-accent);
+  box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.22);
+}
+.cs-pwd-field--error {
+  border-color: var(--cs-danger, #ef4444);
+}
+.cs-pwd-field-icon {
+  color: var(--cs-field-icon);
+  flex: 0 0 auto;
+}
+.cs-pwd-field-input {
+  flex: 1;
+  min-width: 0;
+  background: transparent;
+  border: none;
+  outline: none;
+  padding: 0.8rem 0;
+  font-size: 0.95rem;
+  color: var(--cs-field-text);
+  font-family: inherit;
+}
+.cs-pwd-field-input::placeholder {
+  color: var(--cs-text-muted);
+}
+.cs-pwd-field-toggle {
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  background: transparent;
+  border: none;
+  color: var(--cs-text-muted);
+  cursor: pointer;
+  padding: 0.25rem;
+  border-radius: 8px;
+}
+.cs-pwd-field-toggle:hover {
+  color: var(--cs-text);
+}
+
+/* Strength meter */
+.cs-pwd-strength {
+  margin-top: 0.5rem;
+}
+.cs-pwd-strength-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.78rem;
+  color: var(--cs-text-muted);
+  margin-bottom: 0.3rem;
+}
+.cs-pwd-strength-label {
+  font-weight: 600;
+}
+.cs-pwd-strength-bar {
+  height: 6px;
+  border-radius: 9999px;
+  background: var(--cs-field-border);
+  overflow: hidden;
+}
+.cs-pwd-strength-fill {
+  height: 100%;
+  border-radius: 9999px;
+  transition: width 0.25s ease, background 0.25s ease;
+}

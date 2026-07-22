@@ -1,0 +1,24 @@
+.hm-widget { display: flex; flex-direction: column; gap: 16px; }
+.hm-header  { display: flex; justify-content: space-between; align-items: center; }
+.hm-title-row { display: flex; align-items: center; gap: 8px; }
+.hm-icon    { font-size: 1.1rem; }
+.hm-title   { margin: 0; font-size: 1.1rem; font-weight: 600; color: var(--text-primary, #f8fafc); }
+.hm-total   { font-size: 0.8rem; color: var(--text-secondary, #94a3b8);
+               background: rgba(255,255,255,.06); padding: 3px 10px; border-radius: 20px; }
+
+/* Bar rows */
+.hm-bars { display: flex; flex-direction: column; gap: 10px; }
+.hm-bar-row { display: grid; grid-template-columns: 72px 1fr 36px; align-items: center; gap: 8px; }
+.hm-bar-label { font-size: 0.8rem; font-weight: 600; }
+.hm-bar-track { height: 10px; background: rgba(255,255,255,.07); border-radius: 6px; overflow: hidden; }
+.hm-bar-fill  { height: 100%; border-radius: 6px; transition: width 0.6s ease; }
+.hm-bar-count { font-size: 0.78rem; font-weight: 600; color: var(--text-secondary, #94a3b8); text-align: right; }
+
+/* Treemap */
+.hm-treemap { border-radius: 10px; overflow: hidden; }
+.hm-tooltip { display: flex; align-items: center; gap: 8px;
+               background: var(--bg-secondary, #1e293b);
+               border: 1px solid rgba(255,255,255,.1);
+               border-radius: 8px; padding: 8px 12px;
+               font-size: 0.85rem; color: var(--text-primary, #f8fafc); }
+.hm-tooltip-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }

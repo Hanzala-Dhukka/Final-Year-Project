@@ -1,19 +1,23 @@
-.app-layout {
-    min-height: 100vh;
-    display: flex;
-    flex-direction: column;
+.cs-layout {
+  display: flex;
+  min-height: 100vh;
+  background: var(--bg-primary, #0f172a);
 }
 
-.main-wrapper {
-    display: flex;
-    flex: 1;
-    min-height: calc(100vh - 64px);
+.cs-layout__main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
 }
 
-.content-area {
-    flex: 1;
-    padding: 24px;
-    background: #f5f7fb;
-    overflow-y: auto;
-    transition: all 0.3s ease;
+.cs-layout__content {
+  flex: 1;
+  padding: 24px;
+}
+
+@media (max-width: 767px) {
+  .cs-layout__content {
+    padding: 16px;
+  }
 }

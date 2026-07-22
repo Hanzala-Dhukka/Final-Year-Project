@@ -167,3 +167,106 @@ class EmailService:
 
 # Create singleton instance
 email_service = EmailService()
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Module 6.5 — Security alert & scheduled report emails
+# A lightweight SMTP sender (logs everything to the `email_logs` collection).
+# ─────────────────────────────────────────────────────────────────────────────
+import smtplib
+import ssl
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
+from datetime import datetime
+from typing import Optional
+
+from app.config.settings import settings
+from app.database.db import database
+
+EMAIL_LOGS = "email_logs"
+
+
+def _log_email(to_email: str, subject: str, ok: bool, error: Optional[str] = None,
+               category: str = "alert") -> None:
+    """Persist an email send attempt to the email_logs collection."""
+    try:
+        database[EMAIL_LOGS].insert_one({
+            "to": to_email,
+            "subject": subject,
+            "category": category,
+            "success": ok,
+            "error": error,
+            "created_at": datetime.utcnow(),
+        })
+    except Exception:
+        pass
+
+
+def send_security_alert(to_email: str, title: str, message: str,
+                        risk_score: Optional[int] = None) -> bool:
+    """Send a branded CyberShield security alert email (SMTP)."""
+    if not to_email:
+        return False
+    risk_line = f"<p><strong>Current Risk Score:</strong> {risk_score}</p>" if risk_score is not None else ""
+    body = f"""
+    <div style="font-family:Arial,sans-serif;max-width:600px;margin:auto;">
+      <h2 style="color:#b71c1c;">CyberShield Security Alert</h2>
+      <p><strong>{title}</strong></p>
+      <p>{message}</p>
+      {risk_line}
+      <p style="margin-top:24px;">
+        <a href="http://localhost:3000/dashboard"
+           style="background:#1565c0;color:#fff;padding:10px 16px;border-radius:6px;text-decoration:none;">
+          Click to review
+        </a>
+      </p>
+      <hr/>
+      <small style="color:#888;">This is an automated message from CyberShield.</small>
+    </div>
+    """
+    return _send_smtp(to_email, "CyberShield Security Alert", body, category="alert")
+
+
+def send_report_email(to_email: str, subject: str, message: str,
+                      report_type: str = "report") -> bool:
+    """Send a scheduled report (weekly / monthly / executive)."""
+    if not to_email:
+        return False
+    body = f"""
+    <div style="font-family:Arial,sans-serif;max-width:600px;margin:auto;">
+      <h2 style="color:#1565c0;">{subject}</h2>
+      <p>{message}</p>
+      <p style="margin-top:24px;">
+        <a href="http://localhost:3000/dashboard"
+           style="background:#1565c0;color:#fff;padding:10px 16px;border-radius:6px;text-decoration:none;">
+          Open CyberShield
+        </a>
+      </p>
+    </div>
+    """
+    return _send_smtp(to_email, subject, body, category=report_type)
+
+
+def _send_smtp(to_email: str, subject: str, body: str, category: str = "alert") -> bool:
+    """Low-level SMTP send with graceful no-credential fallback."""
+    user = settings.EMAIL_USER
+    pwd = settings.EMAIL_PASSWORD
+    if not user or not pwd:
+        _log_email(to_email, subject, True, error="SMTP not configured; skipped send",
+                   category=category)
+        return True
+    try:
+        msg = MIMEMultipart("alternative")
+        msg["Subject"] = subject
+        msg["From"] = user
+        msg["To"] = to_email
+        msg.attach(MIMEText(body, "html"))
+        context = ssl.create_default_context()
+        with smtplib.SMTP_SSL("smtp.gmail.com", 465, context=context) as server:
+            server.login(user, pwd)
+            server.sendmail(user, to_email, msg.as_string())
+        _log_email(to_email, subject, True, category=category)
+        return True
+    except Exception as e:
+        _log_email(to_email, subject, False, error=str(e), category=category)
+        return False

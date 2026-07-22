@@ -1,78 +1,65 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import API from "../../api/api";
+import { motion } from "framer-motion";
+import { Moon, Sun, ShieldAlert } from "lucide-react";
+import { useTheme } from "../../theme/useTheme";
+import CyberShieldLogo from "../../components/Auth/CyberShieldLogo";
+import CyberBackground from "../../components/Auth/CyberBackground";
+import ForgotPasswordForm from "./ForgotPasswordForm";
+import "./styles.css";
 
-function ForgotPassword() {
+/**
+ * ForgotPassword page (Module B3) — enterprise-style recovery entry.
+ * Glass card on the animated cyber background; the form handles the
+ * email submission and success state.
+ */
+export default function ForgotPassword() {
   const navigate = useNavigate();
-  const [email, setEmail] = useState("");
-  const [message, setMessage] = useState("");
-  const [loading, setLoading] = useState(false);
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setLoading(true);
-    setMessage("");
-
-    try {
-      await API.post("/auth/forgot-password", { email });
-      setMessage("If your email is registered, you will receive a password reset link.");
-    } catch (error) {
-      setMessage("Error sending reset link. Please try again.");
-    } finally {
-      setLoading(false);
-    }
-  };
+  const { isDark, toggleTheme } = useTheme();
+  const [mode, setMode] = useState("form");
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50">
-      <div className="bg-white p-8 rounded-lg shadow-md w-full max-w-md">
-        <h1 className="text-2xl font-bold mb-6 text-center">Forgot Password</h1>
-        
-        <p className="text-gray-600 mb-6 text-center">
-          Enter your email address and we'll send you a link to reset your password.
-        </p>
+    <div className="cs-auth fp-page" data-theme-mode={isDark ? "dark" : "light"}>
+      <CyberBackground />
 
-        {message && (
-          <div className={`p-4 mb-4 rounded ${message.includes("Error") ? "bg-red-100 text-red-700" : "bg-green-100 text-green-700"}`}>
-            {message}
-          </div>
-        )}
+      <button
+        type="button"
+        className="cs-theme-toggle"
+        onClick={toggleTheme}
+        aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"}
+      >
+        {isDark ? <Sun size={18} /> : <Moon size={18} />}
+      </button>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Email Address
-            </label>
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="Enter your email"
-            />
+      <main className="cs-auth-form">
+        <motion.div
+          className="register-card"
+          initial={{ opacity: 0, y: 24 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+        >
+          <div className="fp-brand">
+            <CyberShieldLogo size={32} />
+            <span className="fp-wordmark">CyberShield</span>
           </div>
 
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full bg-blue-600 text-white py-2 rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {loading ? "Sending..." : "Send Reset Link"}
-          </button>
-        </form>
+          <div className="register-head">
+            <span className="fp-icon">
+              <ShieldAlert size={22} />
+            </span>
+            <h2>Forgot your password?</h2>
+            <p>No worries — enter your email and we&apos;ll send you instructions to reset it.</p>
+          </div>
 
-        <div className="mt-6 text-center">
-          <button
-            onClick={() => navigate("/login")}
-            className="text-blue-600 hover:underline"
-          >
-            Back to Login
-          </button>
-        </div>
-      </div>
+          <ForgotPasswordForm
+            key={mode}
+            onBack={() => {
+              setMode("form");
+              navigate("/login");
+            }}
+          />
+        </motion.div>
+      </main>
     </div>
   );
 }
-
-export default ForgotPassword;

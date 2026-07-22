@@ -1,0 +1,61 @@
+.cs-alert {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 14px 16px;
+  border-radius: var(--radius-md, 8px);
+  border: 1px solid transparent;
+  font-size: 14px;
+}
+.cs-alert__icon {
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+.cs-alert__body {
+  flex: 1;
+  min-width: 0;
+}
+.cs-alert__title {
+  font-weight: 600;
+  color: var(--text-primary, #f1f5f9);
+}
+.cs-alert__msg {
+  color: var(--text-secondary, #94a3b8);
+  margin-top: 2px;
+}
+.cs-alert__action {
+  flex-shrink: 0;
+}
+.cs-alert__close {
+  flex-shrink: 0;
+  border: none;
+  background: none;
+  color: inherit;
+  cursor: pointer;
+  opacity: 0.7;
+  display: inline-flex;
+}
+.cs-alert__close:hover {
+  opacity: 1;
+}
+
+.cs-alert--success {
+  background: var(--success-soft, rgba(16, 185, 129, 0.12));
+  border-color: rgba(16, 185, 129, 0.3);
+  color: var(--success, #10b981);
+}
+.cs-alert--error {
+  background: var(--danger-soft, rgba(239, 68, 68, 0.12));
+  border-color: rgba(239, 68, 68, 0.3);
+  color: var(--danger, #ef4444);
+}
+.cs-alert--warning {
+  background: var(--warning-soft, rgba(245, 158, 11, 0.12));
+  border-color: rgba(245, 158, 11, 0.3);
+  color: var(--warning, #f59e0b);
+}
+.cs-alert--info {
+  background: var(--info-soft, rgba(59, 130, 246, 0.12));
+  border-color: rgba(59, 130, 246, 0.3);
+  color: var(--info, #3b82f6);
+}

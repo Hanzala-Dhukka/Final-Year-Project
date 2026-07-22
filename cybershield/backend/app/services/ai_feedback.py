@@ -1,5 +1,5 @@
 from typing import Dict, Any, List, Optional
-from app.services.gemini_service import generate_ai_response, get_model
+from app.services.gemini_service import generate_ai_response, get_model, call_groq_sync
 from app.config.settings import settings
 
 
@@ -78,12 +78,8 @@ class AIFeedbackEngine:
         validation_result: Dict[str, Any],
         scenario: Dict[str, Any]
     ) -> Optional[Dict[str, Any]]:
-        """Get AI-generated feedback using Gemini"""
+        """Get AI-generated feedback using Groq"""
         try:
-            model = get_model()
-            if not model:
-                return None
-            
             # Build prompt for AI feedback
             prompt = f"""You are a security expert providing feedback on code that defends against {category}.
 
@@ -113,27 +109,25 @@ Focus on:
 
 Return only valid JSON:"""
             
-            response = model.generate_content(
-                prompt,
-                generation_config={
-                    "temperature": 0.3,
-                    "max_output_tokens": 500
-                }
-            )
+            response_text = call_groq_sync(prompt, max_tokens=500)
+            if not response_text:
+                return None
+            response_text = response_text.strip()
             
-            # Parse AI response
-            response_text = response.text.strip()
-            if "```json" in response_text:
+            import json, re
+            match = re.search(r'\{.*\}', response_text, re.DOTALL)
+            if match:
+                response_text = match.group(0).strip()
+            elif "```json" in response_text:
                 response_text = response_text.split("```json")[1].split("```")[0].strip()
             elif "```" in response_text:
                 response_text = response_text.split("```")[1].split("```")[0].strip()
             
-            import json
             ai_feedback = json.loads(response_text)
             return ai_feedback
         
         except Exception as e:
-            print(f"Error getting AI feedback: {e}")
+            print(f"Notice: AI feedback fallback used ({e})")
             return None
     
     @staticmethod

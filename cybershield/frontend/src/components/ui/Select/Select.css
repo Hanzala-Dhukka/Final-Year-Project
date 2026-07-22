@@ -1,0 +1,20 @@
+.cs-select {
+  position: relative;
+  padding-right: 8px !important;
+}
+.cs-select__input {
+  appearance: none;
+  -webkit-appearance: none;
+  cursor: pointer;
+  padding-right: 24px;
+}
+.cs-select__input option {
+  background: var(--card-bg, #111827);
+  color: var(--text-primary, #f1f5f9);
+}
+.cs-select__chevron {
+  position: absolute;
+  right: 12px;
+  pointer-events: none;
+  color: var(--text-muted, #64748b);
+}

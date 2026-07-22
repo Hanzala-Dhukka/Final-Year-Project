@@ -31,6 +31,8 @@ import Glossary from "../pages/Glossary/Glossary";
 
 import Progress from "../pages/Progress/Progress";
 import Achievements from "../pages/Achievements/Achievements";
+import Leaderboard from "../pages/Leaderboard/Leaderboard";
+import LearningGoals from "../pages/LearningGoals/LearningGoals";
 
 import DailyChallenge from "../pages/DailyChallenge/DailyChallenge";
 
@@ -41,14 +43,23 @@ import AIChecklist from "../pages/AIChecklist/AIChecklist";
 import ComplianceDashboard from "../pages/Compliance/ComplianceDashboard";
 import ExecutiveDashboard from "../pages/ExecutiveDashboard/ExecutiveDashboard";
 
+import Notifications from "../pages/Notifications/Notifications";
+import Automation from "../pages/Automation/Automation";
+import ActivityFeed from "../pages/Activity/ActivityFeed";
+
 import Login from "../pages/Login/Login";
 import Register from "../pages/Register/Register";
 import Unauthorized from "../pages/Unauthorized/Unauthorized";
 import ForgotPassword from "../pages/ForgotPassword/ForgotPassword";
-import ResetPassword from "../pages/ResetPassword/ResetPassword";
+import ResetPassword from "../pages/ForgotPassword/ResetPassword";
 import VerifyEmail from "../pages/VerifyEmail/VerifyEmail";
+import ResendVerification from "../pages/ResendVerification/ResendVerification";
+import VerifyMessage from "../pages/VerifyMessage/VerifyMessage";
+import Onboarding from "../pages/Onboarding/Onboarding";
 
 import NotFound from "../pages/NotFound/NotFound";
+
+import ComponentLibrary from "../pages/ComponentLibrary/ComponentLibrary";
 
 export default function AppRoutes() {
   return (
@@ -61,7 +72,12 @@ export default function AppRoutes() {
         <Route path="/unauthorized" element={<Unauthorized />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/reset-password" element={<ResetPassword />} />
+        <Route path="/reset-password/:token" element={<ResetPassword />} />
         <Route path="/verify-email" element={<VerifyEmail />} />
+        <Route path="/verify-message" element={<VerifyMessage />} />
+        <Route path="/resend-verification" element={<ResendVerification />} />
+        <Route path="/onboarding" element={<Onboarding />} />
+        <Route path="/component-library" element={<ComponentLibrary />} />
 
         {/* Protected Routes */}
         <Route element={<ProtectedRoute />}>
@@ -90,12 +106,17 @@ export default function AppRoutes() {
             <Route path="glossary" element={<Glossary />} />
             <Route path="progress" element={<Progress />} />
             <Route path="achievements" element={<Achievements />} />
+            <Route path="leaderboard" element={<Leaderboard />} />
+            <Route path="learning-goals" element={<LearningGoals />} />
             <Route path="daily-challenge" element={<DailyChallenge />} />
             <Route path="profile" element={<Profile />} />
             <Route path="settings" element={<Settings />} />
             <Route path="security-checklist" element={<SecurityChecklist />} />
             <Route path="ai-checklist" element={<AIChecklist />} />
             <Route path="compliance" element={<ComplianceDashboard />} />
+            <Route path="monitoring/notifications" element={<Notifications />} />
+            <Route path="monitoring/schedules" element={<Automation />} />
+            <Route path="monitoring/timeline" element={<ActivityFeed />} />
           </Route>
         </Route>
 

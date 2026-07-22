@@ -1,0 +1,75 @@
+.cs-modal__overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  background: var(--bg-overlay, rgba(15, 23, 42, 0.72));
+  backdrop-filter: blur(2px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+.cs-modal {
+  width: 100%;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  background: var(--card-bg, #111827);
+  border: 1px solid var(--border-color, rgba(148, 163, 184, 0.12));
+  border-radius: var(--radius-xl, 16px);
+  box-shadow: var(--shadow, 0 4px 16px rgba(0, 0, 0, 0.45));
+  color: var(--text-primary, #f1f5f9);
+  outline: none;
+}
+
+.cs-modal--sm {
+  max-width: 420px;
+}
+.cs-modal--md {
+  max-width: 560px;
+}
+.cs-modal--lg {
+  max-width: 820px;
+}
+
+.cs-modal__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 20px;
+  border-bottom: 1px solid var(--border-color, rgba(148, 163, 184, 0.12));
+}
+.cs-modal__title {
+  font-size: 18px;
+  font-weight: 600;
+  margin: 0;
+}
+.cs-modal__close {
+  border: none;
+  background: none;
+  color: var(--text-secondary, #94a3b8);
+  cursor: pointer;
+  display: inline-flex;
+  border-radius: 999px;
+  padding: 4px;
+  transition: background-color 150ms var(--ease-in-out, ease);
+}
+.cs-modal__close:hover {
+  background: var(--surface-hover, #1a2438);
+  color: var(--text-primary, #f1f5f9);
+}
+
+.cs-modal__body {
+  padding: 20px;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.cs-modal__footer {
+  padding: 16px 20px;
+  border-top: 1px solid var(--border-color, rgba(148, 163, 184, 0.12));
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}

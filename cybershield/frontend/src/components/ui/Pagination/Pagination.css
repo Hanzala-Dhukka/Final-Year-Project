@@ -1,0 +1,39 @@
+.cs-pagination {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.cs-pagination__btn {
+  min-width: 36px;
+  height: 36px;
+  padding: 0 10px;
+  border-radius: var(--radius-md, 8px);
+  border: 1px solid var(--border-color, rgba(148, 163, 184, 0.12));
+  background: var(--card-bg, #111827);
+  color: var(--text-secondary, #94a3b8);
+  font-family: inherit;
+  font-size: 14px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 150ms var(--ease-in-out, ease),
+    color 150ms var(--ease-in-out, ease), border-color 150ms var(--ease-in-out, ease);
+}
+.cs-pagination__btn:hover:not(:disabled):not(.is-active) {
+  background: var(--surface-hover, #1a2438);
+  color: var(--text-primary, #f1f5f9);
+}
+.cs-pagination__btn.is-active {
+  background: var(--primary, #2563eb);
+  border-color: var(--primary, #2563eb);
+  color: #fff;
+}
+.cs-pagination__btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+.cs-pagination__ellipsis {
+  padding: 0 4px;
+  color: var(--text-muted, #64748b);
+}

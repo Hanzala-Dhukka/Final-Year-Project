@@ -1,0 +1,28 @@
+.ars-widget { display:flex; flex-direction:column; gap:14px; }
+.ars-header { display:flex; justify-content:space-between; align-items:center; }
+.ars-title-row { display:flex; align-items:center; gap:8px; }
+.ars-title  { margin:0; font-size:1.1rem; font-weight:600; color:var(--text-primary,#f8fafc); }
+.ars-refresh { background:none; border:1px solid rgba(255,255,255,.1); border-radius:6px;
+  color:var(--text-secondary,#94a3b8); font-size:.9rem; padding:3px 8px; cursor:pointer; transition:all .2s; }
+.ars-refresh:hover { color:var(--text-primary,#f8fafc); }
+.ars-loading,.ars-error { display:flex; align-items:center; gap:8px; padding:16px;
+  color:var(--text-secondary,#94a3b8); font-size:.875rem; }
+.ars-spinner { display:inline-block; width:14px; height:14px; border:2px solid rgba(99,102,241,.3);
+  border-top-color:#6366f1; border-radius:50%; animation:arsSpin .8s linear infinite; }
+@keyframes arsSpin { to { transform:rotate(360deg); } }
+.ars-gauge-wrap { display:flex; align-items:center; gap:20px; }
+.ars-gauge { width:110px; height:110px; flex-shrink:0; }
+.ars-gauge-meta { display:flex; flex-direction:column; gap:6px; }
+.ars-level { font-size:1.1rem; font-weight:700; }
+.ars-trend { font-size:.82rem; font-weight:600; }
+.ars-trend--good   { color:#4ade80; }
+.ars-trend--bad    { color:#f87171; }
+.ars-trend--stable { color:#94a3b8; }
+.ars-change { font-size:.78rem; color:var(--text-secondary,#64748b); }
+.ars-explanation { font-size:.85rem; color:var(--text-secondary,#94a3b8); margin:0; line-height:1.5; }
+.ars-breakdown { display:flex; flex-direction:column; gap:10px; }
+.ars-bar-row { display:grid; grid-template-columns:120px 1fr 32px; align-items:center; gap:8px; }
+.ars-bar-label { font-size:.78rem; color:var(--text-secondary,#94a3b8); }
+.ars-bar-track { height:8px; background:rgba(255,255,255,.07); border-radius:6px; overflow:hidden; }
+.ars-bar-fill { height:100%; border-radius:6px; transition:width .6s ease; }
+.ars-bar-val { font-size:.75rem; font-weight:600; color:var(--text-primary,#f8fafc); text-align:right; }

@@ -1,0 +1,53 @@
+.reset-dashboard-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  background: transparent;
+  border: 1px solid var(--border-color, #e0e0e0);
+  border-radius: 8px;
+  color: var(--text-secondary, #666);
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.reset-dashboard-btn:hover:not(:disabled) {
+  background: var(--hover-bg, #f0f0f5);
+  border-color: var(--danger-color, #ef4444);
+  color: var(--danger-color, #ef4444);
+}
+
+.reset-dashboard-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.reset-icon {
+  font-size: 1rem;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Dark mode */
+@media (prefers-color-scheme: dark) {
+  .reset-dashboard-btn {
+    border-color: var(--border-color-dark, #3a3a4e);
+    color: var(--text-secondary-dark, #aaa);
+  }
+
+  .reset-dashboard-btn:hover:not(:disabled) {
+    background: var(--hover-bg-dark, #2a2a3e);
+    border-color: var(--danger-color, #f87171);
+    color: var(--danger-color, #f87171);
+  }
+}

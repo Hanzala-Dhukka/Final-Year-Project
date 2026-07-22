@@ -1,178 +1,200 @@
-import { useState } from "react";
+import { useState, useId } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import API from "../../api/api";
-import CyberShieldLogo from "../../components/Auth/CyberShieldLogo";
+import { motion, AnimatePresence } from "framer-motion";
+import { User, Mail, Lock, Eye, EyeOff, Check } from "lucide-react";
+import AuthIllustration from "../../components/Auth/AuthIllustration";
+import PasswordStrength from "../../components/Auth/PasswordStrength";
+import AuthInput from "../../components/Auth/AuthInput";
+import SocialLogin from "../../components/Auth/SocialLogin";
+import { useToast } from "../../components/Animation/ToastProvider";
+import { registerUser } from "../../services/authService";
+import "./Register.css";
 
-function Register() {
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const MIN_PASSWORD = 8;
+
+export default function Register() {
   const navigate = useNavigate();
+  const toast = useToast();
 
-  const [formData, setFormData] = useState({
-    name: "",
-    email: "",
-    password: "",
-  });
-  const [error, setError] = useState("");
+  const nameId = useId();
+  const emailId = useId();
+  const pwId = useId();
+  const cpwId = useId();
+
+  const [form, setForm] = useState({ name: "", email: "", password: "", confirm: "" });
+  const [errors, setErrors] = useState({});
+  const [touched, setTouched] = useState({});
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [success, setSuccess] = useState(false);
 
-  const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+  const setField = (key) => (e) => {
+    const value = e.target.value;
+    setForm((f) => ({ ...f, [key]: value }));
+    if (touched[key]) validate({ ...form, [key]: value });
   };
 
-  const handleSubmit = async (e) => {
+  const validate = (data = form) => {
+    const next = {};
+    if (!data.name.trim()) next.name = "Full name is required.";
+    if (!data.email.trim()) next.email = "Email is required.";
+    else if (!EMAIL_RE.test(data.email.trim())) next.email = "Enter a valid email address.";
+    if (!data.password) next.password = "Password is required.";
+    else if (data.password.length < MIN_PASSWORD)
+      next.password = `Password must be at least ${MIN_PASSWORD} characters.`;
+    if (!data.confirm) next.confirm = "Please confirm your password.";
+    else if (data.confirm !== data.password) next.confirm = "Passwords do not match.";
+    setErrors(next);
+    return next;
+  };
+
+  const handleBlur = (key) => () => {
+    setTouched((t) => ({ ...t, [key]: true }));
+    validate();
+  };
+
+  const submit = async (e) => {
     e.preventDefault();
-    setError("");
+    const next = validate();
+    setTouched({ name: true, email: true, password: true, confirm: true });
+    if (Object.keys(next).length || loading) return;
+
     setLoading(true);
     try {
-      const response = await API.post("/api/v1/auth/register", formData);
-      alert(response.data.message || "Registration successful!");
-      navigate("/login");
+      await registerUser({
+        name: form.name.trim(),
+        email: form.email.trim(),
+        password: form.password,
+      });
+      setSuccess(true);
+      toast.success("Account created — verify your email to continue.");
+      setTimeout(
+        () => navigate("/verify-message", { state: { email: form.email.trim() }, replace: true }),
+        1600
+      );
     } catch (err) {
-      setError(err.response?.data?.detail || "Registration failed. Please try again.");
-    } finally {
+      const code = err.response?.status;
+      const detail = err.response?.data?.detail || err.response?.data?.message;
+      if (code === 400 || code === 409)
+        toast.error(detail || "An account with this email already exists.");
+      else if (err.code === "ERR_NETWORK" || !err.response)
+        toast.error("Server unavailable — please try again shortly.");
+      else toast.error(detail || "Registration failed. Please try again.");
       setLoading(false);
     }
   };
 
-  const inputClass =
-    "w-full border border-slate-300 rounded-lg px-4 py-2.5 text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition";
+  const show = (key) => (touched[key] ? errors[key] : undefined);
 
   return (
-    <div className="min-h-screen w-full flex bg-slate-50">
-      {/* Left brand panel (hidden on small screens) */}
-      <div className="hidden lg:flex lg:w-1/2 cs-gradient-bg relative overflow-hidden items-center justify-center">
-        <div className="absolute cs-float opacity-90">
-          <div className="relative">
-            <span className="absolute inset-0 cs-pulse-ring rounded-full bg-sky-400/40" />
-            <CyberShieldLogo size={120} light />
-          </div>
-        </div>
+    <div className="register-page">
+      <AuthIllustration />
 
-        <div className="relative z-10 text-center px-10 cs-animate-fade-in">
-          <div className="flex items-center justify-center gap-3 mb-6">
-            <CyberShieldLogo size={44} light />
-            <span className="text-3xl font-extrabold text-white tracking-tight">
-              CyberShield
-            </span>
-          </div>
-          <h1 className="text-white text-4xl font-bold leading-tight max-w-md mx-auto">
-            Join the Secure Coding Movement
-          </h1>
-          <p className="text-sky-100/80 mt-4 max-w-sm mx-auto">
-            Create your account and start defending your code with AI.
-          </p>
-
-          <div className="mt-10 grid grid-cols-1 gap-3 text-left max-w-sm mx-auto">
-            {[
-              "Personalized AI Security Assistant",
-              "Track progress with quizzes & labs",
-              "Free to get started",
-            ].map((f) => (
-              <div
-                key={f}
-                className="flex items-center gap-3 bg-white/10 backdrop-blur-sm rounded-lg px-4 py-3"
-              >
-                <span className="h-2 w-2 rounded-full bg-sky-300" />
-                <span className="text-white text-sm">{f}</span>
+      <motion.div
+        className="register-card"
+        initial={{ opacity: 0, x: 40 }}
+        animate={{ opacity: 1, x: 0 }}
+        transition={{ duration: 0.5 }}
+      >
+        <AnimatePresence mode="wait">
+          {success ? (
+            <motion.div
+              key="success"
+              className="register-success"
+              initial={{ opacity: 0, scale: 0.92 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ type: "spring", stiffness: 240, damping: 20 }}
+            >
+              <div className="register-success-check">
+                <Check size={34} strokeWidth={3} />
               </div>
-            ))}
-          </div>
-        </div>
+              <h2>Account Created</h2>
+              <p>Check your inbox to verify your email and activate your account.</p>
+            </motion.div>
+          ) : (
+            <motion.div key="form" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+              <h1>Create Account</h1>
 
-        <div className="absolute -top-20 -left-20 h-72 w-72 rounded-full bg-sky-400/20 blur-3xl" />
-        <div className="absolute -bottom-24 -right-16 h-80 w-80 rounded-full bg-blue-500/20 blur-3xl" />
-      </div>
-
-      {/* Right form panel */}
-      <div className="flex w-full lg:w-1/2 items-center justify-center p-6">
-        <div className="w-full max-w-md cs-animate-fade-up">
-          <div className="lg:hidden flex items-center justify-center gap-2 mb-8">
-            <CyberShieldLogo size={36} />
-            <span className="text-2xl font-extrabold text-slate-800">
-              CyberShield
-            </span>
-          </div>
-
-          <div className="bg-white rounded-2xl shadow-xl border border-slate-100 p-8">
-            <h2 className="text-2xl font-bold text-slate-800">
-              Create your account
-            </h2>
-            <p className="text-slate-500 text-sm mt-1">
-              It only takes a few seconds.
-            </p>
-
-            {error && (
-              <div className="mt-4 bg-red-50 border border-red-200 text-red-600 text-sm rounded-lg px-4 py-2.5">
-                {error}
-              </div>
-            )}
-
-            <form onSubmit={handleSubmit} className="mt-6 space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-slate-600 mb-1">
-                  Full Name
-                </label>
-                <input
-                  type="text"
-                  name="name"
-                  required
-                  placeholder="Jane Doe"
-                  value={formData.name}
-                  onChange={handleChange}
-                  className={inputClass}
+              <form onSubmit={submit} noValidate>
+                <AuthInput
+                  id={nameId}
+                  label="Full Name"
+                  placeholder="Full Name"
+                  icon={<User size={18} />}
+                  value={form.name}
+                  onChange={setField("name")}
+                  onBlur={handleBlur("name")}
+                  error={show("name")}
+                  disabled={loading}
+                  autoFocus
                 />
-              </div>
 
-              <div>
-                <label className="block text-sm font-medium text-slate-600 mb-1">
-                  Email
-                </label>
-                <input
+                <AuthInput
+                  id={emailId}
+                  label="Email Address"
                   type="email"
-                  name="email"
-                  required
-                  placeholder="you@example.com"
-                  value={formData.email}
-                  onChange={handleChange}
-                  className={inputClass}
+                  placeholder="Email Address"
+                  icon={<Mail size={18} />}
+                  value={form.email}
+                  onChange={setField("email")}
+                  onBlur={handleBlur("email")}
+                  error={show("email")}
+                  disabled={loading}
                 />
-              </div>
 
-              <div>
-                <label className="block text-sm font-medium text-slate-600 mb-1">
-                  Password
-                </label>
-                <input
-                  type="password"
-                  name="password"
-                  required
-                  minLength={8}
-                  placeholder="At least 8 characters"
-                  value={formData.password}
-                  onChange={handleChange}
-                  className={inputClass}
+                <AuthInput
+                  id={pwId}
+                  label="Password"
+                  type={showPassword ? "text" : "password"}
+                  placeholder="Password"
+                  icon={<Lock size={18} />}
+                  value={form.password}
+                  onChange={setField("password")}
+                  onBlur={handleBlur("password")}
+                  error={show("password")}
+                  disabled={loading}
+                  suffix={
+                    <button
+                      type="button"
+                      className="auth-input-toggle"
+                      onClick={() => setShowPassword((s) => !s)}
+                      disabled={loading}
+                      aria-label={showPassword ? "Hide password" : "Show password"}
+                    >
+                      {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                    </button>
+                  }
                 />
-              </div>
+                <PasswordStrength password={form.password} />
 
-              <button
-                type="submit"
-                disabled={loading}
-                className="w-full bg-gradient-to-r from-blue-600 to-sky-500 text-white font-semibold py-2.5 rounded-lg shadow-md hover:from-blue-700 hover:to-sky-600 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2 disabled:opacity-60 transition"
-              >
-                {loading ? "Creating account…" : "Create Account"}
-              </button>
-            </form>
-          </div>
+                <AuthInput
+                  id={cpwId}
+                  label="Confirm Password"
+                  type={showPassword ? "text" : "password"}
+                  placeholder="Confirm Password"
+                  icon={<Lock size={18} />}
+                  value={form.confirm}
+                  onChange={setField("confirm")}
+                  onBlur={handleBlur("confirm")}
+                  error={show("confirm")}
+                  disabled={loading}
+                />
 
-          <p className="text-center text-sm text-slate-500 mt-6">
-            Already have an account?{" "}
-            <Link to="/login" className="text-blue-600 font-semibold hover:underline">
-              Sign in
-            </Link>
-          </p>
-        </div>
-      </div>
+                <button type="submit" className="register-submit" disabled={loading}>
+                  {loading ? "Creating Account…" : "Create Account"}
+                </button>
+              </form>
+
+              <SocialLogin />
+
+              <p className="login-link">
+                Already have account? <Link to="/login">Login</Link>
+              </p>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </motion.div>
     </div>
   );
 }
-
-export default Register;

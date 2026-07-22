@@ -1,0 +1,56 @@
+.cs-tooltip-wrap {
+  position: relative;
+  display: inline-flex;
+}
+
+.cs-tooltip {
+  position: absolute;
+  z-index: 1100;
+  padding: 6px 10px;
+  border-radius: var(--radius-md, 8px);
+  background: var(--bg-secondary, #1e293b);
+  color: var(--text-primary, #f1f5f9);
+  border: 1px solid var(--border-color, rgba(148, 163, 184, 0.12));
+  font-size: 12px;
+  font-weight: 500;
+  white-space: nowrap;
+  box-shadow: var(--shadow, 0 4px 16px rgba(0, 0, 0, 0.45));
+  pointer-events: none;
+  animation: cs-tooltip-in 150ms var(--ease-in-out, ease);
+}
+
+@keyframes cs-tooltip-in {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.cs-tooltip--top {
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  margin-bottom: 8px;
+}
+.cs-tooltip--bottom {
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  margin-top: 8px;
+}
+.cs-tooltip--left {
+  right: 100%;
+  top: 50%;
+  transform: translateY(-50%);
+  margin-right: 8px;
+}
+.cs-tooltip--right {
+  left: 100%;
+  top: 50%;
+  transform: translateY(-50%);
+  margin-left: 8px;
+}

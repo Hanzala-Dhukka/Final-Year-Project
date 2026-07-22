@@ -1,0 +1,35 @@
+.cs-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 48px 24px;
+  gap: 8px;
+}
+.cs-empty__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 64px;
+  height: 64px;
+  border-radius: 999px;
+  background: var(--surface-hover, #1a2438);
+  color: var(--text-muted, #64748b);
+  margin-bottom: 8px;
+}
+.cs-empty__title {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text-primary, #f1f5f9);
+  margin: 0;
+}
+.cs-empty__desc {
+  font-size: 14px;
+  color: var(--text-secondary, #94a3b8);
+  max-width: 360px;
+  margin: 0;
+}
+.cs-empty__action {
+  margin-top: 12px;
+}

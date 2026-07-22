@@ -1,92 +1,71 @@
-import {
-  Card,
-  CardContent,
-  Typography,
-  Box,
-  Skeleton,
-  Stack,
-} from "@mui/material";
-import {
-  Search,
-  Quiz,
-  Description,
-  Person,
-  Science,
-  EmojiEvents,
-} from "@mui/icons-material";
+import { Clock, CheckCircle2, ShieldAlert, Award, FileText } from "lucide-react";
 
-const ICONS = {
-  scan: <Search fontSize="small" />,
-  quiz: <Quiz fontSize="small" />,
-  report: <Description fontSize="small" />,
-  profile: <Person fontSize="small" />,
-  challenge: <Science fontSize="small" />,
-  achievement: <EmojiEvents fontSize="small" />,
-};
+export default function ActivityTimeline({ activities = [] }) {
+  const defaultActivities = [
+    {
+      title: "GitHub Scan Completed",
+      time: "10:32 AM",
+      timestamp: "2 minutes ago",
+      type: "scan"
+    },
+    {
+      title: "Quiz Completed - OWASP A01",
+      time: "09:15 AM",
+      timestamp: "1 hour ago",
+      type: "quiz"
+    },
+    {
+      title: "Threat Model Generated",
+      time: "Yesterday",
+      timestamp: "Yesterday",
+      type: "threat"
+    }
+  ];
 
-// Recent activity timeline (Module 3.2 — Step 12).
-export default function ActivityTimeline({ activity, loading }) {
-  const list = activity || [];
+  const list = activities.length > 0 ? activities : defaultActivities;
 
-  if (loading) {
-    return (
-      <Card>
-        <CardContent>
-          <Skeleton variant="rounded" height={160} />
-        </CardContent>
-      </Card>
-    );
-  }
+  const getTypeIcon = (type) => {
+    switch (type) {
+      case "scan":
+        return <CheckCircle2 size={16} className="text-green-400" />;
+      case "quiz":
+        return <Award size={16} className="text-blue-400" />;
+      case "threat":
+        return <ShieldAlert size={16} className="text-amber-400" />;
+      default:
+        return <FileText size={16} className="text-indigo-400" />;
+    }
+  };
 
   return (
-    <Card>
-      <CardContent>
-        <Typography variant="h6" fontWeight={700} gutterBottom>
-          Recent Activity
-        </Typography>
-        {list.length === 0 ? (
-          <Typography color="text.secondary">No recent activity.</Typography>
-        ) : (
-          <Stack spacing={1.5}>
-            {list.slice(0, 6).map((a, i) => {
-              const key = (a.type || "").toLowerCase();
-              const icon = ICONS[key] || ICONS.achievement;
-              return (
-                <Stack direction="row" spacing={1.5} key={a.id || i} alignItems="center">
-                  <Box
-                    sx={{
-                      width: 34,
-                      height: 34,
-                      borderRadius: "50%",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      bgcolor: "rgba(99,102,241,0.12)",
-                      color: "primary.main",
-                      flexShrink: 0,
-                    }}
-                  >
-                    {icon}
-                  </Box>
-                  <Box>
-                    <Typography variant="body2" fontWeight={600}>
-                      {a.activity || a.action || a.title}
-                    </Typography>
-                    <Typography variant="caption" color="text.secondary">
-                      {a.time
-                        ? new Date(a.time).toLocaleString()
-                        : a.created_at
-                        ? new Date(a.created_at).toLocaleString()
-                        : ""}
-                      {a.xp ? ` · +${a.xp} XP` : ""}
-                    </Typography>
-                  </Box>
-                </Stack>
-              );
-            })}
-          </Stack>
-        )}
-      </CardContent>
-    </Card>
+    <div className="widget-card activity-timeline-widget">
+      <div className="widget-header">
+        <div className="header-title">
+          <Clock className="widget-icon" />
+          <h3>Security Activity Timeline</h3>
+        </div>
+      </div>
+
+      <div className="timeline-list">
+        {list.map((item, idx) => (
+          <div key={idx} className="timeline-item">
+            <div className="timeline-icon-col">
+              <div className="timeline-node">{getTypeIcon(item.type)}</div>
+              {idx < list.length - 1 && <div className="timeline-line" />}
+            </div>
+
+            <div className="timeline-content">
+              <div className="timeline-top">
+                <h4>{item.title}</h4>
+                <span className="time-badge">{item.time || item.timestamp}</span>
+              </div>
+              {item.timestamp && item.timestamp !== item.time && (
+                <p className="timestamp-note">{item.timestamp}</p>
+              )}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
   );
 }

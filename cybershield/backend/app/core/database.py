@@ -107,7 +107,12 @@ async def ensure_collections():
         "generated_checklists",
         "compliance_reports",
         "compliance_history",
-        "analytics_snapshots"
+        "analytics_snapshots",
+        "notifications",
+        "automation_rules",
+        "scheduled_scans",
+        "security_activity",
+        "email_logs"
     ]
     
     for collection_name in required_collections:
@@ -190,6 +195,20 @@ async def create_indexes():
         await tokens_collection.create_index("expires_at")
         print("Indexes created for 'refresh_tokens' collection")
         
+        # Notifications indexes
+        notif_collection = get_collection("notifications")
+        await notif_collection.create_index([("user_id", 1), ("created_at", -1)])
+        await notif_collection.create_index("read")
+        # Scheduled scans indexes
+        await get_collection("scheduled_scans").create_index([("user_id", 1), ("project_id", 1)])
+        await get_collection("scheduled_scans").create_index("next_run")
+        # Automation rules indexes
+        await get_collection("automation_rules").create_index("user_id")
+        # Security activity indexes
+        await get_collection("security_activity").create_index([("user_id", 1), ("created_at", -1)])
+        await get_collection("security_activity").create_index([("project_id", 1), ("created_at", -1)])
+        # Email logs indexes
+        await get_collection("email_logs").create_index("created_at")
         print("All database indexes created successfully")
         
     except Exception as e:

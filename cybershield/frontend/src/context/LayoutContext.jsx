@@ -1,36 +1,34 @@
-import { createContext, useContext, useState } from "react";
+import { createContext, useContext, useState, useEffect, useCallback } from "react";
+
+const COLLAPSE_KEY = "cybershield-sidebar-collapsed";
 
 const LayoutContext = createContext();
 
 export const LayoutProvider = ({ children }) => {
-  const [sidebarOpen, setSidebarOpen] = useState(true);
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [collapsed, setCollapsed] = useState(false);
+  const [collapsed, setCollapsed] = useState(
+    () => localStorage.getItem(COLLAPSE_KEY) === "true"
+  );
 
-  const toggleSidebar = () => {
-    setSidebarOpen(!sidebarOpen);
-  };
+  // Persist collapse preference
+  useEffect(() => {
+    localStorage.setItem(COLLAPSE_KEY, String(collapsed));
+  }, [collapsed]);
 
-  const toggleMobile = () => {
-    setMobileOpen(!mobileOpen);
-  };
-
-  const toggleCollapse = () => {
-    setCollapsed(!collapsed);
-  };
+  const toggleSidebar = useCallback(() => setCollapsed((c) => !c), []);
+  const toggleMobile = useCallback(() => setMobileOpen((o) => !o), []);
+  const closeMobile = useCallback(() => setMobileOpen(false), []);
 
   return (
     <LayoutContext.Provider
       value={{
-        sidebarOpen,
-        setSidebarOpen,
         mobileOpen,
         setMobileOpen,
         collapsed,
         setCollapsed,
         toggleSidebar,
         toggleMobile,
-        toggleCollapse,
+        closeMobile,
       }}
     >
       {children}

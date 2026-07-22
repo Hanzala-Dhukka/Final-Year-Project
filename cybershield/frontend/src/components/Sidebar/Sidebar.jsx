@@ -1,176 +1,95 @@
-import { useState } from "react";
-import { NavLink } from "react-router-dom";
-import {
-  Drawer,
-  List,
-  ListItemButton,
-  ListItemIcon,
-  ListItemText,
-  Collapse,
-  Toolbar,
-  Typography,
-  Box,
-  useTheme,
-  useMediaQuery
-} from "@mui/material";
-import { ExpandLess, ExpandMore } from "@mui/icons-material";
-
-import { menuItems } from "./menuItems";
+import { NavLink, useLocation } from "react-router-dom";
+import { motion } from "framer-motion";
+import { ChevronLeft, Shield, Zap } from "lucide-react";
+import { navSections, APP_VERSION } from "../Navigation/navConfig";
 import { useLayout } from "../../context/LayoutContext";
-import { useResponsive } from "../../hooks/useResponsive";
-import { useAuth } from "../../contexts/AuthContext";
 import "./Sidebar.css";
 
-export default function Sidebar() {
-  const theme = useTheme();
-  const { isMobile, isTablet } = useResponsive();
-  const { mobileOpen, collapsed, setMobileOpen } = useLayout();
-  const { user } = useAuth();
-
-  const [openSecurity, setOpenSecurity] = useState(true);
-  const [openAI, setOpenAI] = useState(true);
-  const [openLearning, setOpenLearning] = useState(true);
-  const [openProgress, setOpenProgress] = useState(true);
-  const [openAdmin, setOpenAdmin] = useState(true);
-
-  // Filter menu items based on user role
-  const filteredMenuItems = menuItems.filter(item => {
-    if (!item.roles) return true; // If no roles specified, show to all
-    return item.roles.includes(user?.role || "student");
-  });
-
-  const drawerContent = (
-    <Box className="sidebar">
-      {/* Logo */}
-      <Toolbar>
-        <Typography variant="h6" fontWeight="bold" color="primary">
-          CyberShield
-        </Typography>
-      </Toolbar>
-
-      <List>
-        {filteredMenuItems.map((item, index) => {
-          if (item.group) {
-            const openState = {
-              Security: openSecurity,
-              AI: openAI,
-              Learning: openLearning,
-              Progress: openProgress,
-              Admin: openAdmin
-            };
-            const toggle = {
-              Security: () => setOpenSecurity(!openSecurity),
-              AI: () => setOpenAI(!openAI),
-              Learning: () => setOpenLearning(!openLearning),
-              Progress: () => setOpenProgress(!openProgress),
-              Admin: () => setOpenAdmin(!openAdmin)
-            };
-
-            const isOpen = openState[item.group];
-            const handleToggle = toggle[item.group];
-
-            // Filter children based on role
-            const filteredChildren = item.children?.filter(child => {
-              if (!child.roles) return true;
-              return child.roles.includes(user?.role || "student");
-            }) || [];
-
-            if (filteredChildren.length === 0) return null;
-
-            return (
-              <Box key={item.group}>
-                <ListItemButton onClick={handleToggle}>
-                  <ListItemText primary={item.group} />
-                  {isOpen ? <ExpandLess /> : <ExpandMore />}
-                </ListItemButton>
-
-                <Collapse in={isOpen} timeout="auto" unmountOnExit>
-                  <List component="div" disablePadding>
-                    {filteredChildren.map((child) => (
-                      <ListItemButton
-                        key={child.path}
-                        component={NavLink}
-                        to={child.path}
-                        sx={{ pl: 4 }}
-                      >
-                        <ListItemIcon>{child.icon}</ListItemIcon>
-                        <ListItemText primary={child.title} />
-                      </ListItemButton>
-                    ))}
-                  </List>
-                </Collapse>
-              </Box>
-            );
-          }
-
-          return (
-            <ListItemButton
-              key={item.path}
-              component={NavLink}
-              to={item.path}
-            >
-              <ListItemIcon>{item.icon}</ListItemIcon>
-              <ListItemText primary={item.title} />
-            </ListItemButton>
-          );
-        })}
-      </List>
-    </Box>
-  );
-
-  // Calculate sidebar width based on state
-  const getSidebarWidth = () => {
-    if (isMobile) return 0; // Hidden on mobile (drawer mode)
-    if (collapsed || isTablet) return 80; // Collapsed or tablet
-    return 260; // Desktop expanded
-  };
-
-  const sidebarWidth = getSidebarWidth();
+/** Inner sidebar markup — reused by the desktop shell and the mobile drawer. */
+export function SidebarContent({ collapsed, onNavigate }) {
+  const { pathname } = useLocation();
 
   return (
-    <>
-      {/* Mobile Drawer */}
-      <Drawer
-        variant="temporary"
-        open={mobileOpen}
-        onClose={() => setMobileOpen(false)}
-        ModalProps={{
-          keepMounted: true,
-        }}
-        sx={{
-          display: { xs: 'block', sm: 'none' },
-          '& .MuiDrawer-paper': {
-            width: 260,
-            boxSizing: 'border-box',
-          },
-        }}
-      >
-        {drawerContent}
-      </Drawer>
+    <div className={`cs-sidebar ${collapsed ? "is-collapsed" : ""}`}>
+      <div className="cs-sidebar__brand">
+        <div className="cs-sidebar__logo">
+          <Shield size={22} />
+        </div>
+        {!collapsed && (
+          <motion.span
+            className="cs-sidebar__name"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+          >
+            CyberShield
+          </motion.span>
+        )}
+      </div>
 
-      {/* Desktop/Tablet Sidebar */}
-      <Drawer
-        variant="permanent"
-        sx={{
-          display: { xs: 'none', sm: 'block' },
-          width: sidebarWidth,
-          flexShrink: 0,
-          transition: theme.transitions.create('width', {
-            easing: theme.transitions.easing.sharp,
-            duration: theme.transitions.duration.enteringScreen,
-          }),
-          "& .MuiDrawer-paper": {
-            width: sidebarWidth,
-            boxSizing: "border-box",
-            transition: theme.transitions.create('width', {
-              easing: theme.transitions.easing.sharp,
-              duration: theme.transitions.duration.enteringScreen,
-            }),
-          }
-        }}
+      <nav className="cs-sidebar__nav">
+        {navSections.map((section) => (
+          <div className="cs-sidebar__group" key={section.id}>
+            {!collapsed && (
+              <div className="cs-sidebar__group-label">{section.label}</div>
+            )}
+            {section.items.map((item) => {
+              const Icon = item.icon;
+              const active = pathname === item.path || pathname.startsWith(item.path + "/");
+              return (
+                <NavLink
+                  key={item.path}
+                  to={item.path}
+                  className={`cs-sidebar__item ${active ? "is-active" : ""}`}
+                  title={collapsed ? item.label : undefined}
+                  onClick={onNavigate}
+                >
+                  <span className="cs-sidebar__item-icon">
+                    <Icon size={20} />
+                  </span>
+                  {!collapsed && <span className="cs-sidebar__item-label">{item.label}</span>}
+                  {active && (
+                    <motion.span
+                      layoutId="cs-sidebar-active"
+                      className="cs-sidebar__active-bar"
+                      transition={{ type: "spring", stiffness: 500, damping: 35 }}
+                    />
+                  )}
+                </NavLink>
+              );
+            })}
+          </div>
+        ))}
+      </nav>
+
+      <div className="cs-sidebar__footer">
+        <div className="cs-sidebar__version">
+          {!collapsed ? (
+            <>
+              <Zap size={14} /> CyberShield {APP_VERSION}
+            </>
+          ) : (
+            <Zap size={16} />
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/** Desktop/tablet permanent sidebar with collapse control. */
+export default function Sidebar() {
+  const { collapsed, toggleSidebar } = useLayout();
+
+  return (
+    <aside className={`cs-sidebar-shell ${collapsed ? "is-collapsed" : ""}`}>
+      <SidebarContent collapsed={collapsed} />
+      <button
+        className="cs-sidebar__collapse"
+        onClick={toggleSidebar}
+        aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
       >
-        {drawerContent}
-      </Drawer>
-    </>
+        <ChevronLeft size={18} className={collapsed ? "rotate-180" : ""} />
+      </button>
+    </aside>
   );
 }

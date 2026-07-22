@@ -1,60 +1,48 @@
-import { useEffect, useState } from "react"
-import API from "../../api/api"
+import { useState } from "react";
+import QuizHome from "./QuizHome";
+import QuizGame from "./QuizGame";
+import QuizResult from "./QuizResult";
 
+/**
+ * AI Quiz Generator (Module 7.2) — top-level orchestrator.
+ * Switches between the home (config), gameplay, and result screens.
+ */
 export default function Quiz() {
-  const [quizData, setQuizData] = useState(null)
-  const [loading, setLoading] = useState(true)
+  const [view, setView] = useState("home"); // home | game | result
+  const [quiz, setQuiz] = useState(null);
+  const [result, setResult] = useState(null);
 
-  useEffect(() => {
-    fetchQuizProgress()
-  }, [])
+  const startQuiz = (generated) => {
+    setQuiz(generated);
+    setView("game");
+  };
 
-  const fetchQuizProgress = async () => {
-    try {
-      const response = await API.get("/quiz/progress")
-      setQuizData(response.data)
-    } catch (error) {
-      console.error("Error fetching quiz progress:", error)
-    } finally {
-      setLoading(false)
-    }
-  }
+  const completeQuiz = (res) => {
+    setResult(res);
+    setView("result");
+  };
 
-  if (loading) {
+  const backHome = () => {
+    setQuiz(null);
+    setResult(null);
+    setView("home");
+  };
+
+  if (view === "game" && quiz) {
     return (
-      <div className="flex items-center justify-center h-screen">
-        <div className="text-xl">Loading...</div>
-      </div>
-    )
+      <QuizGame
+        quiz={quiz}
+        onComplete={completeQuiz}
+        onExit={backHome}
+      />
+    );
   }
 
-  return (
-    <div className="container mx-auto px-4 py-8 max-w-4xl">
-      <h1 className="text-3xl font-bold text-gray-900 mb-8">Quiz Performance</h1>
-      
-      <div className="bg-white shadow-md rounded-lg p-6 mb-6">
-        <h2 className="text-2xl font-semibold mb-4">Your Stats</h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="text-center">
-            <div className="text-4xl font-bold text-indigo-600">
-              {quizData?.attempts || 0}
-            </div>
-            <p className="text-gray-600 mt-2">Total Attempts</p>
-          </div>
-          <div className="text-center">
-            <div className="text-4xl font-bold text-green-600">
-              {quizData?.average || 0}%
-            </div>
-            <p className="text-gray-600 mt-2">Average Score</p>
-          </div>
-          <div className="text-center">
-            <div className="text-2xl font-bold text-purple-600">
-              {quizData?.rank || "Beginner"}
-            </div>
-            <p className="text-gray-600 mt-2">Current Rank</p>
-          </div>
-        </div>
-      </div>
-    </div>
-  )
+  if (view === "result" && result) {
+    return (
+      <QuizResult result={result} onRetry={backHome} onHome={backHome} />
+    );
+  }
+
+  return <QuizHome onStart={startQuiz} />;
 }

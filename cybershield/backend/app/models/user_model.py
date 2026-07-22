@@ -22,6 +22,13 @@ class User(BaseModel):
     verification_token: Optional[str] = None
     reset_token: Optional[str] = None
     refresh_token: Optional[str] = None
+    # Onboarding fields
+    first_login: bool = True
+    profile_completed: bool = False
+    skill_level: str = ""
+    learning_goals: List[str] = []
+    dashboard_tour_completed: bool = False
+    avatar: Optional[str] = None
     last_login: Optional[datetime] = None
     last_activity: Optional[datetime] = None
     login_history: List[dict] = []
@@ -47,6 +54,14 @@ class UserResponse(BaseModel):
     email: EmailStr
     role: str
     is_verified: bool
+    # Onboarding fields surfaced to the client
+    first_login: bool = True
+    profile_completed: bool = False
+    skill_level: str = ""
+    learning_goals: List[str] = []
+    dashboard_tour_completed: bool = False
+    avatar: Optional[str] = None
+    bio: Optional[str] = None
     created_at: datetime
 
 
@@ -62,3 +77,4 @@ class TokenResponse(BaseModel):
     refresh_token: str
     token_type: str = "bearer"
     expires_in: int
+    first_login: bool = False

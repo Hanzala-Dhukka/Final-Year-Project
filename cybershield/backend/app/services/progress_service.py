@@ -15,8 +15,9 @@ from app.services.google_sheets_service import get_user_progress_from_sheet
 class ProgressService:
     """Main service for tracking user progress, XP, and levels"""
     
-    # XP values for different actions
+    # XP values for different actions (Module 7.5, spec Step 4)
     XP_VALUES = {
+        # pre-existing
         "daily_challenge": 100,
         "attack_lab": 75,
         "defense_lab": 75,
@@ -24,31 +25,51 @@ class ProgressService:
         "ai_practice": 20,
         "perfect_score_bonus": 25,
         "streak_7_day": 100,
-        "streak_30_day": 500
+        "streak_30_day": 500,
+        # OWASP Simulator (Module 7.4)
+        "owasp_attack": 25,
+        "owasp_defense": 35,
+        "owasp_no_hint": 20,
+        "owasp_expert": 150,
+        # Module 7.5 — spec Step 4 XP table
+        "quiz_correct": 5,
+        "complete_quiz": 20,
+        "perfect_quiz": 40,
+        "owasp_attack_success": 25,
+        "owasp_defense_success": 35,
+        "learn_glossary_term": 5,
+        "finish_flashcard_session": 20,
+        "ai_checklist_completed": 30,
+        "github_scan_completed": 20,
+        "threat_report_generated": 15,
     }
     
-    # Level thresholds (XP required for each level)
+    # Level thresholds (XP required for each level) — Module 7.5 spec Step 5
     LEVEL_THRESHOLDS = {
         1: 0,
-        2: 250,
-        3: 600,
-        4: 1000,
-        5: 1500,
-        6: 2100,
-        7: 2800,
-        8: 3600,
-        9: 4500,
-        10: 5500,
-        11: 6600,
-        12: 7800,
-        13: 9100,
-        14: 10500,
-        15: 12000,
-        16: 13600,
-        17: 15300,
-        18: 17100,
-        19: 19000,
-        20: 21000
+        2: 200,
+        3: 500,
+        4: 900,
+        5: 1400,
+        6: 2000,
+        7: 3000,
+        8: 4500,
+        9: 6500,
+        10: 9000,
+    }
+    
+    # Level titles — Module 7.5 spec Step 5
+    LEVEL_TITLES = {
+        1: "Beginner",
+        2: "Learner",
+        3: "Defender",
+        4: "Security Analyst",
+        5: "Pen Tester",
+        6: "Security Engineer",
+        7: "DevSecOps Engineer",
+        8: "Security Architect",
+        9: "Cyber Expert",
+        10: "CyberShield Master",
     }
     
     # In-memory storage for user progress

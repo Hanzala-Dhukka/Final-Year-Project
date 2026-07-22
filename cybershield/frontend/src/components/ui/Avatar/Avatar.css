@@ -1,0 +1,58 @@
+.cs-avatar {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  background: var(--primary, #2563eb);
+  color: #fff;
+  overflow: visible;
+  flex-shrink: 0;
+}
+.cs-avatar__img {
+  width: 100%;
+  height: 100%;
+  border-radius: 999px;
+  object-fit: cover;
+}
+.cs-avatar__initials {
+  font-weight: 600;
+  line-height: 1;
+}
+.cs-avatar__status {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 28%;
+  height: 28%;
+  min-width: 8px;
+  min-height: 8px;
+  border-radius: 999px;
+  border: 2px solid var(--card-bg, #111827);
+}
+.cs-avatar__status--online {
+  background: var(--success, #10b981);
+}
+.cs-avatar__status--offline {
+  background: var(--text-muted, #64748b);
+}
+.cs-avatar__status--busy {
+  background: var(--danger, #ef4444);
+}
+.cs-avatar__badge {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  background: var(--danger, #ef4444);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 4px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid var(--card-bg, #111827);
+}
