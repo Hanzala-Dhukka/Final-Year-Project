@@ -72,7 +72,7 @@ narwhals==2.21.0
 numba==0.61.2
 numpy==2.2.6
 oauthlib==3.3.1
-groq>=0.13.0
+google-genai>=0.1.0
 packaging==26.2
 pandas==3.0.2
 pandas-ta==0.4.71b0

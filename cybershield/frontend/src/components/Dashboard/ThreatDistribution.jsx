@@ -46,7 +46,7 @@ export default function ThreatDistribution({
                 backgroundColor: "var(--card-bg, #1e293b)",
                 borderColor: "var(--border-color, #334155)",
                 borderRadius: "8px",
-                color: "#fff",
+                color: "var(--text-primary, #fff)",
               }}
             />
             <Legend />

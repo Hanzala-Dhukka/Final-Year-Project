@@ -148,3 +148,52 @@ User question: {question}
 
 Answer:
 """
+
+# ── 8. Vulnerability Explanation & Remediation (Module D4) ───────────────────
+VULNERABILITY_PROMPT = """You are a Senior Cybersecurity Consultant working for CyberShield.
+
+Analyze this vulnerability found during a GitHub repository scan:
+
+Type: {type}
+Severity: {severity}
+File: {file}
+Code:
+```{code}```
+
+Provide a comprehensive security analysis. Return ONLY valid JSON (no markdown fences, no extra text).
+
+Required JSON structure:
+{{
+  "summary": "2-3 sentence plain-English explanation of what this vulnerability is and why it matters",
+  "technical_explanation": "Detailed technical explanation of the vulnerability — how it works at the code level, what input triggers it, and what the code is doing wrong",
+  "attack_scenario": "Step-by-step real-world attack scenario showing how an attacker would exploit this vulnerability. Include specific payloads or techniques.",
+  "owasp": "OWASP Top 10 2021 mapping (e.g. 'A03:2021 - Injection')",
+  "cwe": "CWE identifier (e.g. 'CWE-89')",
+  "cvss_reason": "Explain the CVSS scoring factors for this vulnerability — what contributes to its severity rating",
+  "risk_priority": "Immediate | High | Medium | Low — based on exploitability and impact",
+  "remediation": [
+    "Step 1: specific remediation action",
+    "Step 2: specific remediation action",
+    "Step 3: specific remediation action"
+  ],
+  "secure_code": "Complete corrected code example using best practices (include the fix with proper syntax highlighting via comments)",
+  "prevention": [
+    "Prevention method 1",
+    "Prevention method 2",
+    "Prevention method 3"
+  ],
+  "learning_resources": [
+    "Resource 1 - brief description",
+    "Resource 2 - brief description",
+    "Resource 3 - brief description"
+  ]
+}}
+
+Rules:
+- Be specific to the actual vulnerability and code provided
+- The secure_code must be a real, working code example that fixes the vulnerability
+- Remediation steps must be actionable and ordered by priority
+- OWASP mapping must use the 2021 Top 10 format
+- CWE must be a valid CWE identifier
+- Risk priority: Immediate = exploitable now with critical impact, High = easily exploitable, Medium = requires conditions, Low = limited impact
+"""

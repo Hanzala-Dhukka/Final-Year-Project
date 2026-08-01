@@ -1,7 +1,7 @@
 """
 Dashboard AI Service
-Provides all AI-powered dashboard analysis features using the existing
-Groq client (app/ai/gemini_client.py) and the dashboard prompt templates.
+Provides all AI-powered dashboard analysis features using the Groq client
+(app/ai/gemini_client.py) and the dashboard prompt templates.
 
 All public methods:
   - security_analysis(data)      → full security overview JSON
@@ -21,7 +21,9 @@ import json
 import re
 from typing import Any, Dict, Optional
 
-from app.ai.groq_client import generate, is_available
+# Import directly from the canonical Gemini client (not via groq_client shim)
+# so that the retry / timeout / reset-on-failure logic is always active.
+from app.ai.gemini_client import generate, is_available
 from app.ai.prompts import (
     SECURITY_ANALYSIS_PROMPT,
     RISK_SCORE_PROMPT,
@@ -143,6 +145,7 @@ class DashboardAIService:
     async def _call(self, prompt: str, fallback: Dict) -> Dict:
         """Call Groq, parse JSON response, fall back on any failure."""
         if not is_available():
+            print("[DashboardAIService] Groq not available — returning fallback data.")
             return fallback
         try:
             raw = await generate(prompt)
@@ -186,7 +189,7 @@ class DashboardAIService:
         if not is_available():
             return (
                 "I'm currently running in offline mode. "
-                "Please ensure GROQ_API_KEY is configured to enable the AI assistant."
+                "Please ensure GROQ_API_KEY is configured in backend/.env to enable the AI assistant."
             )
         prompt = ASSISTANT_PROMPT.format(
             context=_compact(context) if context else "No additional context provided.",
@@ -196,6 +199,12 @@ class DashboardAIService:
             return await generate(prompt)
         except Exception as exc:
             print(f"[DashboardAIService] Assistant chat failed: {exc}")
+            # Surface quota/timeout messages to the UI so users understand what happened
+            msg = str(exc)
+            if "quota" in msg.lower() or "rate" in msg.lower():
+                return f"⚠️ {msg}"
+            if "timed out" in msg.lower():
+                return "⚠️ The AI request timed out. Please try again in a moment."
             return "Sorry, I couldn't process your question right now. Please try again."
 
 

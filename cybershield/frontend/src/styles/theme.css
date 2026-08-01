@@ -18,7 +18,8 @@
 }
 
 /* Semantic aliases so existing components referencing the old names keep
-   working under both themes. */
+   working under both themes. ThemeProvider sets --bgPrimary, --cardBg etc.
+   as inline styles on <html>. These aliases provide kebab-case access. */
 :root {
   --bg-primary: var(--bgPrimary);
   --bg-secondary: var(--bgSecondary);
@@ -27,15 +28,7 @@
   --sidebar-bg: var(--sidebarBg);
   --text-primary: var(--textPrimary);
   --text-secondary: var(--textSecondary);
-  --primary: var(--primary);
-  --secondary: var(--bgSecondary);
-  --success: var(--success);
-  --warning: var(--warning);
-  --danger: var(--danger);
-  --info: var(--info);
   --border-color: var(--borderColor);
-  --shadow: var(--shadow);
-  --glow: var(--glow);
 
   /* Motion (duplicated from variables.css to avoid a FOUC before variables load) */
   --duration-base: 250ms;

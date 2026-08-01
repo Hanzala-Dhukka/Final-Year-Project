@@ -4,7 +4,7 @@ import DashboardLayout from "../layouts/DashboardLayout";
 import ProtectedRoute from "../components/ProtectedRoute/ProtectedRoute";
 
 import Dashboard from "../pages/Dashboard/Dashboard";
-import SecurityScanner from "../pages/SecurityScanner/SecurityScanner";
+import SecurityScanner from "../pages/GithubScanner";
 import ScanHistory from "../pages/ScanHistory/ScanHistory";
 
 import ThreatAnalysis from "../pages/ThreatAnalysis/ThreatAnalysis";
@@ -42,6 +42,13 @@ import SecurityChecklist from "../pages/SecurityChecklist/SecurityChecklist";
 import AIChecklist from "../pages/AIChecklist/AIChecklist";
 import ComplianceDashboard from "../pages/Compliance/ComplianceDashboard";
 import ExecutiveDashboard from "../pages/ExecutiveDashboard/ExecutiveDashboard";
+import SecurityReport from "../pages/Reports/SecurityReport";
+import CodeViewerPage from "../pages/CodeViewerPage/CodeViewerPage";
+import ScannerSetup from "../pages/SecurityScanner/ScannerSetup";
+import ScannerProgress from "../pages/SecurityScanner/ScannerProgress";
+import ScannerResults from "../pages/SecurityScanner/ScannerResults";
+import VulnerabilityDashboard from "../components/GitHubScanner/VulnerabilityDashboard/VulnerabilityDashboard";
+import AIRemediationWorkspace from "../components/GitHubScanner/AIRemediation/AIRemediationWorkspace";
 
 import Notifications from "../pages/Notifications/Notifications";
 import Automation from "../pages/Automation/Automation";
@@ -85,6 +92,14 @@ export default function AppRoutes() {
             <Route index element={<Dashboard />} />
             <Route path="dashboard" element={<Dashboard />} />
             <Route path="security-scanner" element={<SecurityScanner />} />
+            <Route path="scanner/setup" element={<ScannerSetup />} />
+            <Route path="scanner/progress/:id" element={<ScannerProgress />} />
+            <Route path="scanner/results/:id" element={<ScannerResults />} />
+            <Route path="vulnerability-dashboard/:scanId" element={<VulnerabilityDashboard />} />
+            <Route path="scanner/finding/:id" element={<VulnerabilityDashboard />} />
+            <Route path="scanner/remediation/:id" element={<AIRemediationWorkspace />} />
+            <Route path="scanner/report/:id" element={<ScannerResults />} />
+            <Route path="ai-remediation/:scanId/:findingId" element={<AIRemediationWorkspace />} />
             <Route path="scan-history" element={<ScanHistory />} />
             <Route path="threat-analysis" element={<ThreatAnalysis />} />
             <Route path="threat-reports" element={<ThreatReports />} />
@@ -114,6 +129,9 @@ export default function AppRoutes() {
             <Route path="security-checklist" element={<SecurityChecklist />} />
             <Route path="ai-checklist" element={<AIChecklist />} />
             <Route path="compliance" element={<ComplianceDashboard />} />
+            <Route path="executive-dashboard" element={<ExecutiveDashboard />} />
+            <Route path="reports" element={<SecurityReport />} />
+            <Route path="code-viewer/:scanId" element={<CodeViewerPage />} />
             <Route path="monitoring/notifications" element={<Notifications />} />
             <Route path="monitoring/schedules" element={<Automation />} />
             <Route path="monitoring/timeline" element={<ActivityFeed />} />

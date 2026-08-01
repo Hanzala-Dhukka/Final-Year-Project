@@ -1,0 +1,288 @@
+/* ── Security History Container ─────────────────────── */
+.sh-container {
+  margin-top: 24px;
+}
+
+/* Header */
+.sh-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.sh-header-icon {
+  color: #38bdf8;
+  font-size: 22px;
+}
+
+.sh-header h2 {
+  font-size: 20px;
+  font-weight: 700;
+  color: #f8fafc;
+  margin: 0;
+}
+
+.sh-count {
+  margin-left: auto;
+  background: var(--bg-secondary, #1e293b);
+  color: #94a3b8;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+/* Empty State */
+.sh-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 24px;
+  text-align: center;
+  background: var(--bg-primary, #0f172a);
+  border: 1px dashed var(--border-strong, #334155);
+  border-radius: 14px;
+  color: #64748b;
+}
+
+.sh-empty-icon {
+  font-size: 40px;
+  opacity: 0.3;
+  margin-bottom: 12px;
+}
+
+.sh-empty h3 {
+  color: #94a3b8;
+  margin: 0 0 6px;
+  font-size: 16px;
+}
+
+.sh-empty p {
+  margin: 0;
+  font-size: 13px;
+}
+
+/* Card */
+.sh-card {
+  background: var(--bg-primary, #0f172a);
+  border: 1px solid var(--bg-secondary, #1e293b);
+  border-radius: 14px;
+  padding: 20px;
+  margin-bottom: 16px;
+}
+
+.sh-card-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #94a3b8;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  margin: 0 0 16px;
+}
+
+.sh-chart-wrap {
+  margin-top: 8px;
+}
+
+/* Improvement Banner */
+.sh-improvement {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 18px;
+  border-radius: 12px;
+  margin-bottom: 18px;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.sh-improve-positive {
+  background: #22c55e15;
+  border: 1px solid #22c55e30;
+  color: #22c55e;
+}
+
+.sh-improve-negative {
+  background: #ef444415;
+  border: 1px solid #ef444430;
+  color: #ef4444;
+}
+
+.sh-improve-icon {
+  font-size: 18px;
+}
+
+.sh-improve-detail {
+  margin-left: auto;
+  color: #94a3b8;
+  font-size: 13px;
+  font-weight: 400;
+}
+
+/* Scan List */
+.sh-scans-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* Individual Scan Card */
+.sh-scan-card {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  background: var(--bg-primary, #0f172a);
+  border: 1px solid var(--bg-secondary, #1e293b);
+  border-radius: 14px;
+  padding: 18px 22px;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.sh-scan-card:hover {
+  border-color: var(--border-strong, #334155);
+}
+
+.sh-scan-latest {
+  border-color: #38bdf840;
+  box-shadow: 0 0 20px #38bdf808;
+}
+
+/* Left: Scan Number + Date */
+.sh-scan-left {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-width: 200px;
+}
+
+.sh-scan-number {
+  background: var(--bg-secondary, #1e293b);
+  color: #64748b;
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.sh-scan-latest .sh-scan-number {
+  background: #38bdf820;
+  color: #38bdf8;
+}
+
+.sh-scan-date {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  color: #cbd5e1;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.sh-scan-date svg {
+  display: none;
+}
+
+.sh-scan-time {
+  font-size: 12px;
+  color: #64748b;
+  font-weight: 400;
+}
+
+/* Center: Metrics */
+.sh-scan-metrics {
+  display: flex;
+  gap: 28px;
+  flex: 1;
+}
+
+.sh-metric {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.sh-metric label {
+  font-size: 11px;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.sh-metric strong {
+  font-size: 18px;
+  font-weight: 700;
+  color: #f8fafc;
+}
+
+.sh-badge {
+  padding: 3px 12px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: capitalize;
+}
+
+.sh-files-icon {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 14px;
+  color: #94a3b8;
+  font-weight: 600;
+}
+
+/* Right: Delta + Latest Badge */
+.sh-scan-right {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 6px;
+  min-width: 80px;
+}
+
+.sh-delta {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 10px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.sh-delta-good {
+  background: #22c55e18;
+  color: #22c55e;
+}
+
+.sh-delta-bad {
+  background: #ef444418;
+  color: #ef4444;
+}
+
+.sh-delta-neutral {
+  background: #64748b18;
+  color: #64748b;
+}
+
+.sh-latest-badge {
+  background: #38bdf818;
+  color: #38bdf8;
+  padding: 2px 10px;
+  border-radius: 10px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}

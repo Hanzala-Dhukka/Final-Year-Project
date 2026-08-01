@@ -1,52 +1,50 @@
 """
-Groq AI service wrapper for CyberShield.
+Google Gemini AI service wrapper for CyberShield.
 
-Provides a thin async-friendly interface over the (synchronous) Groq SDK so the
+Provides a thin async-friendly interface over the google-genai SDK so the
 rest of the app can call `ai_service.generate_response(prompt)` without worrying
-about the blocking SDK call. The sync call is dispatched on a worker thread so
-the FastAPI event loop stays responsive.
+about blocking SDK calls. Falls back gracefully when no API key is configured.
 """
 import asyncio
-from typing import Optional
+from typing import Optional, Any
 
 try:
-    from groq import Groq
-    GROQ_AVAILABLE = True
+    from google import genai
+    GENAI_AVAILABLE = True
 except ImportError:
-    print("Warning: groq not installed. AI service runs in fallback mode.")
-    Groq = None
-    GROQ_AVAILABLE = False
+    genai = None
+    GENAI_AVAILABLE = False
 
 from app.config.settings import settings
 
 
 class AIService:
-    """Thin wrapper around the Groq chat.completions API."""
+    """Thin wrapper around the Google Gemini API."""
 
     def __init__(self):
-        self.client: Optional[Groq] = None
+        self.client: Optional[Any] = None
         self._initialized = False
 
-    def _ensure_client(self) -> Optional[Groq]:
+    def _ensure_client(self) -> Optional[Any]:
         if self._initialized:
             return self.client
 
         self._initialized = True
 
-        if not GROQ_AVAILABLE or Groq is None:
-            print("Warning: groq not installed. AI service runs in fallback mode.")
+        if not GENAI_AVAILABLE or genai is None:
+            print("Warning: google-genai not installed. AI service runs in fallback mode.")
             return None
 
-        key = settings.GROQ_API_KEY
-        if not key or key == "your-groq-api-key-here":
-            print("Warning: GROQ_API_KEY not set. AI service runs in fallback mode.")
+        key = getattr(settings, "GEMINI_API_KEY", "") or getattr(settings, "GROQ_API_KEY", "")
+        if not key or key in ("your_gemini_api_key_here", "your-gemini-api-key-here", ""):
+            print("Warning: GEMINI_API_KEY not set. AI service runs in fallback mode.")
             return None
 
         try:
-            self.client = Groq(api_key=key)
-            print(f"Groq AI service ready (model: {settings.AI_MODEL})")
-        except Exception as e:  # pragma: no cover - defensive
-            print(f"Error initialising Groq client: {e}")
+            self.client = genai.Client(api_key=key)
+            print(f"Google Gemini AI service ready (model: {settings.AI_MODEL})")
+        except Exception as e:
+            print(f"Error initialising Gemini client: {e}")
             self.client = None
 
         return self.client
@@ -62,7 +60,7 @@ class AIService:
         max_tokens: Optional[int] = None,
     ) -> str:
         """
-        Generate a text response from the configured Groq model.
+        Generate a text response from the configured Gemini model.
 
         Args:
             prompt: Full prompt (system instructions + user question).
@@ -74,16 +72,14 @@ class AIService:
         """
         client = self._ensure_client()
         if client is None:
-            raise RuntimeError("Groq model is not available")
+            raise RuntimeError("Gemini AI model is not available")
 
         response = await asyncio.to_thread(
-            client.chat.completions.create,
+            client.models.generate_content,
             model=settings.AI_MODEL,
-            messages=[{"role": "user", "content": prompt}],
-            temperature=temperature if temperature is not None else settings.AI_TEMPERATURE,
-            max_tokens=max_tokens if max_tokens is not None else settings.AI_MAX_TOKENS,
+            contents=prompt,
         )
-        return (response.choices[0].message.content or "").strip()
+        return (response.text or "").strip()
 
 
 # Module-level singleton used across the codebase.

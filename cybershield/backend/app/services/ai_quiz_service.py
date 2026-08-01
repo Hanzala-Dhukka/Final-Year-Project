@@ -81,7 +81,7 @@ async def generate_quiz_questions(
             raw_text = await generate(prompt)
             parsed = _validate_questions(_safe_json_loads(_strip_code_fences(raw_text)))
             if parsed:
-                return parsed[:count], "Groq"
+                return parsed[:count], "Gemini"
         except Exception as e:
             print(f"AI quiz generation failed, using fallback: {e}")
 

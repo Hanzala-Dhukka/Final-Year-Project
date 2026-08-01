@@ -250,3 +250,117 @@ form {
     transition: none;
   }
 }
+
+/* ════════════════════════════════════════════════════════════════════════
+   LIGHT MODE — [data-theme="light"] overrides
+   ════════════════════════════════════════════════════════════════════════ */
+[data-theme="light"] .register-page {
+  background: linear-gradient(135deg, #e0e7ff, #f1f5f9);
+  color: #0f172a;
+}
+
+[data-theme="light"] .auth-left {
+  background: radial-gradient(circle, #93c5fd, transparent 50%);
+}
+[data-theme="light"] .auth-left h1 {
+  color: #0f172a;
+}
+[data-theme="light"] .auth-left h3 {
+  color: #475569;
+}
+[data-theme="light"] .shield-animation {
+  color: #2563eb;
+}
+[data-theme="light"] .floating-icons {
+  color: #2563eb;
+}
+
+/* Form card */
+[data-theme="light"] .register-card {
+  background: rgba(255, 255, 255, 0.85);
+}
+[data-theme="light"] .register-card h1 {
+  color: #0f172a;
+}
+
+/* Auth inputs */
+[data-theme="light"] .auth-label {
+  color: #334155;
+}
+[data-theme="light"] .auth-input-wrap {
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+}
+[data-theme="light"] .auth-input-wrap:focus-within {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+}
+[data-theme="light"] .auth-input-icon {
+  color: #64748b;
+}
+[data-theme="light"] .auth-input {
+  color: #0f172a;
+}
+[data-theme="light"] .auth-input::placeholder {
+  color: #94a3b8;
+}
+[data-theme="light"] .auth-input-toggle {
+  color: #64748b;
+}
+[data-theme="light"] .auth-input-toggle:hover {
+  color: #0f172a;
+}
+[data-theme="light"] .auth-input-error {
+  color: #dc2626;
+}
+
+/* Submit button */
+[data-theme="light"] .register-submit {
+  background: #2563eb;
+  color: #ffffff;
+}
+[data-theme="light"] .register-submit:hover:not(:disabled) {
+  background: #1d4ed8;
+}
+
+/* Password strength */
+[data-theme="light"] .password-strength {
+  color: #475569;
+}
+[data-theme="light"] .password-strength span {
+  color: #0f172a;
+}
+[data-theme="light"] .strength-bar {
+  background: #e2e8f0;
+}
+
+/* Divider */
+[data-theme="light"] .divider {
+  color: #94a3b8;
+}
+
+/* Social buttons */
+[data-theme="light"] .social-btn {
+  background: #f1f5f9;
+  color: #334155;
+}
+
+/* Login link */
+[data-theme="light"] .login-link {
+  color: #475569;
+}
+[data-theme="light"] .login-link a {
+  color: #2563eb;
+}
+
+/* Success */
+[data-theme="light"] .register-success h2 {
+  color: #0f172a;
+}
+[data-theme="light"] .register-success p {
+  color: #475569;
+}
+[data-theme="light"] .register-success-check {
+  background: rgba(16, 185, 129, 0.12);
+  color: #16a34a;
+}

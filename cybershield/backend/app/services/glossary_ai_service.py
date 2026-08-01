@@ -46,7 +46,7 @@ async def explain_term(term: str, definition: str = None) -> Tuple[str, str]:
             prompt = build_explain_prompt(term, definition)
             text = await generate(prompt)
             if text:
-                return text.strip(), "Groq"
+                return text.strip(), "Gemini"
         except Exception as e:
             print(f"Glossary AI explain failed, using fallback: {e}")
 

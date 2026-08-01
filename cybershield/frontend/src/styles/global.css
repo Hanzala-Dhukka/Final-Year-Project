@@ -13,9 +13,9 @@ body,
 #root {
   width: 100%;
   height: 100%;
-  font-family: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-  background: #0f172a;
-  color: #f1f5f9;
+    font-family: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  background: var(--bg-primary, #0f172a);
+  color: var(--text-primary, #f1f5f9);
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
 }
@@ -41,18 +41,24 @@ img {
   outline-offset: 2px;
 }
 
-/* Custom scrollbar (dark) */
+/* Custom scrollbar — theme-aware */
 ::-webkit-scrollbar {
   width: 10px;
   height: 10px;
 }
 ::-webkit-scrollbar-track {
-  background: #0f172a;
+  background: var(--scrollbar-track, #0f172a);
 }
 ::-webkit-scrollbar-thumb {
-  background: #334155;
+  background: var(--scrollbar-thumb, #334155);
   border-radius: 999px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #475569;
+  background: var(--scrollbar-thumb-hover, #475569);
+}
+
+/* Global select option light mode */
+[data-theme="light"] select option {
+  background: #ffffff;
+  color: #0f172a;
 }

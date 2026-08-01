@@ -11,7 +11,7 @@
 /* ── Chat panel ── */
 .aab-panel { position:fixed; bottom:96px; right:28px; z-index:8999;
   width:360px; max-width:calc(100vw - 32px);
-  background:var(--bg-secondary,#1e293b);
+  background:var(--bg-secondary,var(--bg-secondary, #1e293b));
   border:1px solid rgba(255,255,255,.1); border-radius:18px;
   box-shadow:0 24px 64px rgba(0,0,0,.55);
   display:flex; flex-direction:column; overflow:hidden;

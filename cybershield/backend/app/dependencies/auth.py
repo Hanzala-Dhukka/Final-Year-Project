@@ -12,7 +12,7 @@ from app.core.config import settings
 from app.database.db import database
 
 security = HTTPBearer()
-SESSION_TIMEOUT_MINUTES = 30
+SESSION_TIMEOUT_MINUTES = 120  # 2 hours — longer than the access token lifetime (30 min)
 
 
 async def get_current_user(

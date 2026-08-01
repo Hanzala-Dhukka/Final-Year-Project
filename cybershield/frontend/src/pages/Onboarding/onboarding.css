@@ -5,7 +5,7 @@
   align-items: center;
   justify-content: center;
   padding: 24px;
-  background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%);
+  background: linear-gradient(135deg, var(--bg-primary, #0f172a) 0%, var(--bg-secondary, #1e293b) 50%, var(--bg-primary, #0f172a) 100%);
 }
 
 .ob-loading {
@@ -17,7 +17,7 @@
 .ob-card {
   width: 100%;
   max-width: 620px;
-  background: rgba(15, 23, 42, 0.85);
+  background: var(--glass-bg, rgba(17, 24, 39, 0.70));
   border: 1px solid rgba(148, 163, 184, 0.18);
   border-radius: 20px;
   padding: 28px 32px 34px;
@@ -153,7 +153,7 @@
   padding: 12px 14px;
   border-radius: 10px;
   border: 1px solid rgba(148, 163, 184, 0.25);
-  background: rgba(2, 6, 23, 0.6);
+  background: var(--glass-bg, rgba(17, 24, 39, 0.70));
   color: #f1f5f9;
   font-size: 14px;
   outline: none;
@@ -185,7 +185,7 @@
   font-size: 24px;
   border-radius: 12px;
   border: 2px solid rgba(148, 163, 184, 0.25);
-  background: rgba(2, 6, 23, 0.5);
+  background: var(--glass-bg, rgba(17, 24, 39, 0.70));
   cursor: pointer;
   transition: transform 0.12s, border-color 0.2s;
 }
@@ -209,7 +209,7 @@
   padding: 16px;
   border-radius: 12px;
   border: 2px solid rgba(148, 163, 184, 0.25);
-  background: rgba(2, 6, 23, 0.5);
+  background: var(--glass-bg, rgba(17, 24, 39, 0.70));
   cursor: pointer;
   transition: border-color 0.2s, background 0.2s, transform 0.12s;
 }
@@ -242,7 +242,7 @@
   justify-content: center;
   border-radius: 50%;
   background: #22d3ee;
-  color: #0f172a;
+  color: var(--bg-primary, #0f172a);
 }
 
 /* Goals */
@@ -256,7 +256,7 @@
   padding: 12px 10px;
   border-radius: 10px;
   border: 2px solid rgba(148, 163, 184, 0.25);
-  background: rgba(2, 6, 23, 0.5);
+  background: var(--glass-bg, rgba(17, 24, 39, 0.70));
   color: #cbd5e1;
   font-size: 13px;
   cursor: pointer;
@@ -281,7 +281,7 @@
   justify-content: center;
   border-radius: 50%;
   background: #22d3ee;
-  color: #0f172a;
+  color: var(--bg-primary, #0f172a);
 }
 
 /* Actions */
@@ -401,7 +401,7 @@
   gap: 22px;
   padding: 24px;
   border-radius: 16px;
-  background: rgba(2, 6, 23, 0.5);
+  background: var(--glass-bg, rgba(17, 24, 39, 0.70));
   border: 1px solid rgba(148, 163, 184, 0.15);
   margin-bottom: 22px;
 }
@@ -430,7 +430,7 @@
   align-items: center;
   justify-content: center;
   background: var(--accent);
-  color: #0f172a;
+  color: var(--bg-primary, #0f172a);
 }
 .ob-tour-info h3 {
   font-size: 18px;
@@ -501,4 +501,70 @@
     flex-direction: column;
     text-align: center;
   }
+}
+
+/* ── Light mode overrides ────────────────────────────────────── */
+[data-theme="light"] .ob-card {
+  background: rgba(255, 255, 255, 0.85);
+  border-color: rgba(15, 23, 42, 0.08);
+  color: #0f172a;
+  box-shadow: 0 24px 70px rgba(15, 23, 42, 0.12);
+}
+[data-theme="light"] .ob-loading {
+  color: #475569;
+}
+[data-theme="light"] .ob-brand {
+  color: #0f172a;
+}
+[data-theme="light"] .ob-brand-icon {
+  color: #2563eb;
+}
+[data-theme="light"] .ob-skip {
+  border-color: rgba(15, 23, 42, 0.15);
+  color: #475569;
+}
+[data-theme="light"] .ob-skip:hover {
+  background: rgba(15, 23, 42, 0.06);
+}
+[data-theme="light"] .ob-card h2 {
+  color: #0f172a;
+}
+[data-theme="light"] .ob-card p {
+  color: #475569;
+}
+[data-theme="light"] .ob-label {
+  color: var(--border-strong, #334155);
+}
+[data-theme="light"] .ob-level-card,
+[data-theme="light"] .ob-goal-card,
+[data-theme="light"] .ob-avatar-card {
+  background: #f8fafc;
+  border-color: rgba(15, 23, 42, 0.10);
+  color: var(--border-strong, #334155);
+}
+[data-theme="light"] .ob-level-card:hover,
+[data-theme="light"] .ob-goal-card:hover,
+[data-theme="light"] .ob-avatar-card:hover {
+  border-color: #2563eb;
+}
+[data-theme="light"] .ob-selected {
+  border-color: #2563eb;
+  background: rgba(37, 99, 235, 0.06);
+}
+[data-theme="light"] .ob-input {
+  background: #ffffff;
+  border-color: #cbd5e1;
+  color: #0f172a;
+}
+[data-theme="light"] .ob-input:focus {
+  border-color: #2563eb;
+}
+[data-theme="light"] .ob-input::placeholder {
+  color: #94a3b8;
+}
+[data-theme="light"] .ob-tour-info p {
+  color: #475569;
+}
+[data-theme="light"] .ob-tour-count {
+  color: #475569;
 }

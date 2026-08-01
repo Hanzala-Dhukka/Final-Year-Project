@@ -16,10 +16,12 @@ EMAIL_USER = os.getenv("EMAIL_USER")
 EMAIL_PASSWORD = os.getenv("EMAIL_PASSWORD")
 GITHUB_TOKEN = os.getenv("GITHUB_TOKEN")
 
-# Groq AI
+# Groq AI (primary provider)
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")  # kept for backward compat, not used
 AI_PROVIDER = os.getenv("AI_PROVIDER", "groq")
 AI_MODEL = os.getenv("AI_MODEL", "llama-3.3-70b-versatile")
+AI_MODEL_FALLBACK = os.getenv("AI_MODEL_FALLBACK", "llama-3.1-8b-instant")
 AI_TEMPERATURE = float(os.getenv("AI_TEMPERATURE", "0.2"))
 AI_MAX_TOKENS = int(os.getenv("AI_MAX_TOKENS", "2048"))
 
@@ -38,17 +40,20 @@ class Settings(BaseSettings):
     # Map keys to fallback values
     SECRET_KEY: str = os.getenv("JWT_SECRET_KEY") or os.getenv("JWT_SECRET") or "your-secret-key-here"
     ALGORITHM: str = os.getenv("JWT_ALGORITHM") or os.getenv("ALGORITHM") or "HS256"
-    ACCESS_TOKEN_EXPIRE_MINUTES: int = 60
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 60  # 1 hour
     REFRESH_TOKEN_EXPIRE_DAYS: int = 7
 
     GITHUB_TOKEN: str = os.getenv("GITHUB_TOKEN") or ""
     EMAIL_USER: str = os.getenv("EMAIL_USER") or ""
     EMAIL_PASSWORD: str = os.getenv("EMAIL_PASSWORD") or ""
 
-    # Groq AI
+    # Groq AI (primary provider)
     GROQ_API_KEY: str = os.getenv("GROQ_API_KEY") or ""
+    GEMINI_API_KEY: str = os.getenv("GEMINI_API_KEY") or ""   # kept for compat
+    OPENROUTER_API_KEY: str = os.getenv("OPENROUTER_API_KEY") or ""
     AI_PROVIDER: str = os.getenv("AI_PROVIDER", "groq")
     AI_MODEL: str = os.getenv("AI_MODEL", "llama-3.3-70b-versatile")
+    AI_MODEL_FALLBACK: str = os.getenv("AI_MODEL_FALLBACK", "llama-3.1-8b-instant")
     AI_TEMPERATURE: float = float(os.getenv("AI_TEMPERATURE", "0.2"))
     AI_MAX_TOKENS: int = int(os.getenv("AI_MAX_TOKENS", "2048"))
 

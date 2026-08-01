@@ -1,0 +1,96 @@
+.code-viewer {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  background: #1e1e1e;
+  height: 100%;
+  min-width: 0;
+}
+
+.code-header {
+  height: 45px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 0 20px;
+  background: #252526;
+  border-bottom: 1px solid #333;
+  font-size: 14px;
+  font-weight: 600;
+  color: #ddd;
+  flex-shrink: 0;
+}
+
+.code-header-badge {
+  font-size: 12px;
+  font-weight: 600;
+  padding: 2px 10px;
+  border-radius: 12px;
+  background: rgba(255, 80, 0, 0.2);
+  color: #ff6b00;
+}
+
+.code-editor-wrap {
+  flex: 1;
+  min-height: 0;
+}
+
+.viewer-loading {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 18px;
+  color: #888;
+  background: #1e1e1e;
+}
+
+/* ── Severity Line Highlights (Monaco decorations) ──────────── */
+.severity-critical {
+  background: rgba(255, 0, 0, 0.25) !important;
+}
+
+.severity-high {
+  background: rgba(255, 80, 0, 0.22) !important;
+}
+
+.severity-medium {
+  background: rgba(255, 180, 0, 0.20) !important;
+}
+
+.severity-low {
+  background: rgba(255, 255, 0, 0.18) !important;
+}
+
+/* ── Gutter Glyph Icons (Monaco glyphMargin) ────────────────── */
+.glyph-critical {
+  background: red;
+  border-radius: 50%;
+  width: 10px !important;
+  height: 10px !important;
+  margin: 5px auto;
+}
+
+.glyph-high {
+  background: #ff6b00;
+  border-radius: 50%;
+  width: 10px !important;
+  height: 10px !important;
+  margin: 5px auto;
+}
+
+.glyph-medium {
+  background: #ffc107;
+  border-radius: 50%;
+  width: 10px !important;
+  height: 10px !important;
+  margin: 5px auto;
+}
+
+.glyph-low {
+  background: #17c964;
+  border-radius: 50%;
+  width: 10px !important;
+  height: 10px !important;
+  margin: 5px auto;
+}

@@ -57,7 +57,7 @@ class GlossaryDetailOut(BaseModel):
 class ExplainResponse(BaseModel):
     term: str
     explanation: str
-    provider: str = "Groq"
+    provider: str = "Gemini"
 
 
 class SuggestionOut(BaseModel):

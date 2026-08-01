@@ -1,0 +1,294 @@
+/* ── Enterprise Live Scan Dashboard ─────────────────────── */
+.enterprise-dashboard {
+  background: var(--bg-primary, #0b1329);
+  border: 1px solid var(--bg-secondary, #1e293b);
+  border-radius: 16px;
+  padding: 1.75rem;
+  color: #f8fafc;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.5);
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.dashboard-header-banner {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid var(--bg-secondary, #1e293b);
+  padding-bottom: 1rem;
+}
+
+.dashboard-title-box h2 {
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: #f8fafc;
+  margin: 0;
+
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.dashboard-title-box p {
+  font-size: 0.85rem;
+  color: #64748b;
+  margin: 0.25rem 0 0 0;
+}
+
+/* Stats Row */
+.scan-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: 1rem;
+}
+
+.stat-box {
+  background: var(--bg-primary, #0f172a);
+  border: 1px solid var(--bg-secondary, #1e293b);
+  border-radius: 10px;
+  padding: 0.85rem 1rem;
+  text-align: center;
+}
+
+.stat-box h4 {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #64748b;
+  margin: 0 0 0.35rem 0;
+}
+
+.stat-box p {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #38bdf8;
+  margin: 0;
+}
+
+.stat-box p.risk-tag {
+  display: inline-block;
+  padding: 0.15rem 0.6rem;
+  border-radius: 6px;
+  font-size: 1rem;
+}
+
+.risk-high, .risk-critical {
+  color: #ef4444 !important;
+  background: #ef44441a;
+}
+
+.risk-medium {
+  color: #f59e0b !important;
+  background: #f59e0b1a;
+}
+
+.risk-low {
+  color: #10b981 !important;
+  background: #10b9811a;
+}
+
+/* Two Column Layout */
+.dashboard-main-grid {
+  display: grid;
+  grid-template-columns: 1fr 1.2fr;
+  gap: 1.5rem;
+}
+
+@media (max-width: 850px) {
+  .dashboard-main-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Scan Stages */
+.scan-stages {
+  background: var(--bg-primary, #0f172a);
+  border: 1px solid var(--bg-secondary, #1e293b);
+  border-radius: 12px;
+  padding: 1.25rem;
+}
+
+.stages-title, .logs-title {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #94a3b8;
+  margin: 0 0 1rem 0;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.stages-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.stage-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 0.9rem;
+  padding: 0.4rem 0.6rem;
+  border-radius: 6px;
+  transition: all 0.2s ease;
+}
+
+.stage-row.done {
+  color: #cbd5e1;
+}
+
+.stage-row.active {
+  color: #38bdf8;
+  background: #38bdf812;
+  font-weight: 600;
+}
+
+.stage-row.pending {
+  color: #475569;
+}
+
+.stage-row .icon {
+  font-size: 0.9rem;
+}
+
+.stage-row .icon.done {
+  color: #10b981;
+}
+
+.stage-row .icon.active {
+  color: #38bdf8;
+}
+
+.stage-row .icon.pending {
+  color: var(--border-strong, #334155);
+}
+
+.running-label {
+  margin-left: auto;
+  font-size: 0.75rem;
+  color: #38bdf8;
+  font-style: italic;
+}
+
+/* Live Logs */
+.scan-logs-card {
+  background: var(--bg-primary, #0f172a);
+  border: 1px solid var(--bg-secondary, #1e293b);
+  border-radius: 12px;
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+}
+
+.scan-logs {
+  height: 280px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding-right: 0.5rem;
+}
+
+.scan-logs::-webkit-scrollbar {
+  width: 6px;
+}
+
+.scan-logs::-webkit-scrollbar-thumb {
+  background: var(--border-strong, #334155);
+  border-radius: 3px;
+}
+
+.log-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.6rem;
+  font-family: 'Fira Code', monospace;
+  font-size: 0.82rem;
+  line-height: 1.4;
+}
+
+.log-time {
+  color: #64748b;
+  white-space: nowrap;
+}
+
+.log-msg {
+  color: #e2e8f0;
+  margin: 0;
+}
+
+/* Current File Card */
+.current-file-card {
+  background: var(--bg-primary, #0f172a);
+  border: 1px solid var(--bg-secondary, #1e293b);
+  border-radius: 12px;
+  padding: 1.25rem;
+}
+
+.current-file-title {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #a855f7;
+  margin: 0 0 0.5rem 0;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.current-file-name {
+  font-family: 'Fira Code', monospace;
+  font-size: 1rem;
+  color: #38bdf8;
+  margin: 0 0 0.25rem 0;
+  word-break: break-all;
+}
+
+.current-file-issue {
+  font-size: 0.85rem;
+  color: #f43f5e;
+  margin: 0;
+}
+
+/* Progress Bar */
+.progress-container {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.progress-header-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #cbd5e1;
+}
+
+.progress-percent-text {
+  color: #00ff95;
+  font-family: 'Fira Code', monospace;
+}
+
+.progress-wrapper {
+  height: 14px;
+  background: #172036;
+  border-radius: 30px;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #00e5ff, #00ff95, #8b5cf6);
+  transition: width 0.6s ease;
+}
+
+.spin {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}

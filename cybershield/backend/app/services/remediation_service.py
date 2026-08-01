@@ -52,8 +52,8 @@ def _fallback_solution(finding: str, severity: str, technology: str) -> dict:
         "severity": severity or "Medium",
         "category": "",
         "explanation": (
-            "Groq is not configured, so this is a rule-based placeholder. "
-            "Set GROQ_API_KEY to receive a full AI remediation."
+            "OpenRouter/Gemini is not configured, so this is a rule-based placeholder. "
+            "Set GEMINI_API_KEY to receive a full AI remediation."
         ),
         "impact": ["Potential compromise of confidentiality/integrity/availability."],
         "root_cause": "See the flagged code and the secure-coding guidance below.",

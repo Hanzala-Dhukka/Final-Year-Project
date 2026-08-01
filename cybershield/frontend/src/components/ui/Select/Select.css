@@ -18,3 +18,9 @@
   pointer-events: none;
   color: var(--text-muted, #64748b);
 }
+
+/* Light mode option styling */
+[data-theme="light"] .cs-select__input option {
+  background: #ffffff;
+  color: #0f172a;
+}

@@ -49,7 +49,7 @@ async def coach_explain(
         try:
             text = await generate(build_coach_prompt(attack, difficulty, payload, success))
             if text:
-                return text.strip(), "Groq"
+                return text.strip(), "Gemini"
         except Exception as e:
             print(f"AI coach failed, using fallback: {e}")
 

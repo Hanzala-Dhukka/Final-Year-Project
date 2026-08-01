@@ -43,7 +43,7 @@ class StreamingService:
             # Build prompt with context
             prompt = build_prompt(full_question, project_context)
             
-            # Get Groq model
+            # Get Gemini model
             model = get_model()
             if not model:
                 yield json.dumps({
@@ -52,36 +52,30 @@ class StreamingService:
                 })
                 return
 
-            # Generate streaming response
-            stream = await model.chat.completions.create(
+            # Generate response using Gemini (delivered as a single response, then yielded as one chunk)
+            full_response = await asyncio.to_thread(
+                model.models.generate_content,
                 model=settings.AI_MODEL,
-                messages=[{"role": "user", "content": prompt}],
-                temperature=settings.AI_TEMPERATURE,
-                max_tokens=settings.AI_MAX_TOKENS,
-                stream=True,
+                contents=prompt,
             )
+            full_text = (full_response.text or "").strip()
 
-            full_response = ""
-
-            async for chunk in stream:
-                delta = chunk.choices[0].delta.content if chunk.choices else None
-                if delta:
-                    full_response += delta
-                    yield json.dumps({
-                        "type": "chunk",
-                        "content": delta
-                    })
+            # Yield the full text as a single chunk for compatibility
+            yield json.dumps({
+                "type": "chunk",
+                "content": full_text
+            })
 
             # Send completion signal
             yield json.dumps({
                 "type": "complete",
-                "content": full_response
+                "content": full_text
             })
 
             # Save to conversation history
             append_message(conversation_id, "user", question)
-            append_message(conversation_id, "assistant", full_response, metadata={
-                "provider": "Groq",
+            append_message(conversation_id, "assistant", full_text, metadata={
+                "provider": "Gemini",
                 "model": settings.AI_MODEL,
                 "timestamp": datetime.utcnow().isoformat()
             })

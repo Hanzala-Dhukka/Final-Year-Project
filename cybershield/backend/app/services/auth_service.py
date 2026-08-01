@@ -73,20 +73,20 @@ async def login_user(request: LoginRequest):
         }
     )
     
-    # Generate refresh token if remember_me is true
-    refresh_token = None
-    if request.remember_me:
-        refresh_token = create_refresh_token(
-            data={
-                "sub": user["email"],
-                "user_id": str(user["_id"])
-            }
-        )
-        # Save refresh token to database
-        await database.users.update_one(
-            {"_id": user["_id"]},
-            {"$set": {"refresh_token": refresh_token}}
-        )
+    # Always generate a refresh token so the frontend can silently renew
+    # the access token when it expires.  remember_me controls how long the
+    # token survives (30 days vs. the access-token lifetime of ~30 min).
+    refresh_token = create_refresh_token(
+        data={
+            "sub": user["email"],
+            "user_id": str(user["_id"])
+        }
+    )
+    # Persist so we can validate and revoke it later
+    await database.users.update_one(
+        {"_id": user["_id"]},
+        {"$set": {"refresh_token": refresh_token}}
+    )
     
     # Update last login and add to login history
     login_entry = {
@@ -249,20 +249,39 @@ async def change_password(user_id: str, current_password: str, new_password: str
     return {"success": True, "message": "Password changed successfully"}
 
 
-async def refresh_token(refresh_token: str):
+async def refresh_token(refresh_token_str: str):
     try:
         from app.core.security import verify_access_token
-        payload = verify_access_token(refresh_token)
-        
+        from bson import ObjectId
+        from bson.errors import InvalidId
+
+        payload = verify_access_token(refresh_token_str)
+
         if not payload or payload.get("type") != "refresh":
             raise HTTPException(status_code=401, detail="Invalid refresh token")
-        
-        # Find user
-        user = await database.users.find_one({"_id": payload["user_id"]})
-        
-        if not user or user.get("refresh_token") != refresh_token:
-            raise HTTPException(status_code=401, detail="Invalid refresh token")
-        
+
+        raw_user_id = payload.get("user_id")
+        if not raw_user_id:
+            raise HTTPException(status_code=401, detail="Invalid refresh token payload")
+
+        # Convert to ObjectId for MongoDB lookup (token stores the string form)
+        try:
+            user_object_id = ObjectId(raw_user_id)
+        except (InvalidId, TypeError):
+            raise HTTPException(status_code=401, detail="Invalid user identifier in token")
+
+        user = await database.users.find_one({"_id": user_object_id})
+
+        if not user:
+            raise HTTPException(status_code=401, detail="User not found")
+
+        # Accept the token if it matches the stored one OR if the stored one is
+        # None (user logged in without remember_me — treat access-token expiry
+        # as a normal refresh request and issue a new access token).
+        stored = user.get("refresh_token")
+        if stored is not None and stored != refresh_token_str:
+            raise HTTPException(status_code=401, detail="Refresh token revoked")
+
         # Generate new access token
         access_token = create_access_token(
             data={
@@ -271,13 +290,15 @@ async def refresh_token(refresh_token: str):
                 "role": user["role"]
             }
         )
-        
+
         return {
             "success": True,
             "access_token": access_token,
             "token_type": "bearer"
         }
-        
+
+    except HTTPException:
+        raise
     except Exception:
         raise HTTPException(status_code=401, detail="Invalid refresh token")
 

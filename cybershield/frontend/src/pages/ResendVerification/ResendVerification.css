@@ -4,13 +4,13 @@
   align-items: center;
   justify-content: center;
   padding: 24px;
-  background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%);
+  background: linear-gradient(135deg, var(--bg-primary, #0f172a) 0%, var(--bg-secondary, #1e293b) 50%, var(--bg-primary, #0f172a) 100%);
 }
 
 .resend-card {
   width: 100%;
   max-width: 440px;
-  background: rgba(15, 23, 42, 0.85);
+  background: var(--glass-bg, rgba(17, 24, 39, 0.70));
   border: 1px solid rgba(148, 163, 184, 0.18);
   border-radius: 18px;
   padding: 40px 36px;
@@ -76,7 +76,7 @@
   padding: 12px 14px 12px 42px;
   border-radius: 10px;
   border: 1px solid rgba(148, 163, 184, 0.25);
-  background: rgba(2, 6, 23, 0.6);
+  background: var(--glass-bg, rgba(17, 24, 39, 0.70));
   color: #f1f5f9;
   font-size: 14px;
   outline: none;
@@ -169,4 +169,45 @@
 
 .resend-back a:hover {
   text-decoration: underline;
+}
+
+/* ── Light mode overrides ────────────────────────────────────── */
+[data-theme="light"] .resend-card {
+  background: rgba(255, 255, 255, 0.85);
+  border-color: rgba(15, 23, 42, 0.08);
+  color: #0f172a;
+  box-shadow: 0 20px 60px rgba(15, 23, 42, 0.12);
+}
+[data-theme="light"] .resend-card h1 {
+  color: #0f172a;
+}
+[data-theme="light"] .resend-subtitle {
+  color: #475569;
+}
+[data-theme="light"] .resend-field label {
+  color: var(--border-strong, #334155);
+}
+[data-theme="light"] .resend-input-icon {
+  color: #64748b;
+}
+[data-theme="light"] .resend-input-wrap input {
+  border-color: #cbd5e1;
+  background: #ffffff;
+  color: #0f172a;
+}
+[data-theme="light"] .resend-secondary {
+  border-color: rgba(15, 23, 42, 0.15);
+  color: var(--border-strong, #334155);
+}
+[data-theme="light"] .resend-secondary:hover {
+  background: rgba(15, 23, 42, 0.06);
+}
+[data-theme="light"] .resend-back {
+  color: #475569;
+}
+[data-theme="light"] .resend-success h2 {
+  color: #0f172a;
+}
+[data-theme="light"] .resend-success p {
+  color: #475569;
 }

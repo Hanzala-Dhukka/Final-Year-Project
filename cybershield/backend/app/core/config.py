@@ -31,7 +31,7 @@ class Settings(BaseSettings):
     # Security
     SECRET_KEY: str = os.getenv("JWT_SECRET_KEY") or os.getenv("JWT_SECRET") or "your-secret-key-here"
     ALGORITHM: str = os.getenv("JWT_ALGORITHM") or os.getenv("ALGORITHM") or "HS256"
-    ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 60  # 1 hour — gives the refresh flow time to kick in
     
     # GitHub
     GITHUB_TOKEN: str = os.getenv("GITHUB_TOKEN") or ""
@@ -50,10 +50,12 @@ class Settings(BaseSettings):
     # Frontend
     FRONTEND_URL: str = os.getenv("FRONTEND_URL", "http://localhost:5173")
     
-    # Groq AI
+    # Gemini AI
+    GEMINI_API_KEY: str = os.getenv("GEMINI_API_KEY") or os.getenv("OPENROUTER_API_KEY") or os.getenv("GROQ_API_KEY") or ""
+    OPENROUTER_API_KEY: str = os.getenv("OPENROUTER_API_KEY") or ""
     GROQ_API_KEY: str = os.getenv("GROQ_API_KEY") or ""
-    AI_PROVIDER: str = os.getenv("AI_PROVIDER", "groq")
-    AI_MODEL: str = os.getenv("AI_MODEL", "llama-3.3-70b-versatile")
+    AI_PROVIDER: str = os.getenv("AI_PROVIDER", "gemini")
+    AI_MODEL: str = os.getenv("AI_MODEL", "gemini-2.5-flash")
     AI_TEMPERATURE: float = float(os.getenv("AI_TEMPERATURE", "0.2"))
     AI_MAX_TOKENS: int = int(os.getenv("AI_MAX_TOKENS", "2048"))
     

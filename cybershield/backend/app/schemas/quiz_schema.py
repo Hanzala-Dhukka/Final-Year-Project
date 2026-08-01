@@ -42,7 +42,7 @@ class GenerateQuizResponse(BaseModel):
     technology: str
     total_questions: int
     questions: List[QuizQuestionOut]
-    provider: str = "Groq"
+    provider: str = "Gemini"
 
 
 class QuestionResult(BaseModel):

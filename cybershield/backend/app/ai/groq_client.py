@@ -1,10 +1,8 @@
 """
-groq_client.py — thin re-export so new dashboard AI code can do:
+groq_client.py — canonical Groq client.
 
-    from app.ai.groq_client import generate, is_available
-
-The real implementation lives in app/ai/gemini_client.py (kept as-is to avoid
-breaking the existing AI assistant that already imports from there).
+Other modules may import from here directly.  The actual implementation
+lives in gemini_client.py (kept at that path so existing imports don't break).
 """
 from app.ai.gemini_client import generate, is_available, get_model, initialize
 

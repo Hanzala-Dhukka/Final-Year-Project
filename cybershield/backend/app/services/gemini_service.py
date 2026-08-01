@@ -1,325 +1,198 @@
-import asyncio
+"""
+gemini_service.py — Groq-backed AI service.
+
+All existing callers use:
+    from app.services.gemini_service import generate_ai_response, get_model, ...
+
+The implementation now delegates to the Groq client in app/ai/gemini_client.py.
+No callers need to change.
+"""
+from __future__ import annotations
+
 import json
 import time
-from typing import Dict, Any, Optional
-
-# Use the Groq SDK (synchronous client). It calls chat.completions with the
-# model configured via GROQ_API_KEY / AI_MODEL in settings. The blocking call
-# is dispatched on a worker thread to keep the event loop responsive.
-try:
-    from groq import Groq
-    GROQ_AVAILABLE = True
-except ImportError:
-    print("Warning: groq not installed. Using fallback mode.")
-    Groq = None
-    GROQ_AVAILABLE = False
+from typing import Any, Dict, Optional
 
 from app.config.settings import settings
+from app.ai.gemini_client import generate as _ai_generate, is_available, get_model
 
 
-# Initialize Groq client once at module level
-_groq_configured = False
-_client = None
-
+# ── Compatibility shims used by various routes ────────────────────────────────
 
 def initialize_groq():
+    """Legacy init helper — delegates to the Groq singleton."""
+    from app.ai.gemini_client import initialize
+    return initialize()
+
+
+def get_async_model():
+    """Return the async Groq client."""
+    return get_model()
+
+
+# ── Internal helpers ──────────────────────────────────────────────────────────
+
+async def _generate_content(prompt: str, retries: int = 2) -> Optional[str]:
     """
-    Initialize the Groq AI client.
-
-    Reads the API key from settings.GROQ_API_KEY. Returns None (fallback mode)
-    when the package is not installed or no key is configured.
+    Call Groq and return the response text, or None on failure.
+    Callers that want exceptions should use app.ai.gemini_client.generate directly.
     """
-    global _groq_configured, _client
-
-    if _groq_configured:
-        return _client
-
     try:
-        if not GROQ_AVAILABLE or Groq is None:
-            print("Warning: Groq not available (package not installed). Using fallback mode.")
-            return None
-
-        key = settings.GROQ_API_KEY
-        if not key or key == "your-groq-api-key-here":
-            print("Warning: GROQ_API_KEY not set. Using fallback mode.")
-            return None
-
-        _client = Groq(api_key=key)
-        print(f"Groq AI initialized with model: {settings.AI_MODEL}")
-
-        _groq_configured = True
-        return _client
-
+        return await _ai_generate(prompt)
     except Exception as e:
-        print(f"Error initializing Groq: {str(e)}")
+        print(f"[gemini_service] AI generate failed: {e}")
         return None
 
 
-def get_model():
-    """Get or initialize the Groq client."""
-    global _client
-    if _client is None:
-        _client = initialize_groq()
-    return _client
-
-
-async def _generate_content(prompt: str, retries: int = 2):
-    """Generate content via the configured Groq client with rate limit retry & fallback model.
-
-    Returns the raw text of the completion (or None if unavailable).
+def call_groq_sync(prompt: str, max_tokens: int = None, retries: int = 2) -> Optional[str]:
     """
-    client = get_model()
-    if client is None:
+    Synchronous wrapper around the async generate call.
+    Use sparingly — prefer the async path where possible.
+    """
+    import asyncio
+    try:
+        loop = asyncio.get_event_loop()
+        if loop.is_running():
+            # Can't call run() from a running loop; schedule as task
+            import concurrent.futures
+            with concurrent.futures.ThreadPoolExecutor(max_workers=1) as ex:
+                future = ex.submit(asyncio.run, _ai_generate(prompt))
+                return future.result(timeout=int(getattr(settings, "AI_TIMEOUT", 30)))
+        else:
+            return loop.run_until_complete(_ai_generate(prompt))
+    except Exception as e:
+        print(f"[gemini_service] sync generate failed: {e}")
         return None
 
-    model_to_use = settings.AI_MODEL
-    for attempt in range(retries + 1):
-        try:
-            response = await asyncio.to_thread(
-                client.chat.completions.create,
-                model=model_to_use,
-                messages=[{"role": "user", "content": prompt}],
-                temperature=settings.AI_TEMPERATURE,
-                max_tokens=settings.AI_MAX_TOKENS,
-            )
-            return response.choices[0].message.content or ""
-        except Exception as e:
-            err_msg = str(e).lower()
-            if ("rate_limit" in err_msg or "429" in err_msg) and attempt < retries:
-                # Switch to faster 8b model if 70b rate-limited
-                if "70b" in model_to_use:
-                    model_to_use = "llama-3.1-8b-instant"
-                await asyncio.sleep(1.5)
-                continue
-            print(f"Notice: Groq API call handled fallback ({e})")
-            return None
 
-
-def call_groq_sync(prompt: str, max_tokens: int = None, retries: int = 2) -> str | None:
-    """Synchronous Groq call with rate limit retry & fallback model."""
-    client = get_model()
-    if client is None:
-        return None
-
-    model_to_use = settings.AI_MODEL
-    for attempt in range(retries + 1):
-        try:
-            response = client.chat.completions.create(
-                model=model_to_use,
-                messages=[{"role": "user", "content": prompt}],
-                temperature=settings.AI_TEMPERATURE,
-                max_tokens=max_tokens or settings.AI_MAX_TOKENS,
-            )
-            return response.choices[0].message.content or ""
-        except Exception as e:
-            err_msg = str(e).lower()
-            if ("rate_limit" in err_msg or "429" in err_msg) and attempt < retries:
-                if "70b" in model_to_use:
-                    model_to_use = "llama-3.1-8b-instant"
-                time.sleep(1.5)
-                continue
-            print(f"Notice: Groq sync call handled fallback ({e})")
-            return None
-
-
-
+# ── Primary public API ────────────────────────────────────────────────────────
 
 async def generate_ai_response(
     question: str,
     project_context: Dict[str, Any],
-    max_retries: int = 3
+    max_retries: int = 3,
 ) -> Dict[str, Any]:
     """
-    Generate AI response using Groq
+    Generate an AI response for a project-context question.
 
-    Args:
-        question: User's question
-        project_context: Project context including threats, risk, etc.
-        max_retries: Maximum number of retries on failure
-
-    Returns:
-        Dictionary with AI response or fallback response
+    Returns a dict with keys: provider, model, answer (and optionally error).
+    Falls back to the rule-based chatbot when Groq is unavailable.
     """
-    client = get_model()
-
-    if not client:
-        # Fallback to rule-based chatbot
-        print("Groq not available, using fallback mode")
-        from app.services.chatbot_service import generate_answer as fallback_answer
-        fallback = fallback_answer(question, project_context.get("project_id"))
-        return {
-            "provider": "Fallback",
-            "model": "rule-based",
-            "answer": {
-                "title": "Rule-Based Response",
-                "summary": fallback["answer"],
-                "business_impact": "N/A",
-                "recommendation": fallback["answer"],
-                "implementation_steps": [],
-                "secure_code": "# Configure GROQ_API_KEY for AI-powered responses"
-            }
-        }
+    if not is_available():
+        print("[gemini_service] Groq not available — using rule-based fallback.")
+        return _rule_based_fallback(question, project_context)
 
     try:
-        # Build prompt with context
         from app.services.prompt_builder import build_prompt
         prompt = build_prompt(question, project_context)
 
-        # Generate response with retry logic
-        for attempt in range(max_retries):
-            try:
-                start_time = time.time()
+        start = time.time()
+        response_text = await _ai_generate(prompt)
+        elapsed = round(time.time() - start, 2)
 
-                response_text = await _generate_content(prompt)
+        response_text = response_text.strip()
 
-                response_time = time.time() - start_time
+        # Strip markdown fences if present
+        if "```json" in response_text:
+            response_text = response_text.split("```json")[1].split("```")[0].strip()
+        elif "```" in response_text:
+            response_text = response_text.split("```")[1].split("```")[0].strip()
 
-                # Parse JSON response
-                response_text = response_text.strip()
+        try:
+            answer_data = json.loads(response_text)
+        except json.JSONDecodeError:
+            answer_data = {
+                "title": "AI Response",
+                "summary": response_text,
+                "business_impact": "See summary above.",
+                "recommendation": response_text,
+                "implementation_steps": [],
+                "secure_code": "",
+            }
 
-                # Try to extract JSON from response
-                try:
-                    # Remove markdown code blocks if present
-                    if "```json" in response_text:
-                        response_text = response_text.split("```json")[1].split("```")[0].strip()
-                    elif "```" in response_text:
-                        response_text = response_text.split("```")[1].split("```")[0].strip()
-
-                    answer_data = json.loads(response_text)
-
-                    return {
-                        "provider": "Groq",
-                        "model": settings.AI_MODEL,
-                        "response_time": round(response_time, 2),
-                        "answer": answer_data
-                    }
-
-                except json.JSONDecodeError:
-                    # If JSON parsing fails, wrap the text response
-                    return {
-                        "provider": "Groq",
-                        "model": settings.AI_MODEL,
-                        "response_time": round(response_time, 2),
-                        "answer": {
-                            "title": "AI Response",
-                            "summary": response_text,
-                            "business_impact": "See summary",
-                            "recommendation": response_text,
-                            "implementation_steps": [],
-                            "secure_code": ""
-                        }
-                    }
-
-            except Exception as e:
-                if attempt < max_retries - 1:
-                    wait_time = 2 ** attempt  # Exponential backoff
-                    print(f"Groq API error (attempt {attempt + 1}/{max_retries}): {str(e)}. Retrying in {wait_time}s...")
-                    time.sleep(wait_time)
-                else:
-                    raise e
+        return {
+            "provider": "Groq",
+            "model": settings.AI_MODEL,
+            "response_time": elapsed,
+            "answer": answer_data,
+        }
 
     except Exception as e:
-        print(f"Groq API failed after {max_retries} retries: {str(e)}")
-        # Fallback to rule-based chatbot
+        print(f"[gemini_service] generate_ai_response failed: {e}")
+        return _rule_based_fallback(question, project_context, error=str(e))
+
+
+def _rule_based_fallback(
+    question: str,
+    project_context: Dict[str, Any],
+    error: str = "",
+) -> Dict[str, Any]:
+    try:
         from app.services.chatbot_service import generate_answer as fallback_answer
         fallback = fallback_answer(question, project_context.get("project_id"))
-        return {
-            "provider": "Fallback",
-            "model": "rule-based",
-            "error": str(e),
-            "answer": {
-                "title": "Rule-Based Response (Fallback)",
-                "summary": fallback["answer"],
-                "business_impact": "N/A",
-                "recommendation": fallback["answer"],
-                "implementation_steps": [],
-                "secure_code": "# Configure GROQ_API_KEY for AI-powered responses"
-            }
-        }
+        answer_text = fallback["answer"]
+    except Exception:
+        answer_text = "Please configure GROQ_API_KEY in backend/.env for AI-powered responses."
+
+    return {
+        "provider": "Fallback",
+        "model": "rule-based",
+        **({"error": error} if error else {}),
+        "answer": {
+            "title": "Rule-Based Response",
+            "summary": answer_text,
+            "business_impact": "N/A",
+            "recommendation": answer_text,
+            "implementation_steps": [],
+            "secure_code": "# Set GROQ_API_KEY in backend/.env for AI responses",
+        },
+    }
 
 
 async def generate_daily_explanation(
     category: str,
     title: str,
-    user_answer: str
+    user_answer: str,
 ) -> str:
-    """
-    Generate AI explanation for daily challenge
+    """Generate an educational explanation for a daily challenge."""
+    if not is_available():
+        return _daily_fallback(category)
 
-    Args:
-        category: Challenge category (e.g., "SQL Injection")
-        title: Challenge title
-        user_answer: User's submitted answer
-
-    Returns:
-        Explanation string
-    """
-    client = get_model()
-
-    if not client:
-        # Return fallback explanation
-        return f"""
-Today's challenge demonstrated {category}.
-
-Why it worked:
-The payload you submitted exploited a vulnerability in the application's input validation.
-
-How to prevent it:
-- Use parameterized queries/prepared statements
-- Implement proper input validation
-- Apply the principle of least privilege
-- Use Web Application Firewalls (WAF)
-
-Industry Example:
-Many major breaches have occurred due to {category} vulnerabilities, including the famous TalkTalk breach.
-
-Related OWASP Category:
-A03:2021 - Injection
-"""
-
-    try:
-        prompt = f"""
-You are a cybersecurity expert explaining a daily challenge to a learner.
+    prompt = f"""You are a cybersecurity expert explaining a daily challenge to a learner.
 
 Challenge Category: {category}
 Challenge Title: {title}
 User's Answer: {user_answer}
 
-Provide a comprehensive explanation in this format:
+Provide a comprehensive explanation covering:
+1. What this challenge demonstrated (explain the vulnerability simply)
+2. Why it worked (why the answer was correct / what the vulnerability enables)
+3. How to prevent it (3-4 specific prevention techniques)
+4. An industry example of this vulnerability being exploited
+5. The related OWASP Top 10 category
 
-1. **What this challenge demonstrated**: Explain the vulnerability in simple terms.
+Keep it educational, clear, and actionable. Use bullet points and code examples where helpful."""
 
-2. **Why it worked**: Explain why the user's answer was correct or what the vulnerability allows.
-
-3. **How to prevent it**: Provide 3-4 specific prevention techniques.
-
-4. **Industry Example**: Give a real-world example of this vulnerability being exploited.
-
-5. **Related OWASP Category**: Reference the specific OWASP Top 10 category.
-
-Keep the explanation educational, clear, and actionable. Use bullet points and code examples where appropriate.
-"""
-
-        response_text = await _generate_content(prompt)
-        return response_text.strip()
-
+    try:
+        return (await _ai_generate(prompt)).strip()
     except Exception as e:
-        print(f"Error generating daily explanation: {str(e)}")
-        return f"""
-Today's challenge demonstrated {category}.
+        print(f"[gemini_service] generate_daily_explanation failed: {e}")
+        return _daily_fallback(category)
 
-Why it worked:
-The payload you submitted exploited a vulnerability in the application's input validation.
 
-How to prevent it:
-- Use parameterized queries/prepared statements
-- Implement proper input validation
+def _daily_fallback(category: str) -> str:
+    return f"""Today's challenge demonstrated {category}.
+
+**Why it worked:**
+The payload exploited a vulnerability in the application's input validation.
+
+**How to prevent it:**
+- Use parameterised queries / prepared statements
+- Implement strict input validation and allowlists
 - Apply the principle of least privilege
-- Use Web Application Firewalls (WAF)
+- Deploy a Web Application Firewall (WAF)
 
-Industry Example:
-Many major breaches have occurred due to {category} vulnerabilities.
+**Industry example:**
+Many major breaches have stemmed from {category} vulnerabilities, including the TalkTalk (2015) and Heartland Payment Systems incidents.
 
-Related OWASP Category:
-A03:2021 - Injection
-"""
+**Related OWASP category:** A03:2021 – Injection"""

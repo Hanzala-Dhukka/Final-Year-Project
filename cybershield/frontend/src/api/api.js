@@ -53,7 +53,8 @@ API.interceptors.response.use(
       if (refreshToken) {
         try {
           // Try to refresh the access token
-          const response = await API.post("/auth/refresh", {
+          // Backend route is /auth/refresh-token (not /auth/refresh)
+          const response = await API.post("/auth/refresh-token", {
             refresh_token: refreshToken
           });
 

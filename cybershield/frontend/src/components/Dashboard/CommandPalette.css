@@ -35,7 +35,7 @@
 /* Root Command element */
 .command-palette {
   background: var(--bg-secondary, #1e293b);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid var(--glass-border, rgba(255, 255, 255, 0.10));
   border-radius: 16px;
   overflow: hidden;
   box-shadow:
@@ -49,7 +49,7 @@
   align-items: center;
   gap: 10px;
   padding: 14px 18px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+  border-bottom: 1px solid var(--border-color, rgba(148, 163, 184, 0.12));
 }
 
 .command-palette-icon {
@@ -75,7 +75,7 @@
 .command-esc-hint {
   flex-shrink: 0;
   font-size: 0.7rem;
-  background: rgba(255, 255, 255, 0.08);
+  background: var(--glass-border, rgba(255, 255, 255, 0.10));
   border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: 4px;
   padding: 2px 6px;
@@ -131,7 +131,7 @@
 }
 
 .command-item:hover {
-  background: rgba(255, 255, 255, 0.06);
+  background: var(--border-color, rgba(148, 163, 184, 0.12));
 }
 
 .command-icon {
@@ -154,7 +154,7 @@
 
 .command-shortcut kbd {
   font-size: 0.7rem;
-  background: rgba(255, 255, 255, 0.08);
+  background: var(--glass-border, rgba(255, 255, 255, 0.10));
   border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: 4px;
   padding: 1px 5px;
@@ -165,7 +165,7 @@
 /* Separator */
 .command-separator {
   height: 1px;
-  background: rgba(255, 255, 255, 0.06);
+  background: var(--border-color, rgba(148, 163, 184, 0.12));
   margin: 6px 8px;
 }
 
@@ -183,15 +183,15 @@
   align-items: center;
   gap: 16px;
   padding: 10px 18px;
-  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  border-top: 1px solid var(--border-color, rgba(148, 163, 184, 0.12));
   font-size: 0.75rem;
   color: var(--text-secondary, #64748b);
 }
 
 .command-palette-footer kbd {
   font-size: 0.68rem;
-  background: rgba(255, 255, 255, 0.07);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: var(--border-color, rgba(148, 163, 184, 0.12));
+  border: 1px solid var(--glass-border, rgba(255, 255, 255, 0.10));
   border-radius: 3px;
   padding: 1px 5px;
   font-family: inherit;
@@ -206,11 +206,11 @@
 }
 
 [data-theme="light"] .command-palette-input {
-  color: #0f172a;
+  color: var(--bg-primary, #0f172a);
 }
 
 [data-theme="light"] .command-item {
-  color: #0f172a;
+  color: var(--bg-primary, #0f172a);
 }
 
 [data-theme="light"] .command-item[aria-selected="true"],

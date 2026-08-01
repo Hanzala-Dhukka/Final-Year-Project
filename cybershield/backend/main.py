@@ -4,6 +4,7 @@ from pathlib import Path
 from app.database.db import database
 from app.api.auth_routes import router as auth_router
 from app.api.user_routes import router as user_router
+from app.api.remediation_routes import router as remediation_router
 from app.routes.scan_routes import router as scan_router
 from app.routes.analytics_routes import router as analytics_router
 
@@ -24,6 +25,12 @@ app.include_router(
     user_router,
     prefix="/api/users",
     tags=["User Management"]
+)
+
+app.include_router(
+    remediation_router,
+    prefix="/api/v1",
+    tags=["Remediation"]
 )
 
 app.include_router(

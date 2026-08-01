@@ -1,0 +1,207 @@
+/* ── Risk Dashboard ─────────────────────────────────── */
+.rd-dashboard {
+  margin-bottom: 24px;
+}
+
+/* Top Row */
+.rd-top-row {
+  display: grid;
+  grid-template-columns: 280px 1fr;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+/* Score Card */
+.rd-score-card {
+  background: var(--bg-primary, #0f172a);
+  border: 1px solid var(--bg-secondary, #1e293b);
+  border-radius: 14px;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+}
+
+.rd-gauge-wrap {
+  width: 140px;
+  height: 140px;
+}
+
+.rd-score-meta {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.rd-grade {
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.rd-total {
+  font-size: 13px;
+  color: #64748b;
+}
+
+/* Distribution Card */
+.rd-dist-card {
+  background: var(--bg-primary, #0f172a);
+  border: 1px solid var(--bg-secondary, #1e293b);
+  border-radius: 14px;
+  padding: 20px;
+}
+
+.rd-card-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #94a3b8;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  margin: 0 0 16px;
+}
+
+.rd-dist-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.rd-dist-row:last-child {
+  margin-bottom: 0;
+}
+
+.rd-dist-label {
+  width: 70px;
+  font-size: 13px;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+.rd-dist-bar-bg {
+  flex: 1;
+  height: 10px;
+  background: var(--bg-secondary, #1e293b);
+  border-radius: 5px;
+  overflow: hidden;
+}
+
+.rd-dist-bar {
+  height: 100%;
+  border-radius: 5px;
+  transition: width 0.5s ease;
+}
+
+.rd-dist-count {
+  width: 28px;
+  text-align: right;
+  font-size: 14px;
+  font-weight: 700;
+  color: #e2e8f0;
+}
+
+/* Priority Queue */
+.rd-queue-section {
+  background: var(--bg-primary, #0f172a);
+  border: 1px solid var(--bg-secondary, #1e293b);
+  border-radius: 14px;
+  padding: 20px;
+}
+
+.rd-queue-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.rd-queue-item {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  background: var(--card-bg, #111827);
+  border: 1px solid var(--bg-secondary, #1e293b);
+  border-radius: 12px;
+  padding: 14px 18px;
+  transition: border-color 0.2s;
+}
+
+.rd-queue-item:hover {
+  border-color: var(--border-strong, #334155);
+}
+
+.rd-queue-critical {
+  border-left: 3px solid #ef4444;
+}
+
+.rd-queue-rank {
+  width: 32px;
+  height: 32px;
+  background: var(--bg-secondary, #1e293b);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: 700;
+  color: #94a3b8;
+  flex-shrink: 0;
+}
+
+.rd-queue-critical .rd-queue-rank {
+  background: #ef444420;
+  color: #ef4444;
+}
+
+.rd-queue-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.rd-queue-type {
+  font-size: 14px;
+  font-weight: 600;
+  color: #f8fafc;
+  display: flex;
+  align-items: center;
+}
+
+.rd-queue-file {
+  font-size: 12px;
+  color: #64748b;
+  margin-top: 3px;
+  display: flex;
+  align-items: center;
+}
+
+.rd-queue-impact {
+  font-size: 12px;
+  color: #94a3b8;
+  margin-top: 4px;
+  line-height: 1.4;
+}
+
+.rd-queue-right {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+}
+
+.rd-risk-badge {
+  padding: 3px 12px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.rd-risk-score {
+  font-size: 20px;
+  font-weight: 800;
+}

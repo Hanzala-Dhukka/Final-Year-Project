@@ -18,9 +18,10 @@ const LEVEL_CLS = {
 export default function AIInsightCard({ securityData }) {
   const navigate = useNavigate();
   const [analysis, setAnalysis] = useState(null);
-  const [loading, setLoading]   = useState(true);
+  const [loading, setLoading]   = useState(false);
   const [error, setError]       = useState(false);
   const [cached, setCached]     = useState(false);
+  const [hasAnalyzed, setHasAnalyzed] = useState(false);
 
   const load = useCallback(async () => {
     if (!securityData) return;
@@ -29,6 +30,7 @@ export default function AIInsightCard({ securityData }) {
       const res = await getSecurityAnalysis(securityData);
       setAnalysis(res.analysis);
       setCached(res.cached ?? false);
+      setHasAnalyzed(true);
     } catch {
       setError(true);
     } finally {
@@ -36,7 +38,7 @@ export default function AIInsightCard({ securityData }) {
     }
   }, [securityData]);
 
-  useEffect(() => { load(); }, [load]);
+  // Remove automatic AI call - user must click button to analyze
 
   const status = analysis?.status ?? "Fair";
   const { cls: statusCls, icon: statusIcon } = STATUS_META[status] ?? STATUS_META.Fair;
@@ -45,8 +47,15 @@ export default function AIInsightCard({ securityData }) {
     <div className="aic-widget widget-card" aria-label="AI Security Overview">
       <div className="aic-actions-bar">
         {cached && <span className="aic-cache-badge" title="Served from 24h cache">cached</span>}
-        <button className="aic-refresh" onClick={load} aria-label="Refresh AI analysis" title="Refresh">↻</button>
+        {hasAnalyzed && <button className="aic-refresh" onClick={load} aria-label="Refresh AI analysis" title="Refresh">↻</button>}
       </div>
+
+      {!hasAnalyzed && !loading && (
+        <div className="aic-prompt">
+          <p>Click to analyze your security posture with AI</p>
+          <button className="aic-analyze-btn" onClick={load}>Analyze Now</button>
+        </div>
+      )}
 
       {loading && (
         <div className="aic-loading" aria-busy="true">
@@ -57,12 +66,12 @@ export default function AIInsightCard({ securityData }) {
 
       {!loading && error && (
         <div className="aic-error">
-          <p>⚠️ Could not load AI analysis.</p>
+          <p>⚠️ Could not load AI analysis. Please try again.</p>
           <button onClick={load}>Retry</button>
         </div>
       )}
 
-      {!loading && !error && analysis && (
+      {!loading && !error && hasAnalyzed && analysis && (
         <>
           <div className={`aic-status ${statusCls}`}>
             <span aria-hidden="true">{statusIcon}</span>

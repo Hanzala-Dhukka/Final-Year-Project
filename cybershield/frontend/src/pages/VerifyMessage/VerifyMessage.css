@@ -4,13 +4,13 @@
   align-items: center;
   justify-content: center;
   padding: 24px;
-  background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%);
+  background: linear-gradient(135deg, var(--bg-primary, #0f172a) 0%, var(--bg-secondary, #1e293b) 50%, var(--bg-primary, #0f172a) 100%);
 }
 
 .verify-message-card {
   width: 100%;
   max-width: 460px;
-  background: rgba(15, 23, 42, 0.85);
+  background: var(--glass-bg, rgba(17, 24, 39, 0.70));
   border: 1px solid rgba(148, 163, 184, 0.18);
   border-radius: 18px;
   padding: 44px 38px;
@@ -125,4 +125,31 @@
 
 .verify-message-foot a:hover {
   text-decoration: underline;
+}
+
+/* ── Light mode overrides ────────────────────────────────────── */
+[data-theme="light"] .verify-message-card {
+  background: rgba(255, 255, 255, 0.85);
+  border-color: rgba(15, 23, 42, 0.08);
+  color: #0f172a;
+  box-shadow: 0 20px 60px rgba(15, 23, 42, 0.12);
+}
+[data-theme="light"] .verify-message-card h1 {
+  color: #0f172a;
+}
+[data-theme="light"] .verify-message-sub {
+  color: #475569;
+}
+[data-theme="light"] .verify-message-sub strong {
+  color: var(--border-strong, #334155);
+}
+[data-theme="light"] .verify-message-secondary {
+  border-color: rgba(15, 23, 42, 0.15);
+  color: var(--border-strong, #334155);
+}
+[data-theme="light"] .verify-message-secondary:hover {
+  background: rgba(15, 23, 42, 0.06);
+}
+[data-theme="light"] .verify-message-foot {
+  color: #475569;
 }

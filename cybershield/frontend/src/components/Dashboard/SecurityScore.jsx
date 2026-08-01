@@ -26,7 +26,7 @@ export default function SecurityScore({ score = 82 }) {
             textSize: "22px",
             pathColor: rating.color,
             textColor: "var(--text-primary, #ffffff)",
-            trailColor: "rgba(255, 255, 255, 0.1)",
+            trailColor: "var(--glass-border, rgba(255, 255, 255, 0.1))",
             strokeLinecap: "round",
             pathTransitionDuration: 1.2,
           })}

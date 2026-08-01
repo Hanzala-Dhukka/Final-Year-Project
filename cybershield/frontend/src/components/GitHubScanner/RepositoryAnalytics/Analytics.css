@@ -1,0 +1,645 @@
+/* ============================================================
+   Repository Analytics Dashboard — Professional Enterprise UI
+   ============================================================ */
+
+/* ── Main Container ────────────────────────────────────────── */
+.analytics-container {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.analytics-header {
+  margin-bottom: 8px;
+}
+
+.analytics-title {
+  font-size: 20px;
+  font-weight: 700;
+  color: #fff;
+  letter-spacing: -0.02em;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.analytics-title::before {
+  content: "";
+  width: 4px;
+  height: 24px;
+  background: linear-gradient(180deg, #6366f1, #a855f7);
+  border-radius: 2px;
+}
+
+/* ── Grid Layout ───────────────────────────────────────────── */
+.analytics-grid {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 24px;
+}
+
+/* Card spans */
+.analytics-grid > .language-chart-card {
+  grid-column: span 1;
+  grid-row: span 1;
+}
+
+.analytics-grid > .statistics-card {
+  grid-column: span 1;
+  grid-row: span 1;
+}
+
+.analytics-grid > .technology-stack-card {
+  grid-column: span 2;
+  grid-row: span 1;
+}
+
+.analytics-grid > .activity-card {
+  grid-column: span 2;
+  grid-row: span 1;
+}
+
+/* ── Dashboard Card Base ───────────────────────────────────── */
+.dashboardCard {
+  background: var(--bg-secondary, #1e293b);
+  border: 1px solid var(--border-strong, #334155);
+  border-radius: 18px;
+  padding: 24px;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.dashboardCard::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, #6366f1, #a855f7, #06b6d4);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.dashboardCard:hover {
+  transform: translateY(-4px);
+  border-color: #475569;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+}
+
+.dashboardCard:hover::before {
+  opacity: 1;
+}
+
+.dashboardCardTitle {
+  font-size: 16px;
+  font-weight: 700;
+  color: #fff;
+  margin: 0 0 20px;
+  letter-spacing: -0.01em;
+}
+
+/* ── Language Chart Card ───────────────────────────────────── */
+.language-chart-card {
+  min-height: 420px;
+}
+
+.chart-wrapper {
+  height: 280px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ── Recharts Custom Styles ────────────────────────────────── */
+.recharts-tooltip-wrapper {
+  background: var(--bg-primary, #0f172a);
+  border: 1px solid var(--border-strong, #334155);
+  border-radius: 10px;
+  padding: 12px 16px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+}
+
+.recharts-tooltip-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #94a3b8;
+  margin-bottom: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.recharts-tooltip-item {
+  font-size: 13px;
+  font-weight: 500;
+  color: #e2e8f0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.recharts-legend-wrapper {
+  padding-top: 16px !important;
+}
+
+.recharts-legend-item {
+  margin-right: 24px !important;
+  padding: 4px 0 !important;
+}
+
+.recharts-legend-item-text {
+  font-size: 13px !important;
+  font-weight: 500 !important;
+  color: #e2e8f0 !important;
+  margin-left: 8px !important;
+}
+
+.recharts-pie-label-text {
+  font-size: 12px !important;
+  font-weight: 600 !important;
+  fill: #e2e8f0 !important;
+}
+
+/* ── Statistics Cards ──────────────────────────────────────── */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 14px;
+}
+
+.stat-card {
+  background: var(--glass-border, rgba(255, 255, 255, 0.10));
+  border: 1px solid var(--glass-border, rgba(255, 255, 255, 0.10));
+  border-radius: 14px;
+  padding: 16px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  transition: all 0.2s ease;
+}
+
+.stat-card:hover {
+  background: var(--glass-border, rgba(255, 255, 255, 0.10));
+  border-color: rgba(99, 102, 241, 0.3);
+  transform: translateY(-2px);
+}
+
+.stat-icon {
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+  flex-shrink: 0;
+}
+
+.stat-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.stat-value {
+  display: block;
+  font-size: 20px;
+  font-weight: 700;
+  color: #fff;
+  line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.stat-label {
+  display: block;
+  font-size: 11px;
+  font-weight: 600;
+  color: #94a3b8;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-top: 2px;
+}
+
+/* ── Technology Stack ──────────────────────────────────────── */
+.tech-categories {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.tech-category {
+  background: var(--glass-border, rgba(255, 255, 255, 0.10));
+  border: 1px solid var(--glass-border, rgba(255, 255, 255, 0.10));
+  border-radius: 12px;
+  padding: 16px;
+  transition: all 0.2s ease;
+}
+
+.tech-category:hover {
+  background: var(--glass-border, rgba(255, 255, 255, 0.10));
+  border-color: rgba(99, 102, 241, 0.2);
+}
+
+.tech-category-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.tech-category-icon {
+  color: #6366f1;
+  font-size: 18px;
+  flex-shrink: 0;
+}
+
+.tech-category-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: #fff;
+  margin: 0;
+  flex: 1;
+}
+
+.tech-category-count {
+  font-size: 11px;
+  font-weight: 700;
+  color: #6366f1;
+  background: rgba(99, 102, 241, 0.15);
+  padding: 2px 8px;
+  border-radius: 999px;
+}
+
+.tech-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.tech-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  background: rgba(99, 102, 241, 0.1);
+  border: 1px solid rgba(99, 102, 241, 0.2);
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #a5b4fc;
+  transition: all 0.2s ease;
+}
+
+.tech-chip:hover {
+  background: rgba(99, 102, 241, 0.2);
+  color: #c7d2fe;
+  transform: translateY(-1px);
+}
+
+.tech-chip-icon {
+  font-size: 14px;
+  flex-shrink: 0;
+}
+
+/* ── Activity Timeline ─────────────────────────────────────── */
+.timeline {
+  position: relative;
+  padding-left: 24px;
+}
+
+.timeline::before {
+  content: "";
+  position: absolute;
+  left: 8px;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: linear-gradient(180deg, var(--border-strong, #334155), #475569);
+  border-radius: 1px;
+}
+
+.timeline-item {
+  display: flex;
+  gap: 16px;
+  position: relative;
+  padding-bottom: 24px;
+}
+
+.timeline-item:last-child {
+  padding-bottom: 0;
+}
+
+.timeline-marker {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  z-index: 1;
+  box-shadow: 0 0 0 4px var(--bg-secondary, #1e293b);
+}
+
+.timeline-line {
+  position: absolute;
+  left: 9px;
+  top: 20px;
+  bottom: 0;
+  width: 2px;
+  background: var(--border-strong, #334155);
+}
+
+.timeline-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.timeline-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 6px;
+  flex-wrap: wrap;
+}
+
+.timeline-badge {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 3px 10px;
+  border-radius: 999px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+}
+
+.timeline-event-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #fff;
+}
+
+.timeline-meta {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 12px;
+  color: #94a3b8;
+}
+
+.timeline-date {
+  font-weight: 500;
+  color: #cbd5e1;
+}
+
+.timeline-ago {
+  font-size: 11px;
+  color: #64748b;
+}
+
+/* ── Activity Stats ────────────────────────────────────────── */
+.activity-stats {
+  display: flex;
+  gap: 16px;
+  margin-top: 20px;
+  padding-top: 20px;
+  border-top: 1px solid var(--border-strong, #334155);
+}
+
+.activity-stat {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 1;
+  padding: 14px 16px;
+  background: var(--glass-border, rgba(255, 255, 255, 0.10));
+  border: 1px solid var(--glass-border, rgba(255, 255, 255, 0.10));
+  border-radius: 12px;
+  transition: all 0.2s ease;
+}
+
+.activity-stat:hover {
+  background: var(--glass-border, rgba(255, 255, 255, 0.10));
+  border-color: rgba(99, 102, 241, 0.3);
+}
+
+.activity-stat-icon {
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+  flex-shrink: 0;
+}
+
+.activity-stat-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.activity-stat-value {
+  font-size: 18px;
+  font-weight: 700;
+  color: #fff;
+  line-height: 1.2;
+}
+
+.activity-stat-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: #94a3b8;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+/* ── Empty State ───────────────────────────────────────────── */
+.chart-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 20px;
+  text-align: center;
+  color: #64748b;
+}
+
+.empty-icon {
+  width: 48px;
+  height: 48px;
+  margin-bottom: 16px;
+  opacity: 0.5;
+}
+
+.chart-empty p {
+  font-size: 14px;
+  font-weight: 500;
+  margin: 0;
+}
+
+/* ── Responsive ────────────────────────────────────────────── */
+@media (max-width: 1200px) {
+  .analytics-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .analytics-grid > .language-chart-card,
+  .analytics-grid > .statistics-card,
+  .analytics-grid > .technology-stack-card,
+  .analytics-grid > .activity-card {
+    grid-column: span 1;
+  }
+}
+
+@media (max-width: 768px) {
+  .analytics-container {
+    gap: 20px;
+  }
+
+  .dashboardCard {
+    padding: 20px;
+    border-radius: 16px;
+  }
+
+  .dashboardCardTitle {
+    font-size: 15px;
+  }
+
+  .stats-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+
+  .stat-card {
+    padding: 14px;
+    gap: 12px;
+  }
+
+  .stat-icon {
+    width: 40px;
+    height: 40px;
+  }
+
+  .stat-value {
+    font-size: 18px;
+  }
+
+  .tech-category {
+    padding: 14px;
+  }
+
+  .activity-stats {
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .activity-stat {
+    padding: 12px 14px;
+  }
+}
+
+@media (max-width: 480px) {
+  .stats-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .timeline {
+    padding-left: 20px;
+  }
+
+  .timeline::before {
+    left: 6px;
+  }
+
+  .timeline-marker {
+    width: 16px;
+    height: 16px;
+  }
+
+  .timeline-line {
+    left: 7px;
+  }
+}
+
+/* ── Print Styles ──────────────────────────────────────────── */
+@media print {
+  .dashboardCard:hover,
+  .stat-card:hover,
+  .tech-category:hover,
+  .activity-stat:hover {
+    transform: none;
+    box-shadow: none;
+  }
+
+  .dashboardCard,
+  .stat-card,
+  .tech-category,
+  .activity-stat {
+    break-inside: avoid;
+    border: 1px solid #ddd;
+    background: #fff !important;
+    color: #000 !important;
+  }
+}
+
+/* ── Focus Styles for Accessibility ────────────────────────── */
+.dashboardCard:focus-visible,
+.stat-card:focus-visible,
+.tech-chip:focus-visible,
+.activity-stat:focus-visible {
+  outline: 2px solid #6366f1;
+  outline-offset: 2px;
+}
+
+/* ── Reduced Motion ────────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  .analytics-container,
+  .dashboardCard,
+  .stat-card,
+  .tech-category,
+  .timeline-item,
+  .activity-stat,
+  .tech-chip {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+
+/* ── High Contrast Mode ────────────────────────────────────── */
+@media (prefers-contrast: high) {
+  .dashboardCard {
+    border-width: 2px;
+  }
+
+  .stat-card,
+  .tech-category,
+  .tech-chip {
+    border-width: 2px;
+  }
+
+  .timeline::before {
+    background: #000;
+  }
+}
+
+/* ── Scrollbar Styling ─────────────────────────────────────── */
+.tech-chips::-webkit-scrollbar,
+.activity-stats::-webkit-scrollbar {
+  height: 6px;
+}
+
+.tech-chips::-webkit-scrollbar-track,
+.activity-stats::-webkit-scrollbar-track {
+  background: var(--glass-border, rgba(255, 255, 255, 0.10));
+  border-radius: 3px;
+}
+
+.tech-chips::-webkit-scrollbar-thumb,
+.activity-stats::-webkit-scrollbar-thumb {
+  background: #475569;
+  border-radius: 3px;
+}

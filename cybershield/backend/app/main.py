@@ -7,6 +7,8 @@ from app.routes.onboarding_routes import router as onboarding_router
 from app.routes.security_routes import router as security_router
 from app.routes.scan_routes import router as scan_router
 from app.routes.github_routes import router as github_router
+from app.github.routes import router as github_analysis_router
+from app.api.routes.github_history import router as github_history_router
 from app.routes.analytics_routes import router as analytics_router
 from app.routes.report_routes import router as report_router
 from app.routes.admin_routes import router as admin_router
@@ -47,6 +49,12 @@ from app.dashboard.routes import router as dashboard_module_router
 from app.routes.dashboard_routes import router as dashboard_aggregator_router
 from app.websocket.dashboard_ws import router as dashboard_ws_router
 from app.ai.routes import router as ai_dashboard_router
+from app.ai.vulnerability_routes import router as vulnerability_ai_router
+from app.scanner.routes import router as scanner_router
+from app.scanner.websocket import router as scanner_ws_router
+from app.scanner.worker import start_worker
+from app.scanner.findings_routes import router as findings_router
+from app.reports.routes import router as professional_reports_router
 
 
 # ── App instance ─────────────────────────────────────────────────────────────
@@ -74,6 +82,8 @@ app.include_router(session_router, prefix="/api/v1/auth", tags=["Sessions"])
 app.include_router(security_router, prefix="/api/v1/security", tags=["Security Analyzer"])
 app.include_router(scan_router, prefix="/api/v1/scan", tags=["Scan"])
 app.include_router(github_router, prefix="/api/v1/github", tags=["GitHub Scanner"])
+app.include_router(github_analysis_router, prefix="/api/v1/github", tags=["GitHub Analysis"])
+app.include_router(github_history_router, prefix="/api/v1/github", tags=["History"])
 app.include_router(analytics_router, prefix="/api/v1/analytics", tags=["Analytics"])
 # report_routes defines its own "/reports" and "/report/{id}" paths,
 # so mount under /api/v1 (not /api/v1/reports) to avoid a double prefix.
@@ -130,6 +140,15 @@ app.include_router(dashboard_aggregator_router, prefix="/api/v1", tags=["Dashboa
 app.include_router(dashboard_ws_router, tags=["WebSocket"])
 # ── AI Dashboard (Module D1) ────────────────────────────────────────────────
 app.include_router(ai_dashboard_router, prefix="/api/v1", tags=["AI Dashboard"])
+# ── AI Vulnerability Explanation (Module D4) ───────────────────────────────
+app.include_router(vulnerability_ai_router, prefix="/api/v1", tags=["AI Vulnerability"])
+# ── Real-Time Scan Engine (Module D3) ────────────────────────────────────────
+app.include_router(scanner_router, prefix="/api/v1/scanner", tags=["Scan Engine"])
+app.include_router(scanner_ws_router, tags=["Scanner WebSocket"])
+# ── SAST Findings (Module D6) ────────────────────────────────────────────────
+app.include_router(findings_router, prefix="/api/v1/scanner", tags=["Scan Findings"])
+# ── Professional Security Reports (Module D5) ────────────────────────────────
+app.include_router(professional_reports_router, prefix="/api/v1/reports", tags=["Professional Reports"])
 
 from fastapi import WebSocket, WebSocketDisconnect
 from app.websocket.manager import manager as _ws_manager
@@ -174,6 +193,14 @@ async def startup():
     except Exception as e:
         print(f"Failed to seed security checklists: {e}")
 
+    # H7.1: Create indexes for scan_history collection
+    try:
+        from app.services.history_service import create_indexes
+        await create_indexes()
+        print("Scan history indexes created successfully.")
+    except Exception as e:
+        print(f"Failed to create scan history indexes: {e}")
+
     # Add scheduled jobs
     scheduler.add_job(
         monitor_targets,
@@ -182,6 +209,8 @@ async def startup():
     )
     # Register Module 6.5 automation / notification jobs
     register_scheduler_jobs()
+    # Start the scan worker
+    await start_worker()
     # Start the scheduler
     scheduler.start()
     print("Scheduler started. Monitoring jobs scheduled every 30 minutes.")

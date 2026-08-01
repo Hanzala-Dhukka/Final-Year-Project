@@ -1,7 +1,8 @@
 .footer {
-    background: #ffffff;
-    border-top: 1px solid #e5e7eb;
+    background: var(--card-bg, #ffffff);
+    border-top: 1px solid var(--border-color, #e5e7eb);
     margin-top: auto;
+    color: var(--text-primary, #0f172a);
 }
 
 .footer-container {
@@ -13,10 +14,10 @@
     display: flex;
     align-items: center;
     gap: 5px;
-    color: #2563EB;
+    color: var(--primary, #2563EB);
     text-decoration: none;
 }
 
 .footer a:hover {
-    color: #1d4ed8;
+    color: var(--primary-hover, #1d4ed8);
 }

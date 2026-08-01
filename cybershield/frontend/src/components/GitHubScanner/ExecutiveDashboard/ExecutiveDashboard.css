@@ -1,0 +1,457 @@
+.exec-dashboard {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding: 4px 0;
+}
+
+/* ── Repo Header ────────────────────────────────────────────── */
+.exec-repo-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 24px;
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.12), rgba(168, 85, 247, 0.06));
+  border: 1px solid rgba(99, 102, 241, 0.2);
+  border-radius: 16px;
+}
+
+.exec-repo-left {
+  display: flex;
+  gap: 18px;
+  align-items: center;
+}
+
+.exec-repo-icon {
+  width: 52px;
+  height: 52px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 14px;
+  background: linear-gradient(135deg, #6366f1, #a855f7);
+  color: #fff;
+  font-size: 22px;
+  flex-shrink: 0;
+}
+
+.exec-repo-name {
+  font-size: 24px;
+  font-weight: 800;
+  color: #fff;
+  margin: 0;
+}
+
+.exec-repo-desc {
+  color: #94a3b8;
+  font-size: 14px;
+  margin: 4px 0 0;
+}
+
+.exec-grade {
+  text-align: center;
+  padding: 12px 20px;
+  border: 2px solid;
+  border-radius: 14px;
+  background: rgba(0, 0, 0, 0.3);
+}
+
+.exec-grade-label {
+  display: block;
+  font-size: 11px;
+  color: #94a3b8;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 4px;
+}
+
+.exec-grade-value {
+  font-size: 36px;
+  font-weight: 900;
+}
+
+/* ── KPI Grid ───────────────────────────────────────────────── */
+.exec-kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: 16px;
+}
+
+.exec-kpi {
+  padding: 18px;
+  border-radius: 14px;
+  background: var(--glass-border, rgba(255, 255, 255, 0.10));
+  border: 1px solid var(--glass-border, rgba(255, 255, 255, 0.10));
+  text-align: center;
+  transition: all 0.25s;
+  backdrop-filter: blur(12px);
+}
+
+.exec-kpi:hover {
+  transform: translateY(-3px);
+  border-color: var(--kpi-color);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+}
+
+.exec-kpi-icon {
+  font-size: 20px;
+  color: var(--kpi-color);
+  margin-bottom: 8px;
+}
+
+.exec-kpi-value {
+  font-size: 24px;
+  font-weight: 800;
+  color: #fff;
+}
+
+.exec-kpi-label {
+  font-size: 12px;
+  color: #94a3b8;
+  margin-top: 4px;
+}
+
+/* ── Severity Row ───────────────────────────────────────────── */
+.exec-severity-row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px;
+}
+
+.exec-sev-card {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 18px;
+  border-radius: 12px;
+  background: var(--glass-border, rgba(255, 255, 255, 0.10));
+  border: 1px solid var(--glass-border, rgba(255, 255, 255, 0.10));
+  transition: all 0.2s;
+}
+
+.exec-sev-card:hover {
+  border-color: var(--sev-color);
+  background: var(--glass-border, rgba(255, 255, 255, 0.10));
+}
+
+.exec-sev-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--sev-color);
+  flex-shrink: 0;
+}
+
+.exec-sev-label {
+  font-size: 13px;
+  color: #94a3b8;
+  flex: 1;
+}
+
+.exec-sev-count {
+  font-size: 18px;
+  font-weight: 800;
+  color: #fff;
+}
+
+/* ── Two Column Layout ──────────────────────────────────────── */
+.exec-two-col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+
+/* ── Generic Card ───────────────────────────────────────────── */
+.exec-card {
+  padding: 22px;
+  border-radius: 14px;
+  background: var(--glass-border, rgba(255, 255, 255, 0.10));
+  border: 1px solid var(--glass-border, rgba(255, 255, 255, 0.10));
+  backdrop-filter: blur(12px);
+}
+
+.exec-card h3 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 700;
+  color: #e2e8f0;
+  margin: 0 0 16px;
+}
+
+.exec-card h3 svg {
+  color: #6366f1;
+}
+
+/* ── Gauge ──────────────────────────────────────────────────── */
+.exec-gauge-card {
+  text-align: center;
+}
+
+.exec-gauge-wrap {
+  width: 180px;
+  height: 180px;
+  margin: 0 auto;
+}
+
+.exec-gauge-label {
+  font-size: 13px;
+  color: #94a3b8;
+  margin: 12px 0 0;
+}
+
+/* ── Repository Info ────────────────────────────────────────── */
+.exec-info-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.exec-info-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--glass-border, rgba(255, 255, 255, 0.10));
+}
+
+.exec-info-row:last-child {
+  border-bottom: none;
+}
+
+.exec-info-label {
+  font-size: 13px;
+  color: #94a3b8;
+}
+
+.exec-info-value {
+  font-size: 13px;
+  font-weight: 600;
+  color: #e2e8f0;
+}
+
+/* ── AI Summary ─────────────────────────────────────────────── */
+.exec-ai-text {
+  font-size: 13px;
+  color: #cbd5e1;
+  line-height: 1.6;
+  margin: 0;
+}
+
+/* ── Recommendations ────────────────────────────────────────── */
+.exec-rec-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.exec-rec-list li {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  font-size: 13px;
+  color: #cbd5e1;
+  line-height: 1.5;
+  padding: 8px 12px;
+  border-radius: 8px;
+  background: rgba(34, 197, 94, 0.06);
+  border: 1px solid rgba(34, 197, 94, 0.12);
+}
+
+.exec-rec-list li svg {
+  margin-top: 3px;
+}
+
+/* ── Scan Modules ───────────────────────────────────────────── */
+.exec-modules-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 12px;
+}
+
+.exec-module {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+  border-radius: 10px;
+  background: var(--glass-border, rgba(255, 255, 255, 0.10));
+  border: 1px solid var(--glass-border, rgba(255, 255, 255, 0.10));
+  font-size: 13px;
+  color: #94a3b8;
+  transition: all 0.2s;
+}
+
+.exec-module-done {
+  color: #22c55e;
+  border-color: rgba(34, 197, 94, 0.2);
+  background: rgba(34, 197, 94, 0.06);
+}
+
+.exec-module-icon.done {
+  color: #22c55e;
+}
+
+.exec-module-icon.pending {
+  color: #94a3b8;
+}
+
+/* ── Vulnerabilities ────────────────────────────────────────── */
+.exec-vuln-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.exec-vuln-card {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  border-radius: 10px;
+  background: var(--glass-border, rgba(255, 255, 255, 0.10));
+  border: 1px solid var(--glass-border, rgba(255, 255, 255, 0.10));
+  transition: all 0.2s;
+}
+
+.exec-vuln-card:hover {
+  background: rgba(255, 255, 255, 0.07);
+  border-color: var(--vuln-sev);
+}
+
+.exec-vuln-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.exec-vuln-sev-bar {
+  width: 4px;
+  height: 36px;
+  border-radius: 2px;
+  background: var(--vuln-sev);
+  flex-shrink: 0;
+}
+
+.exec-vuln-type {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  color: #e2e8f0;
+}
+
+.exec-vuln-file {
+  display: block;
+  font-size: 11px;
+  color: #64748b;
+  margin-top: 2px;
+}
+
+.exec-vuln-badge {
+  padding: 4px 12px;
+  border-radius: 8px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+/* ── Progress Bars ──────────────────────────────────────────── */
+.exec-progress-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.exec-progress-header {
+  display: flex;
+  justify-content: space-between;
+  font-size: 13px;
+  color: #94a3b8;
+  margin-bottom: 6px;
+}
+
+.exec-progress-track {
+  height: 8px;
+  border-radius: 4px;
+  background: var(--bg-secondary, #1e293b);
+  overflow: hidden;
+}
+
+.exec-progress-fill {
+  height: 100%;
+  border-radius: 4px;
+}
+
+/* ── Quick Actions ──────────────────────────────────────────── */
+.exec-actions-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px;
+}
+
+.exec-action-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 14px 18px;
+  border-radius: 12px;
+  border: 1px solid var(--glass-border, rgba(255, 255, 255, 0.10));
+  background: var(--glass-border, rgba(255, 255, 255, 0.10));
+  color: #e2e8f0;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.25s;
+}
+
+.exec-action-btn:hover {
+  background: var(--action-color);
+  color: #fff;
+  border-color: var(--action-color);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+}
+
+.exec-action-btn svg {
+  color: var(--action-color);
+  transition: color 0.25s;
+}
+
+.exec-action-btn:hover svg {
+  color: #fff;
+}
+
+/* ── Responsive ─────────────────────────────────────────────── */
+@media (max-width: 900px) {
+  .exec-two-col {
+    grid-template-columns: 1fr;
+  }
+
+  .exec-severity-row {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 600px) {
+  .exec-repo-header {
+    flex-direction: column;
+    gap: 16px;
+    align-items: flex-start;
+  }
+
+  .exec-kpi-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .exec-severity-row {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .exec-modules-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}

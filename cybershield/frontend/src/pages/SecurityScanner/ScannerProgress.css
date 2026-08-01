@@ -1,0 +1,10 @@
+/* ============================================================
+   ScannerProgress — During Scan Page
+   ============================================================ */
+
+.sp-page {
+  min-height: 100vh;
+  background: var(--bg-primary, #0f172a);
+  padding: 20px 24px 40px;
+  color: #e2e8f0;
+}

@@ -1,7 +1,7 @@
 /**
  * aiDashboardApi.js
- * All AI-dashboard API calls. The backend never exposes the Groq key to the
- * browser — React → FastAPI → Groq is the only allowed flow.
+ * All AI-dashboard API calls. The backend never exposes the OpenRouter key to the
+ * browser — React → FastAPI → OpenRouter is the only allowed flow.
  */
 import axios from "axios";
 

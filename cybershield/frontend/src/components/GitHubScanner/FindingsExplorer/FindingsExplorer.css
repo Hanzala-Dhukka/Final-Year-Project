@@ -1,0 +1,105 @@
+.findings-container {
+  margin-top: 30px;
+}
+
+.findings-container h2 {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.finding-card {
+  background: var(--bg-primary, #0f172a);
+  border: 1px solid var(--bg-secondary, #1e293b);
+  border-radius: 15px;
+  margin-bottom: 25px;
+  padding: 20px;
+}
+
+.finding-header {
+  margin-bottom: 15px;
+}
+
+.finding-file {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 18px;
+  font-weight: bold;
+  color: #38bdf8;
+}
+
+.issue-card {
+  background: var(--card-bg, #111827);
+  padding: 18px;
+  border-radius: 12px;
+  margin-top: 15px;
+}
+
+.issue-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.issue-top h4 {
+  margin: 0;
+}
+
+.issue-info {
+  display: flex;
+  gap: 50px;
+  margin-top: 15px;
+}
+
+.issue-info p {
+  margin-top: 5px;
+  color: #cbd5e1;
+}
+
+.severity {
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-weight: bold;
+}
+
+.severity.high {
+  background: #7f1d1d;
+  color: #fecaca;
+}
+
+.severity.medium {
+  background: #78350f;
+  color: #fde68a;
+}
+
+.severity.low {
+  background: #14532d;
+  color: #bbf7d0;
+}
+
+.details-btn {
+  margin-top: 18px;
+  background: #2563eb;
+  color: white;
+  border: none;
+  padding: 10px 18px;
+  border-radius: 8px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: .25s;
+}
+
+.details-btn:hover {
+  background: #1d4ed8;
+}
+
+.findings-empty {
+  padding: 50px;
+  text-align: center;
+  background: var(--bg-primary, #0f172a);
+  border-radius: 12px;
+}

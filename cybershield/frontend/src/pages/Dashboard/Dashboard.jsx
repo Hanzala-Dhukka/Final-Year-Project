@@ -53,6 +53,10 @@ export default function Dashboard() {
   const [cmdOpen, setCmdOpen] = useState(false);
   const [selectorOpen, setSelectorOpen] = useState(false);
 
+  // Track whether we have received data at least once — using a ref so that
+  // loadDashboard's identity stays stable and does NOT re-trigger the effect.
+  const hasDataRef = useRef(false);
+
   // ── Load dashboard data ─────────────────────────────────────────────────────
   const loadDashboard = useCallback(async (isBackground = false) => {
     try {
@@ -61,14 +65,16 @@ export default function Dashboard() {
       setError(null);
       const result = await getDashboardOverview();
       setData(result);
+      hasDataRef.current = true;
     } catch (err) {
       console.error("Dashboard fetch error:", err);
-      if (!data) setError("Failed to load dashboard data");
+      // Only show the error banner when we have no data yet
+      if (!hasDataRef.current) setError("Failed to load dashboard data");
     } finally {
       setLoading(false);
       setRefreshing(false);
     }
-  }, [data]);
+  }, []); // stable — no state in deps
 
   // ── Load preferences ────────────────────────────────────────────────────────
   const loadPreferences = useCallback(async () => {
@@ -88,15 +94,12 @@ export default function Dashboard() {
       socketRef.current = ws;
       ws.onmessage = (event) => {
         try {
-          const payload = JSON.parse(event.data);
-          if (payload.event === "dashboard_update" || payload.event === "scan_completed") {
-            loadDashboard(true);
-          }
+          JSON.parse(event.data); // parse frame but don't auto-reload (prevents excessive AI calls)
         } catch { /* non-JSON frame — ignore */ }
       };
       ws.onerror = () => { /* silent — WS is non-critical */ };
     } catch { /* silent */ }
-  }, [loadDashboard]);
+  }, []); // stable — loadDashboard not used inside, so not a dep
 
   useEffect(() => {
     loadDashboard();
@@ -112,10 +115,10 @@ export default function Dashboard() {
     };
     document.addEventListener("keydown", handleGlobalKey);
 
-    const interval = setInterval(() => loadDashboard(true), 30_000);
+    // Removed auto-refresh interval to prevent excessive API calls
+    // User can manually refresh using the refresh button
 
     return () => {
-      clearInterval(interval);
       document.removeEventListener("keydown", handleGlobalKey);
       socketRef.current?.close();
     };

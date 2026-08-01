@@ -35,3 +35,11 @@
 .sh-uptime { display: flex; align-items: center; gap: 6px; }
 .sh-uptime strong { color: var(--text-primary, #f8fafc); }
 .sh-updated { font-size: 0.72rem; opacity: .6; }
+
+/* ── Light theme overrides ── */
+[data-theme="light"] .sh-status--ok   { color: #16a34a; }
+[data-theme="light"] .sh-status--warn { color: #a16207; }
+[data-theme="light"] .sh-gauge-pct--ok       { color: #16a34a; }
+[data-theme="light"] .sh-gauge-pct--warning  { color: #a16207; }
+[data-theme="light"] .sh-gauge-pct--critical { color: #dc2626; }
+[data-theme="light"] .sh-gauge-track { background: rgba(0,0,0,.08); }

@@ -1,423 +1,783 @@
+import { useState, useEffect, useCallback, useRef } from "react"
+import { motion, AnimatePresence } from "framer-motion"
+import {
+  FaGithub,
+  FaSearch,
+  FaShieldAlt,
+  FaCode,
+  FaBug,
+  FaRobot,
+  FaFileAlt,
+  FaSync,
+  FaDownload,
+  FaExclamationTriangle,
+  FaCheckCircle,
+  FaStar,
+  FaCodeBranch,
+  FaUsers,
+  FaHashtag,
+  FaTimes,
+  FaGlobe,
+  FaBox,
+  FaHistory,
+} from "react-icons/fa"
+import API from "../../api/api"
+import { githubStartScan, githubGetResults } from "../../services/scanService"
+import RepositoryHealth from "../../components/GitHubScanner/RepositoryHealth/RepositoryHealth"
+import RepositoryAnalytics from "../../components/GitHubScanner/RepositoryAnalytics/RepositoryAnalytics"
+import ScanControl from "../../components/GitHubScanner/ScanControl/ScanControl"
+import ScanDashboard from "../../components/GitHubScanner/ScanProgress/ScanDashboard"
+import VulnerabilityExplorer from "../../components/GitHubScanner/VulnerabilityExplorer/VulnerabilityExplorer"
+import DependencyDashboard from "../../components/GitHubScanner/DependencyDashboard/DependencyDashboard"
+import ExecutiveDashboard from "../../components/GitHubScanner/ExecutiveDashboard/ExecutiveDashboard"
+import FindingsExplorer from "../../components/GitHubScanner/FindingsExplorer/FindingsExplorer"
+import FileExplorer from "../../components/GitHubScanner/VSCodeViewer/FileExplorer"
+import CodeViewer from "../../components/GitHubScanner/VSCodeViewer/CodeViewer"
+import ProblemsPanel from "../../components/GitHubScanner/VSCodeViewer/ProblemsPanel"
+import AIFixPanel from "../../components/GitHubScanner/VSCodeViewer/AIFixPanel"
+import VulnerabilityIntelligence from "../../components/GitHubScanner/VulnerabilityIntelligence/VulnerabilityIntelligence"
+import SecurityHistory from "../../components/GitHubScanner/SecurityHistory/SecurityHistory"
+import RiskDashboard from "../../components/GitHubScanner/RiskDashboard/RiskDashboard"
+import { mapScanResult } from "../../utils/scanMapper"
+import "./GitHubScanner.css"
 
-import { useState } from "react"
-import API from "../api/api"
+/* ── Tab Configuration ────────────────────────────────────── */
+const TABS = [
+  { id: "overview", label: "Overview", icon: FaSearch },
+  { id: "scan", label: "Scan", icon: FaShieldAlt },
+  { id: "findings", label: "Findings", icon: FaBug },
+  { id: "ai", label: "AI Fix", icon: FaRobot },
+  { id: "reports", label: "Reports", icon: FaFileAlt },
+  { id: "history", label: "History", icon: FaHistory },
+]
 
 function GitHubScanner() {
-
   const [repoUrl, setRepoUrl] = useState("")
+  const [validatedUrl, setValidatedUrl] = useState(null)
   const [result, setResult] = useState(null)
   const [loading, setLoading] = useState(false)
-  const [activeSecretFilter, setActiveSecretFilter] = useState("all")
+  const [activeTab, setActiveTab] = useState("overview")
+  const [scanActive, setScanActive] = useState(false)
+  const [selectedFile, setSelectedFile] = useState(null)
+  const [fileContent, setFileContent] = useState(null)
+  const [loadingFile, setLoadingFile] = useState(false)
+  const [activeFinding, setActiveFinding] = useState(null)
+  const [aiFix, setAiFix] = useState(null)
+  const [loadingFix, setLoadingFix] = useState(false)
+  const [selectedFinding, setSelectedFinding] = useState(null)
+  const [history, setHistory] = useState([])
 
-  const handleScan = async () => {
+  /* ── URL Validation Flow ─────────────────────────────────── */
+  const handleValidate = async () => {
+    if (!repoUrl.trim()) return
     try {
       setLoading(true)
-      const response = await API.post(
-        "/github/scan-repository",
-        { repo_url: repoUrl }
-      )
-      setResult(response.data)
-    } catch (error) {
-      console.log(error)
-      const message = error.response?.data?.detail || "Repository scan failed"
-      alert(message)
+      const res = await API.post("/github/validate", { repository: repoUrl })
+      setValidatedUrl(res.data)
+    } catch (err) {
+      const msg = err.response?.data?.detail || "Validation failed. Check the URL."
+      alert(msg)
     } finally {
       setLoading(false)
     }
   }
 
+  /* ── Full Scan Flow (Background with Progress Tracking) ───── */
+  const [currentScanId, setCurrentScanId] = useState(null)
+  const scanIdRef = useRef(null)
+
+  const handleScan = async () => {
+    try {
+      setLoading(true)
+      setScanActive(true)
+
+      // Start background scan — returns immediately with scan_id
+      const response = await githubStartScan(repoUrl)
+
+      setCurrentScanId(response.scan_id)
+      scanIdRef.current = response.scan_id
+    } catch (error) {
+      console.error(error)
+      alert(error.response?.data?.detail || "Scan Failed to start")
+      setScanActive(false)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  /* ── PDF Download ────────────────────────────────────────── */
   const downloadReport = async () => {
     try {
       const response = await API.post(
         "/github/generate-pdf",
-        { report: result.scan_summary },
+        { report: result?.scan },
         { responseType: "blob" }
       )
-
       const url = window.URL.createObjectURL(new Blob([response.data]))
       const link = document.createElement("a")
       link.href = url
       link.setAttribute("download", "CyberShield_Report.pdf")
       document.body.appendChild(link)
       link.click()
+      window.URL.revokeObjectURL(url)
     } catch (error) {
-      console.log(error)
+      console.error(error)
     }
   }
 
-  const getSeverityColor = (severity) => {
-    switch (severity?.toLowerCase()) {
-      case "critical": return "text-red-600"
-      case "high": return "text-orange-500"
-      case "medium": return "text-yellow-500"
-      case "low": return "text-green-600"
-      default: return "text-gray-600"
+  /* ── File Loading ────────────────────────────────────────── */
+  const loadFile = async (file) => {
+    try {
+      setLoadingFile(true)
+      setSelectedFile(file)
+      setActiveFinding(null)
+      setAiFix(null)
+      const res = await API.get("/github/file-content", {
+        params: { scan_id: result.scan_id, file }
+      })
+      setFileContent(res.data)
+    } catch (err) {
+      console.error("Failed to load file:", err)
+    } finally {
+      setLoadingFile(false)
     }
   }
+
+  /* ── AI Fix Loading ────────────────────────────────────────── */
+  const loadAiFix = async (issue) => {
+    try {
+      setLoadingFix(true)
+      setAiFix(null)
+      const res = await API.get("/github/ai-fix", {
+        params: {
+          scan_id: result.scan_id,
+          file: issue.file,
+          type: issue.type
+        }
+      })
+      setAiFix(res.data)
+    } catch (err) {
+      console.error("Failed to load AI fix:", err)
+    } finally {
+      setLoadingFix(false)
+    }
+  }
+
+  /* ── Auto-open first file after scan ─────────────────────── */
+  useEffect(() => {
+    if (result?.fileReport?.length && !selectedFile) {
+      loadFile(result.fileReport[0].file)
+    }
+  }, [result])
+
+  /* ── Load scan history when History tab is opened ─────────── */
+  const loadHistory = async () => {
+    if (!repoInfo.name) return
+    try {
+      const res = await API.get(`/github/history/${repoInfo.name}`)
+      setHistory(res.data)
+    } catch (err) {
+      console.error("Failed to load history:", err)
+    }
+  }
+
+  useEffect(() => {
+    if (activeTab === "history" && result) {
+      loadHistory()
+    }
+  }, [activeTab, result])
+
+  /* ── Helpers ─────────────────────────────────────────────── */
+  const getRiskColor = (level) => {
+    switch (level?.toLowerCase()) {
+      case "critical":
+        return "#ef4444"
+      case "high":
+        return "#f97316"
+      case "medium":
+        return "#eab308"
+      case "low":
+        return "#22c55e"
+      default:
+        return "#94a3b8"
+    }
+  }
+
+  const repoInfo = result?.repository || {}
+  const riskDashboard = result?.scan || {}
 
   return (
-    <div className="min-h-screen bg-gray-100 p-10">
-      <h1 className="text-4xl font-bold mb-8">GitHub Security Scanner</h1>
-
-      <div className="flex gap-4 mb-10">
-        <input
-          type="text"
-          placeholder="Enter GitHub repository URL"
-          className="border p-3 rounded w-[500px]"
-          value={repoUrl}
-          onChange={(e) => setRepoUrl(e.target.value)}
-        />
-        <button
-          onClick={handleScan}
-          className="bg-black text-white px-6 rounded"
+    <div className="gs-page">
+      {/* ── Repository Header (constant) ──────────────────── */}
+      {result && (
+        <motion.div
+          className="gs-repo-header"
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4 }}
         >
-          {loading ? "Scanning..." : "Scan Repository"}
-        </button>
+          <div className="gs-repo-header-left">
+            <div className="gs-repo-icon">
+              <FaGithub />
+            </div>
+            <div>
+              <h1 className="gs-repo-name">{repoInfo.name || "Repository"}</h1>
+              {repoInfo.description && (
+                <p className="gs-repo-desc">{repoInfo.description}</p>
+              )}
+            </div>
+          </div>
+
+          <div className="gs-repo-header-stats">
+            <div className="gs-stat-chip">
+              <FaStar style={{ color: "#eab308" }} />
+              <span>{(repoInfo.stars || 0).toLocaleString()}</span>
+            </div>
+            <div className="gs-stat-chip">
+              <FaCodeBranch style={{ color: "#6366f1" }} />
+              <span>{(repoInfo.forks || 0).toLocaleString()}</span>
+            </div>
+            <div className="gs-stat-chip">
+              <FaHashtag style={{ color: "#06b6d4" }} />
+              <span>{(repoInfo.issues || 0).toLocaleString()}</span>
+            </div>
+            <div className="gs-stat-chip">
+              <FaUsers style={{ color: "#a855f7" }} />
+              <span>{repoInfo.language || "Unknown"}</span>
+            </div>
+            <div className="gs-stat-chip">
+              <FaGlobe style={{ color: "#06b6d4" }} />
+              <span>{repoInfo.visibility ? repoInfo.visibility.charAt(0).toUpperCase() + repoInfo.visibility.slice(1) : "Public"}</span>
+            </div>
+            {riskDashboard.riskLevel && (
+              <div
+                className="gs-grade-badge"
+                style={{ background: getRiskColor(riskDashboard.riskLevel) + "22", color: getRiskColor(riskDashboard.riskLevel) }}
+              >
+                {riskDashboard.riskLevel}
+              </div>
+            )}
+          </div>
+        </motion.div>
+      )}
+
+      {/* ── Tab Navigation ────────────────────────────────── */}
+      <div className="gs-tabs-bar">
+        {TABS.map((tab) => {
+          const Icon = tab.icon
+          return (
+            <button
+              key={tab.id}
+              className={`gs-tab-btn ${activeTab === tab.id ? "gs-tab-active" : ""}`}
+              onClick={() => setActiveTab(tab.id)}
+            >
+              <Icon />
+              <span>{tab.label}</span>
+            </button>
+          )
+        })}
       </div>
 
-      {result && (
-        <div className="space-y-8">
-          {/* ── Top Summary Cards ───────────────────────────────────── */}
-          <div className="bg-white p-6 rounded shadow">
-            <h2 className="text-3xl font-bold mb-4">
-              {result.repository_info?.repository || result.repository}
-            </h2>
-            {result.repository_info?.description && (
-              <p className="mt-2 text-gray-500 text-sm mb-6">{result.repository_info.description}</p>
+      {/* ── Tab Content ───────────────────────────────────── */}
+      <AnimatePresence mode="wait">
+        {activeTab === "overview" && (
+          <motion.div
+            key="overview"
+            className="gs-tab-content"
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -12 }}
+            transition={{ duration: 0.25 }}
+          >
+            {result ? (
+              <>
+                <ExecutiveDashboard
+                  repository={result.repository}
+                  summary={result.scan}
+                  findings={result.findings}
+                  dependency={result.dependency}
+                  aiReport={result.ai}
+                  technologies={result.technologies}
+                  fileReport={result.fileReport}
+                  onNavigate={setActiveTab}
+                />
+                <RepositoryHealth
+                  repository={result.repository}
+                  technologies={result.technologies}
+                  dependency={result.dependency}
+                  topics={result.repository.topics || []}
+                />
+                <RepositoryAnalytics
+                  repository={result.repository}
+                  technologies={result.technologies}
+                  dependencyReport={result.dependency}
+                  scanSummary={result.scan}
+                  findings={result.findings}
+                  dependencyFindings={result.dependency?.findings || []}
+                />
+                <DependencyDashboard
+                  dependencyReport={result.dependency}
+                  dependencyFindings={result.dependency?.findings || []}
+                />
+              </>
+            ) : (
+              <div className="gs-empty-state">
+                <FaGithub className="gs-empty-icon" />
+                <h2>No Repository Loaded</h2>
+                <p>Paste a GitHub repository URL and validate to get started.</p>
+              </div>
+            )}
+          </motion.div>
+        )}
+
+        {activeTab === "scan" && (
+          <motion.div
+            key="scan"
+            className="gs-tab-content"
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -12 }}
+            transition={{ duration: 0.25 }}
+          >
+            <ScanControl
+              repositoryUrl={repoUrl}
+              onScanStart={handleScan}
+              onScanPause={() => {}}
+              onScanResume={() => {}}
+              onScanCancel={() => setScanActive(false)}
+              onScanRetry={handleScan}
+              onExportResults={downloadReport}
+              onShareResults={() => {}}
+              onOpenReport={() => setActiveTab("reports")}
+              scanStatus={scanActive ? "running" : "idle"}
+            />
+
+            {scanActive && currentScanId && (
+              <ScanDashboard
+                scanId={currentScanId}
+                onScanComplete={async (data) => {
+                  console.log("Scan Finished:", data)
+                  setScanActive(false)
+                  try {
+                    const finalResult = await githubGetResults(scanIdRef.current)
+                    const mapped = mapScanResult(finalResult)
+                    console.log("Mapped Result:", mapped)
+                    setResult(mapped)
+                    setActiveTab("findings")
+                  } catch (err) {
+                    console.error("Failed to fetch results:", err)
+                  }
+                }}
+              />
             )}
 
-            <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
-              <div className="p-3 bg-gray-50 rounded-lg">
-                <p className="text-xs text-gray-400 uppercase font-bold">Files Scanned</p>
-                <p className="text-xl font-black">{result.risk_dashboard?.files_scanned || "—"}</p>
-              </div>
-              <div className="p-3 bg-gray-50 rounded-lg">
-                <p className="text-xs text-gray-400 uppercase font-bold">Risk Score</p>
-                <p className={`text-xl font-black ${getSeverityColor(result.risk_dashboard?.risk_level)}`}>
-                  {result.risk_dashboard?.risk_score?.toFixed(1) || "—"}
-                </p>
-              </div>
-              <div className="p-3 bg-gray-50 rounded-lg">
-                <p className="text-xs text-gray-400 uppercase font-bold">Security Grade</p>
-                <p className={`text-xl font-black ${
-                  result.risk_dashboard?.security_grade === "A" ? "text-green-600" :
-                  result.risk_dashboard?.security_grade === "B" ? "text-green-500" :
-                  result.risk_dashboard?.security_grade === "C" ? "text-yellow-500" :
-                  result.risk_dashboard?.security_grade === "D" ? "text-orange-500" :
-                  result.risk_dashboard?.security_grade === "F" ? "text-red-600" :
-                  "text-gray-600"
-                }`}>
-                  {result.risk_dashboard?.security_grade || "—"}
-                </p>
-              </div>
-              <div className="p-3 bg-gray-50 rounded-lg">
-                <p className="text-xs text-gray-400 uppercase font-bold">Stars</p>
-                <p className="text-xl font-black text-yellow-500">
-                  ⭐ {result.repository_info?.stars ?? "—"}
-                </p>
-              </div>
-              <div className="p-3 bg-gray-50 rounded-lg">
-                <p className="text-xs text-gray-400 uppercase font-bold">Forks</p>
-                <p className="text-xl font-black text-blue-500">
-                  🍴 {result.repository_info?.forks ?? "—"}
-                </p>
-              </div>
-            </div>
-
-            {/* Repository Health Section */}
-            {result.repository_health && (
-              <div className="border-t pt-4">
-                <h3 className="font-bold text-lg mb-3">Repository Health</h3>
-                <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-                  {Object.entries(result.repository_health).map(([key, value]) => (
-                    <div key={key} className="p-2 bg-gray-50 rounded text-sm">
-                      <p className="text-xs text-gray-400 font-bold uppercase">
-                        {key.replace(/_/g, " ")}
-                      </p>
-                      <p className={`font-semibold ${
-                        value === "Critical" ? "text-red-600" :
-                        value === "Poor" ? "text-orange-500" :
-                        value === "Moderate" ? "text-yellow-500" :
-                        "text-green-600"
-                      }`}>
-                        {value}
-                      </p>
-                    </div>
-                  ))}
+            {!scanActive && result && (
+              <div className="gs-last-scan-card">
+                <FaCheckCircle style={{ color: "#22c55e", fontSize: 28 }} />
+                <div>
+                  <p className="gs-last-scan-title">No Active Scan</p>
+                  <p className="gs-last-scan-sub">Last scan completed. View findings in the Findings tab.</p>
                 </div>
+                <button className="gs-btn-outline" onClick={() => setActiveTab("findings")}>
+                  View Report
+                </button>
               </div>
             )}
-          </div>
+          </motion.div>
+        )}
 
-          {/* ── Severity Count Cards ───────────────────────────────── */}
-          {result.severity_summary && (
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <div className="bg-red-50 border border-red-200 p-6 rounded-xl shadow-sm">
-                <p className="text-xs text-red-400 uppercase font-bold mb-1">Critical</p>
-                <p className="text-4xl font-black text-red-600">{result.severity_summary.critical}</p>
-              </div>
-              <div className="bg-orange-50 border border-orange-200 p-6 rounded-xl shadow-sm">
-                <p className="text-xs text-orange-400 uppercase font-bold mb-1">High</p>
-                <p className="text-4xl font-black text-orange-600">{result.severity_summary.high}</p>
-              </div>
-              <div className="bg-yellow-50 border border-yellow-200 p-6 rounded-xl shadow-sm">
-                <p className="text-xs text-yellow-400 uppercase font-bold mb-1">Medium</p>
-                <p className="text-4xl font-black text-yellow-600">{result.severity_summary.medium}</p>
-              </div>
-              <div className="bg-green-50 border border-green-200 p-6 rounded-xl shadow-sm">
-                <p className="text-xs text-green-400 uppercase font-bold mb-1">Low</p>
-                <p className="text-4xl font-black text-green-600">{result.severity_summary.low}</p>
-              </div>
-            </div>
-          )}
+        {activeTab === "findings" && (
+          <motion.div
+            key="findings"
+            className="gs-tab-content"
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -12 }}
+            transition={{ duration: 0.25 }}
+          >
+            {result ? (
+              <>
+                {/* Risk Intelligence Dashboard */}
+                <RiskDashboard riskDashboard={result.riskDashboard} />
 
-          {/* ── Technologies Section ───────────────────────────────────── */}
-          {result.technologies && Object.values(result.technologies).some(v => v.length > 0) && (
-            <div className="bg-white p-6 rounded shadow">
-              <h2 className="text-2xl font-bold mb-5">🔧 Repository Technologies</h2>
-              <div className="space-y-4">
-                {[
-                  { key: "language", label: "Programming Language", color: "bg-blue-100 text-blue-800" },
-                  { key: "frontend", label: "Frontend", color: "bg-purple-100 text-purple-800" },
-                  { key: "backend", label: "Backend", color: "bg-green-100 text-green-800" },
-                  { key: "database", label: "Database", color: "bg-orange-100 text-orange-800" },
-                  { key: "devops", label: "DevOps", color: "bg-gray-100 text-gray-800" },
-                ].map(({ key, label, color }) => {
-                  const items = result.technologies[key] || []
-                  if (items.length === 0) return null
-                  return (
-                    <div key={key} className="flex flex-wrap items-center gap-3">
-                      <span className="text-sm font-semibold text-gray-500 w-36 shrink-0">{label}</span>
-                      <div className="flex flex-wrap gap-2">
-                        {items.map((tech, i) => (
-                          <span key={i} className={`px-3 py-1 rounded-full text-sm font-semibold ${color}`}>
-                            {tech}
-                          </span>
+                {/* Severity Cards */}
+                {result.scan?.severity && (
+                  <div className="gs-severity-grid">
+                    {[
+                      { label: "Critical", count: result.scan.severity.Critical || 0, color: "#ef4444", bg: "#ef444418" },
+                      { label: "High", count: result.scan.severity.High || 0, color: "#f97316", bg: "#f9731618" },
+                      { label: "Medium", count: result.scan.severity.Medium || 0, color: "#eab308", bg: "#eab30818" },
+                      { label: "Low", count: result.scan.severity.Low || 0, color: "#22c55e", bg: "#22c55e18" },
+                    ].map((s) => (
+                      <div key={s.label} className="gs-severity-card" style={{ borderColor: s.color + "40", background: s.bg }}>
+                        <span className="gs-severity-label" style={{ color: s.color }}>{s.label}</span>
+                        <span className="gs-severity-count" style={{ color: s.color }}>{s.count}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* VS Code Style Vulnerability Explorer */}
+                <VulnerabilityExplorer result={result} />
+
+                {/* Security Findings Explorer */}
+                <FindingsExplorer
+                  fileReport={result.fileReport}
+                />
+
+                {/* VS Code Layout — File Explorer + Code Viewer + AI Fix */}
+                <div className="vscode-layout">
+                  <FileExplorer
+                    files={result.fileReport}
+                    selectedFile={selectedFile}
+                    onSelectFile={loadFile}
+                  />
+                  <div className="vscode-center">
+                    <CodeViewer
+                      fileContent={fileContent}
+                      loading={loadingFile}
+                      fileReport={result.fileReport}
+                      activeFinding={activeFinding}
+                    />
+                    {fileContent && (
+                      <ProblemsPanel
+                        findings={
+                          (result.fileReport || [])
+                            .find(f => f.file === fileContent.file)
+                            ?.issues?.map(i => ({
+                              ...i,
+                              file: fileContent.file
+                            })) || []
+                        }
+                        onSelect={(issue) => {
+                          setActiveFinding(issue)
+                          setSelectedFinding(issue)
+                          loadAiFix(issue)
+                        }}
+                      />
+                    )}
+                  </div>
+                  <AIFixPanel
+                    aiFix={aiFix}
+                    loading={loadingFix}
+                  />
+                  <VulnerabilityIntelligence
+                    finding={selectedFinding}
+                  />
+                </div>
+
+
+              </>
+            ) : (
+              <div className="gs-empty-state">
+                <FaBug className="gs-empty-icon" />
+                <h2>No Findings Yet</h2>
+                <p>Run a scan to see vulnerability findings.</p>
+                <button className="gs-btn-primary" onClick={() => setActiveTab("scan")}>
+                  Go to Scan
+                </button>
+              </div>
+            )}
+          </motion.div>
+        )}
+
+        {activeTab === "ai" && (
+          <motion.div
+            key="ai"
+            className="gs-tab-content"
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -12 }}
+            transition={{ duration: 0.25 }}
+          >
+            {result ? (
+              <>
+                {/* Risk Level Badge */}
+                <div style={{ background: "#0f172a", border: "1px solid #1e293b", padding: "0.85rem 1.25rem", borderRadius: "10px", display: "flex", alignItems: "center", gap: "1rem", marginBottom: "1.25rem" }}>
+                  <span style={{ color: "#94a3b8", fontWeight: 500 }}>Risk Level:</span>
+                  <span className={`gs-badge gs-badge-${(result.ai?.riskLevel || result.scan?.riskLevel || "low").toLowerCase()}`}>
+                    {result.ai?.riskLevel || result.scan?.riskLevel || "Unknown"}
+                  </span>
+                  {result.security_score !== undefined && (
+                    <span style={{ marginLeft: "auto", color: "#38bdf8", fontWeight: "bold" }}>
+                      Security Score: {result.security_score}/100
+                    </span>
+                  )}
+                </div>
+
+                {/* AI Security Report */}
+                <div className="gs-card">
+                  <h3 className="gs-card-title"><FaRobot /> AI Security Analysis</h3>
+                  {result.ai?.summary && (
+                    <div className="gs-ai-section">
+                      <h4>Repository Summary</h4>
+                      <p>{result.ai.summary}</p>
+                    </div>
+                  )}
+                  {result.ai?.businessImpact?.length > 0 && (
+                    <div className="gs-ai-section">
+                      <h4>Business Impact</h4>
+                      <ul className="gs-list">
+                        {result.ai.businessImpact.map((impact, i) => (
+                          <li key={i}>{impact}</li>
                         ))}
+                      </ul>
+                    </div>
+                  )}
+                </div>
+
+                {/* Dependency Analysis */}
+                {result.dependency && (
+                  <div className="gs-card">
+                    <h3 className="gs-card-title"><FaBox /> Dependency Analysis</h3>
+                    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(130px, 1fr))", gap: "1rem", marginTop: "0.75rem" }}>
+                      <div style={{ background: "#0f172a", padding: "0.75rem", borderRadius: "8px", border: "1px solid #1e293b" }}>
+                        <span style={{ fontSize: "0.8rem", color: "#94a3b8" }}>Packages Scanned</span>
+                        <p style={{ fontSize: "1.25rem", fontWeight: "bold", color: "#f8fafc", margin: "0.25rem 0 0" }}>{result.dependency.totalPackages ?? 0}</p>
+                      </div>
+                      <div style={{ background: "#0f172a", padding: "0.75rem", borderRadius: "8px", border: "1px solid #1e293b" }}>
+                        <span style={{ fontSize: "0.8rem", color: "#f59e0b" }}>Outdated</span>
+                        <p style={{ fontSize: "1.25rem", fontWeight: "bold", color: "#f59e0b", margin: "0.25rem 0 0" }}>{result.dependency.outdated ?? 0}</p>
+                      </div>
+                      <div style={{ background: "#0f172a", padding: "0.75rem", borderRadius: "8px", border: "1px solid #1e293b" }}>
+                        <span style={{ fontSize: "0.8rem", color: "#ef4444" }}>Risky</span>
+                        <p style={{ fontSize: "1.25rem", fontWeight: "bold", color: "#ef4444", margin: "0.25rem 0 0" }}>{result.dependency.risky ?? 0}</p>
+                      </div>
+                      <div style={{ background: "#0f172a", padding: "0.75rem", borderRadius: "8px", border: "1px solid #1e293b" }}>
+                        <span style={{ fontSize: "0.8rem", color: "#a855f7" }}>Unpinned</span>
+                        <p style={{ fontSize: "1.25rem", fontWeight: "bold", color: "#a855f7", margin: "0.25rem 0 0" }}>{result.dependency.unpinned ?? 0}</p>
                       </div>
                     </div>
-                  )
-                })}
+                  </div>
+                )}
+
+                {/* Executive Summary */}
+                {result.ai?.summary && (
+                  <div className="gs-card gs-card-accent">
+                    <h3 className="gs-card-title"><FaFileAlt /> Executive Summary</h3>
+                    <p className="gs-pre-line">{result.ai.summary}</p>
+                  </div>
+                )}
+
+                {/* Recommendations */}
+                {result.ai?.recommendations?.length > 0 && (
+                  <div className="gs-card">
+                    <h3 className="gs-card-title"><FaCheckCircle /> Recommendations</h3>
+                    <ol className="gs-ordered-list">
+                      {result.ai.recommendations.map((rec, i) => (
+                        <li key={i}>
+                          {typeof rec === "string" ? rec : (rec.recommendation || rec.text || JSON.stringify(rec))}
+                        </li>
+                      ))}
+                    </ol>
+                  </div>
+                )}
+
+                {/* Score Card */}
+                {result.score_card && (
+                  <div className="gs-card">
+                    <h3 className="gs-card-title"><FaShieldAlt /> Security Score Card</h3>
+                    <div className="gs-score-grid">
+                      {Object.entries(result.score_card).map(([key, score]) => {
+                        const val = parseInt(score.split("/")[0])
+                        const color = val >= 80 ? "#22c55e" : val >= 60 ? "#eab308" : val >= 40 ? "#f97316" : "#ef4444"
+                        return (
+                          <div key={key} className="gs-score-item">
+                            <span className="gs-score-label">{key}</span>
+                            <span className="gs-score-value" style={{ color }}>{score}</span>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  </div>
+                )}
+              </>
+            ) : (
+              <div className="gs-empty-state">
+                <FaRobot className="gs-empty-icon" />
+                <h2>No AI Analysis</h2>
+                <p>Run a scan to receive AI-powered security insights.</p>
+                <button className="gs-btn-primary" onClick={() => setActiveTab("scan")}>
+                  Go to Scan
+                </button>
               </div>
-            </div>
-          )}
+            )}
+          </motion.div>
+        )}
 
-          {/* ── Secrets Detected ─────────────────────────────────────── */}
-          {result.secret_summary && (
-            <div className="bg-white p-6 rounded shadow">
-              <h2 className="text-2xl font-bold mb-5">🔐 Secrets Detected</h2>
+        {activeTab === "reports" && (
+          <motion.div
+            key="reports"
+            className="gs-tab-content"
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -12 }}
+            transition={{ duration: 0.25 }}
+          >
+            {result ? (
+              <>
+                <div className="gs-card">
+                  <h3 className="gs-card-title"><FaFileAlt /> Executive Report</h3>
+                  <div className="gs-report-meta">
+                    <div>
+                      <span className="gs-report-label">Repository</span>
+                      <span className="gs-report-value">{repoInfo.name}</span>
+                    </div>
+                    <div>
+                      <span className="gs-report-label">Risk Level</span>
+                      <span className="gs-report-value" style={{ color: getRiskColor(result.scan?.riskLevel || result.ai?.riskLevel) }}>
+                        {result.scan?.riskLevel || result.ai?.riskLevel || "—"}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="gs-report-label">Security Score</span>
+                      <span className="gs-report-value" style={{ color: "#38bdf8" }}>
+                        {result.security_score ?? "—"}/100
+                      </span>
+                    </div>
+                    <div>
+                      <span className="gs-report-label">Files Scanned</span>
+                      <span className="gs-report-value">{result.scan?.filesWithIssues ?? result.fileReport?.length ?? "—"}</span>
+                    </div>
+                  </div>
+                </div>
 
-              <div className="flex flex-wrap gap-2 mb-6">
-                {[
-                  { id: "all", label: "All" },
-                  { id: "critical", label: "Critical" },
-                  { id: "high", label: "High" },
-                  { id: "medium", label: "Medium" },
-                ].map((f) => (
-                  <button
-                    key={f.id}
-                    onClick={() => setActiveSecretFilter(f.id)}
-                    className={`px-4 py-2 rounded-full font-semibold text-sm transition-colors ${
-                      activeSecretFilter === f.id ? "bg-blue-600 text-white" : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                    }`}
-                  >
-                    {f.label}
-                  </button>
-                ))}
-              </div>
-
-              {result.advanced_secrets && result.advanced_secrets.length > 0 && (
-                <div className="overflow-x-auto">
-                  <table className="w-full border-collapse">
-                    <thead>
-                      <tr className="bg-gray-50">
-                        <th className="text-left px-4 py-3 text-sm font-semibold text-gray-600 border-b">
-                          Secret Type
-                        </th>
-                        <th className="text-left px-4 py-3 text-sm font-semibold text-gray-600 border-b">
-                          File
-                        </th>
-                        <th className="text-left px-4 py-3 text-sm font-semibold text-gray-600 border-b">
-                          Line
-                        </th>
-                        <th className="text-left px-4 py-3 text-sm font-semibold text-gray-600 border-b">
-                          Severity
-                        </th>
-                        <th className="text-left px-4 py-3 text-sm font-semibold text-gray-600 border-b">
-                          Recommendation
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {result.advanced_secrets
-                        .filter(secret => activeSecretFilter === "all" || secret.severity?.toLowerCase() === activeSecretFilter)
-                        .map((secret, idx) => (
-                          <tr key={idx} className="border-b hover:bg-gray-50">
-                            <td className="px-4 py-3 text-sm font-semibold text-gray-800">{secret.type}</td>
-                            <td className="px-4 py-3 text-sm text-gray-600 font-mono">{secret.file}</td>
-                            <td className="px-4 py-3 text-sm text-gray-600">{secret.line}</td>
-                            <td className="px-4 py-3 text-sm">
-                              <span className={`px-2 py-1 rounded-full text-xs font-semibold ${
-                                secret.severity === "Critical" ? "bg-red-100 text-red-700" :
-                                secret.severity === "High" ? "bg-orange-100 text-orange-700" :
-                                secret.severity === "Medium" ? "bg-yellow-100 text-yellow-700" :
-                                "bg-green-100 text-green-700"
-                              }`}>
-                                {secret.severity}
-                              </span>
-                            </td>
-                            <td className="px-4 py-3 text-sm text-gray-700">{secret.recommendation}</td>
+                {/* Severity Breakdown Table */}
+                {result.scan?.severity && (
+                  <div className="gs-card">
+                    <h3 className="gs-card-title"><FaShieldAlt /> Severity Breakdown</h3>
+                    <div className="gs-table-wrap">
+                      <table className="gs-table">
+                        <thead>
+                          <tr>
+                            <th>Severity</th>
+                            <th>Count</th>
                           </tr>
-                        ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
-
-              {(!result.advanced_secrets || result.advanced_secrets.length === 0) && (
-                <div className="text-center py-8 text-gray-500">
-                  <p className="text-lg font-semibold">No secrets detected</p>
-                  <p className="text-sm">No exposed credentials or secrets were found in the scanned files</p>
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* ── Category Summary and Charts Placeholders ─────────────── */}
-          {result.category_summary && (
-            <div className="bg-white p-6 rounded shadow">
-              <h2 className="text-2xl font-bold mb-5">📊 Issue Categories</h2>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                {Object.entries(result.category_summary).map(([key, count]) => (
-                  <div key={key} className="border p-4 rounded-lg bg-gray-50">
-                    <p className="text-xs text-gray-400 font-bold uppercase mb-1">{key}</p>
-                    <p className="text-2xl font-black">{count}</p>
+                        </thead>
+                        <tbody>
+                          {Object.entries(result.scan.severity).map(([sev, count]) => (
+                            <tr key={sev}>
+                              <td>
+                                <span className={`gs-badge gs-badge-${sev.toLowerCase()}`}>
+                                  {sev}
+                                </span>
+                              </td>
+                              <td className="gs-text-bold">{count}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
                   </div>
-                ))}
-              </div>
-            </div>
-          )}
+                )}
 
-          {/* ── Score Card ─────────────────────────────────────────────── */}
-          {result.score_card && (
-            <div className="bg-white p-6 rounded shadow">
-              <h2 className="text-2xl font-bold mb-5">📋 Security Score Card</h2>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                {Object.entries(result.score_card).map(([key, score]) => (
-                  <div key={key} className="border p-4 rounded-lg bg-gray-50">
-                    <p className="text-xs text-gray-400 font-bold uppercase mb-1">{key}</p>
-                    <p className={`text-2xl font-black ${
-                      parseInt(score.split("/")[0]) >= 80 ? "text-green-600" :
-                      parseInt(score.split("/")[0]) >= 60 ? "text-yellow-500" :
-                      parseInt(score.split("/")[0]) >= 40 ? "text-orange-500" :
-                      "text-red-600"
-                    }`}>
-                      {score}
-                    </p>
+                {result.ai?.summary && (
+                  <div className="gs-card gs-card-accent">
+                    <h3 className="gs-card-title"><FaFileAlt /> Executive Summary</h3>
+                    <p className="gs-pre-line">{result.ai.summary}</p>
                   </div>
-                ))}
-              </div>
-            </div>
-          )}
+                )}
 
-          {/* ── Top Risks ─────────────────────────────────────────────── */}
-          {result.top_risks && result.top_risks.length > 0 && (
-            <div className="bg-white p-6 rounded shadow">
-              <h2 className="text-2xl font-bold mb-5">🚨 Top Risks</h2>
-              <div className="overflow-x-auto">
-                <table className="w-full border-collapse">
-                  <thead>
-                    <tr className="bg-gray-50">
-                      <th className="text-left px-4 py-3 text-sm font-semibold text-gray-600 border-b">Risk</th>
-                      <th className="text-left px-4 py-3 text-sm font-semibold text-gray-600 border-b">Severity</th>
-                      <th className="text-left px-4 py-3 text-sm font-semibold text-gray-600 border-b">File</th>
-                      <th className="text-left px-4 py-3 text-sm font-semibold text-gray-600 border-b">Recommendation</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {result.top_risks.map((risk, idx) => (
-                      <tr key={idx} className="border-b hover:bg-gray-50">
-                        <td className="px-4 py-3 text-sm font-semibold text-gray-800">{risk.title}</td>
-                        <td className="px-4 py-3 text-sm">
-                          <span className={`px-2 py-1 rounded-full text-xs font-semibold ${
-                            risk.severity === "Critical" ? "bg-red-100 text-red-700" :
-                            risk.severity === "High" ? "bg-orange-100 text-orange-700" :
-                            risk.severity === "Medium" ? "bg-yellow-100 text-yellow-700" :
-                            "bg-green-100 text-green-700"
-                          }`}>
-                            {risk.severity}
-                          </span>
-                        </td>
-                        <td className="px-4 py-3 text-sm text-gray-600 font-mono">{risk.file}</td>
-                        <td className="px-4 py-3 text-sm text-gray-700">{risk.recommendation}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          )}
+                {result.ai?.summary && (
+                  <div className="gs-card">
+                    <h3 className="gs-card-title"><FaRobot /> AI Report Summary</h3>
+                    <p>{result.ai.summary}</p>
+                  </div>
+                )}
 
-          {/* ── Prioritized Recommendations ───────────────────────────── */}
-          {result.recommendations && result.recommendations.length > 0 && (
-            <div className="bg-white p-6 rounded shadow">
-              <h2 className="text-2xl font-bold mb-5">✅ Prioritized Recommendations</h2>
-              <ol className="list-decimal ml-6 space-y-3">
-                {result.recommendations.map((rec, idx) => (
-                  <li key={idx} className="text-gray-700 text-base">
-                    <span className="font-bold">{rec.priority}.</span> {rec.recommendation}
-                  </li>
-                ))}
-              </ol>
-            </div>
-          )}
-
-          {/* ── Executive Summary ─────────────────────────────────────── */}
-          {result.executive_summary && (
-            <div className="bg-yellow-50 border border-yellow-200 p-6 rounded-xl shadow">
-              <h2 className="text-2xl font-bold mb-3 text-yellow-800">📝 Executive Summary</h2>
-              <p className="text-gray-800 whitespace-pre-line text-base">
-                {result.executive_summary}
-              </p>
-            </div>
-          )}
-
-          {/* ── AI Report & Download Button ───────────────────────────── */}
-          <div className="bg-white p-6 rounded shadow">
-            <h2 className="text-3xl font-bold mb-6">AI Security Report</h2>
-            <div className="space-y-4">
-              <div>
-                <p className="text-xl font-semibold">
-                  Risk Level:
-                  <span className={`ml-2 ${getSeverityColor(result.risk_dashboard?.risk_level)}`}>
-                    {result.risk_dashboard?.risk_level || "Unknown"}
-                  </span>
-                </p>
-              </div>
-              <div>
-                <h3 className="text-xl font-bold">Repository Summary:</h3>
-                <p className="mt-2 text-gray-700">{result.ai_report?.summary}</p>
-              </div>
-              {result.ai_report?.business_impact?.length > 0 && (
-                <div>
-                  <h3 className="text-xl font-bold">Business Impact:</h3>
-                  <ul className="list-disc ml-6 mt-2 space-y-1 text-gray-700">
-                    {result.ai_report.business_impact.map((impact, i) => (
-                      <li key={i}>{impact}</li>
-                    ))}
-                  </ul>
+                <div className="gs-card">
+                  <h3 className="gs-card-title"><FaDownload /> Export</h3>
+                  <button className="gs-btn-primary gs-btn-lg" onClick={downloadReport} disabled={loading}>
+                    <FaDownload /> Download PDF Report
+                  </button>
                 </div>
-              )}
-              <button
-                onClick={downloadReport}
-                disabled={loading}
-                className="bg-black text-white px-8 py-3 rounded font-bold mt-4 disabled:opacity-50 hover:bg-gray-800 transition-colors"
-              >
-                Download PDF Report
+              </>
+            ) : (
+              <div className="gs-empty-state">
+                <FaFileAlt className="gs-empty-icon" />
+                <h2>No Report Available</h2>
+                <p>Run a scan to generate a security report.</p>
+                <button className="gs-btn-primary" onClick={() => setActiveTab("scan")}>
+                  Go to Scan
+                </button>
+              </div>
+            )}
+          </motion.div>
+        )}
+
+        {activeTab === "history" && (
+          <motion.div
+            key="history"
+            className="gs-tab-content"
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -12 }}
+            transition={{ duration: 0.25 }}
+          >
+            {result ? (
+              <SecurityHistory history={history} />
+            ) : (
+              <div className="gs-empty-state">
+                <FaHistory className="gs-empty-icon" />
+                <h2>No Scan History</h2>
+                <p>Run a scan to start tracking security trends over time.</p>
+                <button className="gs-btn-primary" onClick={() => setActiveTab("scan")}>
+                  Go to Scan
+                </button>
+              </div>
+            )}
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* ── URL Input Bar (shown when no result yet) ──────── */}
+      {!result && (
+        <div className="gs-url-bar">
+          <div className="gs-url-input-wrap">
+            <FaGithub className="gs-url-icon" />
+            <input
+              type="text"
+              placeholder="Paste a GitHub repository URL..."
+              value={repoUrl}
+              onChange={(e) => setRepoUrl(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && handleValidate()}
+              className="gs-url-input"
+            />
+            {repoUrl && (
+              <button className="gs-url-clear" onClick={() => { setRepoUrl(""); setValidatedUrl(null) }}>
+                <FaTimes />
               </button>
+            )}
+          </div>
+          <button
+            className="gs-btn-primary"
+            onClick={handleValidate}
+            disabled={loading || !repoUrl.trim()}
+          >
+            {loading ? <><FaSync className="gs-spin" /> Validating...</> : <><FaSearch /> Validate</>}
+          </button>
+        </div>
+      )}
+
+      {/* ── Validated Repository Preview ───────────────────── */}
+      {validatedUrl && !result && (
+        <motion.div
+          className="gs-preview-card"
+          initial={{ opacity: 0, scale: 0.97 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.3 }}
+        >
+          <div className="gs-preview-info">
+            <FaGithub style={{ fontSize: 28, color: "#e2e8f0" }} />
+            <div>
+              <p className="gs-preview-name">{validatedUrl.full_name || validatedUrl.name || repoUrl}</p>
+              {validatedUrl.description && <p className="gs-preview-desc">{validatedUrl.description}</p>}
             </div>
           </div>
-        </div>
+          <button className="gs-btn-primary gs-btn-lg" onClick={handleScan} disabled={loading}>
+            {loading ? <><FaSync className="gs-spin" /> Scanning...</> : <><FaShieldAlt /> Start Scan</>}
+          </button>
+        </motion.div>
       )}
     </div>
   )

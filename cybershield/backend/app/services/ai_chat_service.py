@@ -231,8 +231,8 @@ async def send_to_gemini(
 
     if not is_available():
         return (
-            "I'm currently running in offline mode because the Groq API key is "
-            "not configured on the server. Please configure `GROQ_API_KEY` to "
+            "I'm currently running in offline mode because the Gemini API key is "
+            "not configured on the server. Please configure `GEMINI_API_KEY` to "
             "enable AI responses.\n\nIn the meantime, here are some topics to "
             "explore: OWASP Top 10, secure coding, authentication, and threat modeling."
         )

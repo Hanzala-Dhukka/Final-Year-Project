@@ -194,8 +194,8 @@ async def ai_review(code: str, language: str, findings: List[Dict[str, Any]]) ->
         secure = "\n".join(f"# {f['title']} ({f['severity']}): {f['recommendation']}" for f in findings)
         return {
             "ai_explanation": (
-                "Groq is not configured, so this is a rule-based summary. "
-                "Configure GROQ_API_KEY for a full AI review.\n\n" + secure
+                "OpenRouter is not configured, so this is a rule-based summary. "
+                "Configure OPENROUTER_API_KEY for a full AI review.\n\n" + secure
             ),
             "secure_code": "",
         }
