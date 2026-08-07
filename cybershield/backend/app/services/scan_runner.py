@@ -184,7 +184,7 @@ async def run_github_scan(repo_url: str, user_id: Optional[str] = None,
         p for p in all_file_paths
         if p.endswith((".py", ".js", ".ts", ".env", ".yml", ".yaml", ".json", ".txt", ".sh"))
         or "config" in p.lower()
-    ][:100]
+    ]
 
     # Progress: Static Analysis
     if scan_id:

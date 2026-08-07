@@ -477,7 +477,7 @@ async def scan_repository_sync(
             p for p in all_file_paths
             if p.endswith((".py", ".js", ".ts", ".env", ".yml", ".yaml", ".json", ".txt", ".sh")) or
             "config" in p.lower()
-        ][:100]
+        ]
 
         file_results = []
         with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
