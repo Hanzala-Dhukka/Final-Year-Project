@@ -7,6 +7,26 @@ import MessageInput from "../../components/AIAssistant/MessageInput";
 import ContextSelector from "../../components/AIAssistant/ContextSelector";
 
 /**
+ * Generate an initial question based on the context type and scan data
+ */
+function generateInitialQuestion(type, scanData) {
+  switch (type) {
+    case "github_scan":
+      if (scanData.severity_summary?.critical > 0) {
+        return `I have ${scanData.severity_summary.critical} critical vulnerabilities in my ${scanData.repository || "repository"}. What should I fix first?`;
+      }
+      if (scanData.severity_summary?.high > 0) {
+        return `My scan shows ${scanData.severity_summary.high} high-severity issues. How do I prioritize remediation?`;
+      }
+      return `Explain the security findings for my ${scanData.repository || "repository"} scan.`;
+    case "owasp":
+      return `Explain the ${scanData.vulnerability || "vulnerability"} vulnerability and how to defend against it.`;
+    default:
+      return "Help me understand my security scan results.";
+  }
+}
+
+/**
  * AI Security Assistant (Modules 5.1 & 5.2)
  *
  * Layout: sidebar (conversations) + chat window + input, with a project
@@ -27,6 +47,7 @@ export default function AIAssistant() {
   const [contextMeta, setContextMeta] = useState({});
 
   const scrollRef = useRef(null);
+  const initDoneRef = useRef(false);
 
   const loadConversations = useCallback(async () => {
     try {
@@ -62,7 +83,40 @@ export default function AIAssistant() {
     loadConversations();
     loadProjects();
     loadContext();
-  }, [loadConversations, loadProjects, loadContext]);
+
+    // Check for context passed from other pages (Scan Results, OWASP, etc.)
+    // Only run once on mount
+    if (initDoneRef.current) return;
+    initDoneRef.current = true;
+
+    const storedContext = sessionStorage.getItem("aiAssistantContext");
+    if (storedContext) {
+      try {
+        const ctx = JSON.parse(storedContext);
+        // Set the context domain based on the source
+        if (ctx.type === "github_scan") {
+          setContext("github_scan");
+          changeContext("github_scan");
+        } else if (ctx.type === "owasp") {
+          setContext("owasp");
+          changeContext("owasp");
+        }
+        // Optionally auto-send a question based on the context
+        if (ctx.scanData) {
+          const initialQuestion = generateInitialQuestion(ctx.type, ctx.scanData);
+          // Small delay to allow context to be set on backend
+          setTimeout(() => {
+            handleSend(initialQuestion);
+          }, 500);
+        }
+        // Clear the stored context so it doesn't trigger again on refresh
+        sessionStorage.removeItem("aiAssistantContext");
+      } catch (e) {
+        console.error("Failed to parse AI Assistant context", e);
+        sessionStorage.removeItem("aiAssistantContext");
+      }
+    }
+  }, [loadConversations, loadProjects, loadContext]); // Only run once on mount
 
   // Auto-scroll to the bottom when messages change
   useEffect(() => {
@@ -114,8 +168,15 @@ export default function AIAssistant() {
     }
   };
 
+  // Step 15 — Clear Chat button
+  const handleClearChat = async (id) => {
+    if (window.confirm("Delete this conversation?")) {
+      await handleDelete(id);
+    }
+  };
+
   // Update the active context on the backend whenever project/context changes
-  const changeContext = async (nextContext) => {
+  const changeContext = useCallback(async (nextContext) => {
     setContext(nextContext);
     try {
       const res = await chatApi.updateContext(projectId, nextContext);
@@ -123,9 +184,9 @@ export default function AIAssistant() {
     } catch (e) {
       console.error("Failed to update context", e);
     }
-  };
+  }, [projectId]);
 
-  const changeProject = async (nextProjectId) => {
+  const changeProject = useCallback(async (nextProjectId) => {
     setProjectId(nextProjectId);
     try {
       const res = await chatApi.updateContext(nextProjectId, context);
@@ -133,9 +194,9 @@ export default function AIAssistant() {
     } catch (e) {
       console.error("Failed to update project context", e);
     }
-  };
+  }, [context]);
 
-  const handleSend = async (text) => {
+  const handleSend = useCallback(async (text) => {
     setLoading(true);
     setError("");
     const userMsg = { role: "user", content: text };
@@ -162,7 +223,7 @@ export default function AIAssistant() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [activeId, context, projectId]);
 
   const activeProject = projects.find((p) => p._id === projectId || p.id === projectId);
 
@@ -174,6 +235,7 @@ export default function AIAssistant() {
         onSelect={handleSelect}
         onNewChat={handleNewChat}
         onDelete={handleDelete}
+        onClearChat={handleClearChat}
       />
 
       <div className="flex-1 flex flex-col min-w-0">

@@ -1,14 +1,13 @@
 import MessageBubble from "./MessageBubble";
 import TypingIndicator from "./TypingIndicator";
 
+// Spec Step 11 — Suggested Questions
 const GENERAL_SUGGESTIONS = [
-  "OWASP",
-  "Secure Coding",
-  "Authentication",
-  "Threat Modeling",
-  "Vulnerability Analysis",
-  "Python Security",
-  "Web Security",
+  "Explain SQL Injection",
+  "Explain XSS",
+  "How do I improve my score?",
+  "What is OWASP A01?",
+  "How do I fix exposed secrets?",
 ];
 
 // Context-aware suggested questions (Module 5.2, Step 12)

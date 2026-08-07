@@ -17,7 +17,7 @@ import {
   Stack,
   Chip,
 } from "@mui/material";
-import { Add } from "@mui/icons-material";
+import { Add, GitHub } from "@mui/icons-material";
 import { projectApi } from "../../api/projectApi";
 import ProjectCard from "../../components/Projects/ProjectCard";
 
@@ -26,7 +26,7 @@ export default function Projects() {
   const [projects, setProjects] = useState([]);
   const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(false);
-  const [form, setForm] = useState({ name: "", description: "", tech_stack: "", status: "Active" });
+  const [form, setForm] = useState({ name: "", description: "", tech_stack: "", repo_url: "", status: "Active" });
 
   const load = async () => {
     setLoading(true);
@@ -51,11 +51,12 @@ export default function Projects() {
         name: form.name,
         description: form.description,
         tech_stack: form.tech_stack.split(",").map((s) => s.trim()).filter(Boolean),
+        repo_url: form.repo_url.trim(),
         status: form.status,
       });
       toast.success("Project created");
       setOpen(false);
-      setForm({ name: "", description: "", tech_stack: "", status: "Active" });
+      setForm({ name: "", description: "", tech_stack: "", repo_url: "", status: "Active" });
       navigate(`/projects/${data.id}`);
     } catch (e) {
       toast.error(e.response?.data?.detail || "Failed to create project");
@@ -109,32 +110,51 @@ export default function Projects() {
       )}
 
       <Dialog open={open} onClose={() => setOpen(false)} fullWidth maxWidth="sm">
-        <DialogTitle>Create Project</DialogTitle>
+        <DialogTitle sx={{ fontWeight: 700 }}>Create Project</DialogTitle>
         <DialogContent>
-          <Stack spacing={2} sx={{ mt: 1 }}>
+          <Stack spacing={2.5} sx={{ mt: 1 }}>
             <TextField
               label="Project Name"
+              required
               value={form.name}
               onChange={(e) => setForm({ ...form, name: e.target.value })}
+              helperText={!form.name.trim() && form.name.length > 0 ? "Name is required" : ""}
+              error={!form.name.trim() && form.name.length > 0}
             />
             <TextField
               label="Description"
               multiline
               minRows={2}
+              placeholder="Brief description of the project and its security goals"
               value={form.description}
               onChange={(e) => setForm({ ...form, description: e.target.value })}
             />
             <TextField
+              label="Repository URL"
+              placeholder="https://github.com/username/repository"
+              value={form.repo_url}
+              onChange={(e) => setForm({ ...form, repo_url: e.target.value })}
+              helperText="GitHub repository URL for automated security scanning"
+              InputProps={{
+                startAdornment: <GitHub sx={{ mr: 1, color: "text.secondary" }} />,
+              }}
+            />
+            <TextField
               label="Tech Stack (comma separated)"
-              placeholder="FastAPI, React, MongoDB"
+              placeholder="FastAPI, React, MongoDB, Python"
               value={form.tech_stack}
               onChange={(e) => setForm({ ...form, tech_stack: e.target.value })}
+              helperText="Technologies used in this project"
             />
           </Stack>
         </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setOpen(false)}>Cancel</Button>
-          <Button variant="contained" onClick={create}>
+        <DialogActions sx={{ px: 3, pb: 2 }}>
+          <Button onClick={() => setOpen(false)} color="inherit">Cancel</Button>
+          <Button
+            variant="contained"
+            onClick={create}
+            disabled={!form.name.trim()}
+          >
             Create
           </Button>
         </DialogActions>

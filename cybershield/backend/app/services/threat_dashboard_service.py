@@ -250,9 +250,11 @@ def build_dashboard(report_id: str, project: str = "Untitled Project",
 async def get_user_reports(user_id: str) -> List[Dict[str, Any]]:
     """List the user's threat reports for the dashboard picker."""
     try:
+        # Match user_id stored as either ObjectId or string
+        user_oid = ObjectId(user_id) if ObjectId.is_valid(user_id) else user_id
         reports = []
         async for doc in database.threat_reports.find(
-            {"user_id": user_id}
+            {"$or": [{"user_id": user_oid}, {"user_id": user_id}]}
         ).sort("created_at", -1):
             created = doc.get("created_at")
             reports.append(

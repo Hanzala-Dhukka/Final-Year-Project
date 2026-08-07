@@ -280,6 +280,13 @@ async def run_github_scan(repo_url: str, user_id: Optional[str] = None,
     if scan_id:
         update_scan(scan_id, stage="Saving Results", progress=95, message="Saving scan results")
 
+    # Build severity summary from findings
+    severity_summary = {"critical": 0, "high": 0, "medium": 0, "low": 0}
+    for finding in findings:
+        sev = str(finding.get("severity", "")).lower()
+        if sev in severity_summary:
+            severity_summary[sev] += 1
+
     scan_document = {
         "scan_id": scan_id,
         "repository": repo_name,
@@ -291,6 +298,7 @@ async def run_github_scan(repo_url: str, user_id: Optional[str] = None,
         "risk_score": risk_score,
         "summary": summary,
         "scan_summary": report,
+        "severity_summary": severity_summary,
         "business_impact": ai_report.get("business_impact"),
         "recommendations": ai_report.get("recommendations"),
         "ai_report": ai_report,
@@ -298,6 +306,7 @@ async def run_github_scan(repo_url: str, user_id: Optional[str] = None,
         "dependency_findings": dependency_findings,
         "risk_dashboard": risk_dashboard,
         "created_at": datetime.utcnow(),
+        "completed_at": datetime.utcnow().isoformat(),
         "user_id": str(user_id) if user_id else None,
         "project_id": str(project_id) if project_id else None,
         "repo_url": repo_url,
@@ -347,6 +356,52 @@ async def run_github_scan(repo_url: str, user_id: Optional[str] = None,
         await save_scan(final_result)
     except Exception as e:
         print(f"[ScanRunner] Warning: Failed to save scan to history: {e}")
+
+    # Module E3: Generate and save AI scan summary
+    try:
+        from app.ai.scan_summary import generate_scan_summary, save_scan_summary
+
+        scan_summary_input = {
+            "critical": severity_counts.get("critical", 0),
+            "high": severity_counts.get("high", 0),
+            "medium": severity_counts.get("medium", 0),
+            "low": severity_counts.get("low", 0),
+            "score": risk_score,
+            "risk_level": risk_level,
+            "findings": [
+                {"type": f.get("type", ""), "severity": f.get("severity", "")}
+                for f in findings[:10]
+                if isinstance(f, dict)
+            ],
+        }
+        summary_data = await generate_scan_summary(scan_summary_input)
+        await save_scan_summary(
+            scan_id=scan_id or "",
+            repository=repo_name,
+            security_score=risk_score,
+            summary_data=summary_data,
+        )
+    except Exception as e:
+        print(f"[ScanRunner] Warning: Failed to generate AI scan summary: {e}")
+
+    # Module E5, Part 1: Store scan context for AI Assistant personalisation
+    if user_id:
+        try:
+            from app.ai.context_service import store_scan_context
+
+            issue_types = list(set(
+                f.get("type", "") for f in findings
+                if isinstance(f, dict) and f.get("type")
+            ))
+            await store_scan_context(
+                user_id=str(user_id),
+                repository=repo_name,
+                score=risk_score,
+                issues=issue_types[:20],
+                risk_level=risk_level,
+            )
+        except Exception as e:
+            print(f"[ScanRunner] Warning: Failed to store AI context: {e}")
 
     return {
         "scan_id": db_scan_id,

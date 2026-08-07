@@ -1,5 +1,6 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 
 from app.config.settings import settings
 from app.routes.auth_routes import router as auth_router
@@ -54,7 +55,13 @@ from app.scanner.routes import router as scanner_router
 from app.scanner.websocket import router as scanner_ws_router
 from app.scanner.worker import start_worker
 from app.scanner.findings_routes import router as findings_router
+from app.rules.rule_routes import router as rule_mapping_router
+from app.recommendation.routes import router as recommendation_router
+from app.sc5.routes import router as sc5_router
 from app.reports.routes import router as professional_reports_router
+from app.ai_assistant.routes import router as ai_assistant_router
+from app.learning.learning_routes import router as learning_router
+from app.ai.summary_routes import router as summary_router
 
 
 # ── App instance ─────────────────────────────────────────────────────────────
@@ -115,6 +122,12 @@ app.include_router(defense_router, prefix="/api/v1/owasp", tags=["OWASP Defense"
 app.include_router(lab_router, prefix="/api/v1", tags=["Attack Labs"])
 # ── AI Security Assistant (Module 5.1) ─────────────────────────────────────
 app.include_router(ai_chat_router, prefix="/api/v1/chat", tags=["AI Security Assistant"])
+# ── AI Security Assistant (Module E1) ──────────────────────────────────────
+app.include_router(ai_assistant_router, prefix="/api/v1", tags=["AI Security Assistant E1"])
+# ── AI Learning Recommendations (Module E2) ───────────────────────────────
+app.include_router(learning_router, prefix="/api/v1", tags=["Learning Recommendations"])
+# ── AI Scan Summary (Module E3) ───────────────────────────────────────────
+app.include_router(summary_router, prefix="/api/v1", tags=["AI Scan Summary"])
 # ── AI Code Review (Module 5.3) ────────────────────────────────────────────
 app.include_router(code_review_router, prefix="/api/v1/code-review", tags=["AI Code Review"])
 # ── AI Remediation Engine (Module 5.4) ─────────────────────────────────────
@@ -147,6 +160,12 @@ app.include_router(scanner_router, prefix="/api/v1/scanner", tags=["Scan Engine"
 app.include_router(scanner_ws_router, tags=["Scanner WebSocket"])
 # ── SAST Findings (Module D6) ────────────────────────────────────────────────
 app.include_router(findings_router, prefix="/api/v1/scanner", tags=["Scan Findings"])
+# ── Rule Mapping Engine (Module SC2) ────────────────────────────────────────
+app.include_router(rule_mapping_router, tags=["Rule Mapping"])
+# ── Auto Recommendation Service (Module SC3) ─────────────────────────────────
+app.include_router(recommendation_router, tags=["Scanner Recommendations"])
+# ── SC5: AI-Assisted Recommendations & Score Tracking ─────────────────────────
+app.include_router(sc5_router, tags=["SC5 AI Recommendations"])
 # ── Professional Security Reports (Module D5) ────────────────────────────────
 app.include_router(professional_reports_router, prefix="/api/v1/reports", tags=["Professional Reports"])
 
@@ -170,6 +189,20 @@ async def root_ws_dashboard(websocket: WebSocket):
         await _ws_manager.disconnect(websocket)
 
 
+
+
+# ── Global Error Handler (Module E5, Part 8) ────────────────────────────────
+@app.exception_handler(Exception)
+async def global_error_handler(request: Request, exc: Exception):
+    """Catch-all handler — returns a consistent JSON error for any unhandled exception."""
+    print(f"[Error] {request.method} {request.url.path}: {exc}")
+    return JSONResponse(
+        status_code=500,
+        content={
+            "error": "Internal server error",
+            "message": "Something went wrong. Please try again later.",
+        },
+    )
 
 
 # ── Health check ──────────────────────────────────────────────────────────────
@@ -200,6 +233,13 @@ async def startup():
         print("Scan history indexes created successfully.")
     except Exception as e:
         print(f"Failed to create scan history indexes: {e}")
+
+    # Module E5, Part 4: Ensure all MongoDB indexes for performance
+    try:
+        from app.database.indexes import ensure_indexes
+        await ensure_indexes()
+    except Exception as e:
+        print(f"Failed to ensure MongoDB indexes: {e}")
 
     # Add scheduled jobs
     scheduler.add_job(

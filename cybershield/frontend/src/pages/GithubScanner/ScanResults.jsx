@@ -1,5 +1,6 @@
 import { useState } from "react"
 import { motion, AnimatePresence } from "framer-motion"
+import { useNavigate } from "react-router-dom"
 import {
   FaGithub,
   FaSearch,
@@ -24,6 +25,7 @@ import {
   FaClipboardCheck,
   FaArrowRight,
   FaKey,
+  FaComments,
 } from "react-icons/fa"
 import API from "../../api/api"
 import RepositoryHealth from "../../components/GitHubScanner/RepositoryHealth/RepositoryHealth"
@@ -148,6 +150,25 @@ export default function ScanResults({ result, repoUrl, onRescan }) {
   const [activeTab, setActiveTab] = useState("findings")
   const [activeSecretFilter, setActiveSecretFilter] = useState("all")
   const [expandedFile, setExpandedFile] = useState(null)
+  const navigate = useNavigate()
+
+  const handleAskAI = () => {
+    // Navigate to AI Assistant with scan context
+    const scanContext = {
+      type: "github_scan",
+      scanData: {
+        repository: result?.repository,
+        risk_level: result?.risk_level,
+        security_score: result?.security_score,
+        severity_summary: result?.severity_summary,
+        top_risks: result?.top_risks?.slice(0, 5),
+        findings: result?.findings?.slice(0, 10),
+      },
+    }
+    // Store in sessionStorage for the AI Assistant to pick up
+    sessionStorage.setItem("aiAssistantContext", JSON.stringify(scanContext))
+    navigate("/ai-assistant")
+  }
 
   const downloadReport = async () => {
     try {
@@ -222,6 +243,14 @@ export default function ScanResults({ result, repoUrl, onRescan }) {
               {result.risk_level}
             </div>
           )}
+          <button
+            onClick={handleAskAI}
+            className="gs-btn-primary gs-btn-sm"
+            style={{ marginLeft: 8, display: "flex", alignItems: "center", gap: 6 }}
+            title="Ask AI about this scan"
+          >
+            <FaComments size={14} /> Ask AI
+          </button>
         </div>
       </motion.div>
 

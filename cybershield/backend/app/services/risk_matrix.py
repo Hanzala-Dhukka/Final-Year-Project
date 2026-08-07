@@ -176,10 +176,20 @@ def generate_risk_matrix(threats: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
     
     for threat in threats:
         threat_name = threat.get("threat", "")
-        
-        # Get likelihood and impact from mappings
-        likelihood = LIKELIHOOD_MAPPING.get(threat_name, 3)  # Default to 3 if not found
-        impact = IMPACT_MAPPING.get(threat_name, 3)  # Default to 3 if not found
+
+        # Use AI-provided scores when available (likelihood/impact_score from threat_engine),
+        # otherwise fall back to hardcoded name-based mappings.
+        likelihood = threat.get("likelihood")
+        impact = threat.get("impact_score")
+
+        if likelihood is None:
+            likelihood = LIKELIHOOD_MAPPING.get(threat_name, 3)
+        if impact is None:
+            impact = IMPACT_MAPPING.get(threat_name, 3)
+
+        # Clamp to 1-5
+        likelihood = max(1, min(5, int(likelihood)))
+        impact = max(1, min(5, int(impact)))
         
         # Calculate risk score
         risk_score = calculate_risk_score(likelihood, impact)

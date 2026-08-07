@@ -4,6 +4,7 @@ import Scanning from "./Scanning"
 import ScanResults from "./ScanResults"
 import ScanError from "./ScanError"
 import { githubStartScan, githubGetResults } from "../../services/scanService"
+import { getRecommendations } from "../../api/learningApi"
 import "../SecurityScanner/GitHubScanner.css"
 
 /**
@@ -50,8 +51,22 @@ export default function GithubScanner() {
       const sid = data?.scan_id || scanId || scanIdRef.current
       if (sid) {
         const raw = await githubGetResults(sid)
-        setScanResult(mapScanResult(raw))
+        const mapped = mapScanResult(raw)
+        setScanResult(mapped)
         setScanState("completed")
+
+        // Module E2, Step 11: Generate learning recommendations from scan
+        try {
+          const vulnerabilities = (mapped.top_risks || []).map((r) => ({
+            type: r.title,
+            severity: r.severity,
+          }))
+          if (vulnerabilities.length > 0) {
+            await getRecommendations(vulnerabilities, sid)
+          }
+        } catch (recErr) {
+          console.warn("Failed to generate learning recommendations:", recErr)
+        }
       } else {
         setError("Scan completed but no scan ID found.")
         setScanState("error")

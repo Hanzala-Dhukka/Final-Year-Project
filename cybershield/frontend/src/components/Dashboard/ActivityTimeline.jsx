@@ -1,71 +1,41 @@
-import { Clock, CheckCircle2, ShieldAlert, Award, FileText } from "lucide-react";
+import { motion } from "framer-motion";
 
-export default function ActivityTimeline({ activities = [] }) {
-  const defaultActivities = [
-    {
-      title: "GitHub Scan Completed",
-      time: "10:32 AM",
-      timestamp: "2 minutes ago",
-      type: "scan"
-    },
-    {
-      title: "Quiz Completed - OWASP A01",
-      time: "09:15 AM",
-      timestamp: "1 hour ago",
-      type: "quiz"
-    },
-    {
-      title: "Threat Model Generated",
-      time: "Yesterday",
-      timestamp: "Yesterday",
-      type: "threat"
-    }
+/**
+ * Module E4, Step 13 — Activity Timeline Card.
+ * Shows user's recent activity timestamps.
+ */
+export default function ActivityTimeline({ activity }) {
+  if (!activity) return null;
+
+  const items = [
+    { label: "Last Scan", value: activity.last_scan, icon: "🔍", color: "text-blue-500" },
+    { label: "Last Quiz", value: activity.last_quiz, icon: "📝", color: "text-purple-500" },
+    { label: "Last AI Chat", value: activity.last_ai_chat, icon: "🤖", color: "text-green-500" },
   ];
 
-  const list = activities.length > 0 ? activities : defaultActivities;
-
-  const getTypeIcon = (type) => {
-    switch (type) {
-      case "scan":
-        return <CheckCircle2 size={16} className="text-green-400" />;
-      case "quiz":
-        return <Award size={16} className="text-blue-400" />;
-      case "threat":
-        return <ShieldAlert size={16} className="text-amber-400" />;
-      default:
-        return <FileText size={16} className="text-indigo-400" />;
-    }
-  };
-
   return (
-    <div className="widget-card activity-timeline-widget">
-      <div className="widget-header">
-        <div className="header-title">
-          <Clock className="widget-icon" />
-          <h3>Security Activity Timeline</h3>
-        </div>
-      </div>
-
-      <div className="timeline-list">
-        {list.map((item, idx) => (
-          <div key={idx} className="timeline-item">
-            <div className="timeline-icon-col">
-              <div className="timeline-node">{getTypeIcon(item.type)}</div>
-              {idx < list.length - 1 && <div className="timeline-line" />}
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: 0.4 }}
+      className="bg-white rounded-xl border border-gray-200 p-5 hover:shadow-md transition"
+    >
+      <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">
+        Activity
+      </h2>
+      <div className="space-y-3">
+        {items.map((item) => (
+          <div key={item.label} className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <span className={item.color}>{item.icon}</span>
+              <span className="text-sm text-gray-600">{item.label}:</span>
             </div>
-
-            <div className="timeline-content">
-              <div className="timeline-top">
-                <h4>{item.title}</h4>
-                <span className="time-badge">{item.time || item.timestamp}</span>
-              </div>
-              {item.timestamp && item.timestamp !== item.time && (
-                <p className="timestamp-note">{item.timestamp}</p>
-              )}
-            </div>
+            <span className="text-sm font-medium text-gray-800">
+              {item.value || "No activity yet"}
+            </span>
           </div>
         ))}
       </div>
-    </div>
+    </motion.div>
   );
 }

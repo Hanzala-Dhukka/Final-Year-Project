@@ -1,76 +1,91 @@
+import { lazy, Suspense } from "react";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 
 import DashboardLayout from "../layouts/DashboardLayout";
 import ProtectedRoute from "../components/ProtectedRoute/ProtectedRoute";
 
-import Dashboard from "../pages/Dashboard/Dashboard";
-import SecurityScanner from "../pages/GithubScanner";
-import ScanHistory from "../pages/ScanHistory/ScanHistory";
+// Module E5, Part 6: Lazy-loaded pages for code splitting & faster initial load
+const Dashboard = lazy(() => import("../pages/Dashboard/Dashboard"));
+const SecurityScanner = lazy(() => import("../pages/GithubScanner"));
+const ScanHistory = lazy(() => import("../pages/ScanHistory/ScanHistory"));
 
-import ThreatAnalysis from "../pages/ThreatAnalysis/ThreatAnalysis";
-import ThreatReports from "../pages/ThreatReports/ThreatReports";
-import ThreatDashboard from "../pages/ThreatDashboard/ThreatDashboard";
-import ReportViewer from "../pages/ThreatReports/ReportViewer";
+const ThreatAnalysis = lazy(() => import("../pages/ThreatAnalysis/ThreatAnalysis"));
+const ThreatReports = lazy(() => import("../pages/ThreatReports/ThreatReports"));
+const ThreatDashboard = lazy(() => import("../pages/ThreatDashboard/ThreatDashboard"));
+const ReportViewer = lazy(() => import("../pages/ThreatReports/ReportViewer"));
 
-import Projects from "../pages/Projects/Projects";
-import ProjectDashboard from "../pages/Projects/ProjectDashboard";
-import ProjectDetails from "../pages/Projects/ProjectDetails";
-import TeamMembers from "../pages/Projects/TeamMembers";
-import ActivityTimeline from "../pages/Projects/ActivityTimeline";
-import VersionHistory from "../pages/Projects/VersionHistory";
+const Projects = lazy(() => import("../pages/Projects/Projects"));
+const ProjectDashboard = lazy(() => import("../pages/Projects/ProjectDashboard"));
+const ProjectDetails = lazy(() => import("../pages/Projects/ProjectDetails"));
+const TeamMembers = lazy(() => import("../pages/Projects/TeamMembers"));
+const ActivityTimeline = lazy(() => import("../pages/Projects/ActivityTimeline"));
+const VersionHistory = lazy(() => import("../pages/Projects/VersionHistory"));
 
-import AIAssistant from "../pages/AIAssistant/AIAssistant";
-import SecurityCopilot from "../pages/AIAssistant/SecurityCopilot";
-import CodeReview from "../pages/CodeReview/CodeReview";
-import AIRecommendations from "../pages/AIRecommendations/AIRecommendations";
+const AIAssistant = lazy(() => import("../pages/AIAssistant/AIAssistant"));
+const SecurityCopilot = lazy(() => import("../pages/AIAssistant/SecurityCopilot"));
+const CodeReview = lazy(() => import("../pages/CodeReview/CodeReview"));
+const AIRecommendations = lazy(() => import("../pages/AIRecommendations/AIRecommendations"));
 
-import OWASP from "../pages/OWASP/OWASP";
+const OWASP = lazy(() => import("../pages/OWASP/OWASP"));
 
-import Quiz from "../pages/Quiz/Quiz";
-import Glossary from "../pages/Glossary/Glossary";
+const Quiz = lazy(() => import("../pages/Quiz/Quiz"));
+const Glossary = lazy(() => import("../pages/Glossary/Glossary"));
 
-import Progress from "../pages/Progress/Progress";
-import Achievements from "../pages/Achievements/Achievements";
-import Leaderboard from "../pages/Leaderboard/Leaderboard";
-import LearningGoals from "../pages/LearningGoals/LearningGoals";
+const Progress = lazy(() => import("../pages/Progress/Progress"));
+const Achievements = lazy(() => import("../pages/Achievements/Achievements"));
+const Leaderboard = lazy(() => import("../pages/Leaderboard/Leaderboard"));
+const LearningGoals = lazy(() => import("../pages/LearningGoals/LearningGoals"));
 
-import DailyChallenge from "../pages/DailyChallenge/DailyChallenge";
+const DailyChallenge = lazy(() => import("../pages/DailyChallenge/DailyChallenge"));
 
-import Profile from "../pages/Profile/Profile";
-import Settings from "../pages/Settings/Settings";
-import SecurityChecklist from "../pages/SecurityChecklist/SecurityChecklist";
-import AIChecklist from "../pages/AIChecklist/AIChecklist";
-import ComplianceDashboard from "../pages/Compliance/ComplianceDashboard";
-import ExecutiveDashboard from "../pages/ExecutiveDashboard/ExecutiveDashboard";
-import SecurityReport from "../pages/Reports/SecurityReport";
-import CodeViewerPage from "../pages/CodeViewerPage/CodeViewerPage";
-import ScannerSetup from "../pages/SecurityScanner/ScannerSetup";
-import ScannerProgress from "../pages/SecurityScanner/ScannerProgress";
-import ScannerResults from "../pages/SecurityScanner/ScannerResults";
-import VulnerabilityDashboard from "../components/GitHubScanner/VulnerabilityDashboard/VulnerabilityDashboard";
-import AIRemediationWorkspace from "../components/GitHubScanner/AIRemediation/AIRemediationWorkspace";
+const Profile = lazy(() => import("../pages/Profile/Profile"));
+const Settings = lazy(() => import("../pages/Settings/Settings"));
+const SecurityChecklist = lazy(() => import("../pages/SecurityChecklist/SecurityChecklist"));
+const AIChecklist = lazy(() => import("../pages/AIChecklist/AIChecklist"));
+const ComplianceDashboard = lazy(() => import("../pages/Compliance/ComplianceDashboard"));
+const ExecutiveDashboard = lazy(() => import("../pages/ExecutiveDashboard/ExecutiveDashboard"));
+const SecurityReport = lazy(() => import("../pages/Reports/SecurityReport"));
+const CodeViewerPage = lazy(() => import("../pages/CodeViewerPage/CodeViewerPage"));
+const ScannerSetup = lazy(() => import("../pages/SecurityScanner/ScannerSetup"));
+const ScannerProgress = lazy(() => import("../pages/SecurityScanner/ScannerProgress"));
+const ScannerResults = lazy(() => import("../pages/SecurityScanner/ScannerResults"));
+const VulnerabilityDashboard = lazy(() => import("../components/GitHubScanner/VulnerabilityDashboard/VulnerabilityDashboard"));
+const AIRemediationWorkspace = lazy(() => import("../components/GitHubScanner/AIRemediation/AIRemediationWorkspace"));
 
-import Notifications from "../pages/Notifications/Notifications";
-import Automation from "../pages/Automation/Automation";
-import ActivityFeed from "../pages/Activity/ActivityFeed";
+const Notifications = lazy(() => import("../pages/Notifications/Notifications"));
+const Automation = lazy(() => import("../pages/Automation/Automation"));
+const ActivityFeed = lazy(() => import("../pages/Activity/ActivityFeed"));
 
-import Login from "../pages/Login/Login";
-import Register from "../pages/Register/Register";
-import Unauthorized from "../pages/Unauthorized/Unauthorized";
-import ForgotPassword from "../pages/ForgotPassword/ForgotPassword";
-import ResetPassword from "../pages/ForgotPassword/ResetPassword";
-import VerifyEmail from "../pages/VerifyEmail/VerifyEmail";
-import ResendVerification from "../pages/ResendVerification/ResendVerification";
-import VerifyMessage from "../pages/VerifyMessage/VerifyMessage";
-import Onboarding from "../pages/Onboarding/Onboarding";
+const Login = lazy(() => import("../pages/Login/Login"));
+const Register = lazy(() => import("../pages/Register/Register"));
+const Unauthorized = lazy(() => import("../pages/Unauthorized/Unauthorized"));
+const ForgotPassword = lazy(() => import("../pages/ForgotPassword/ForgotPassword"));
+const ResetPassword = lazy(() => import("../pages/ForgotPassword/ResetPassword"));
+const VerifyEmail = lazy(() => import("../pages/VerifyEmail/VerifyEmail"));
+const ResendVerification = lazy(() => import("../pages/ResendVerification/ResendVerification"));
+const VerifyMessage = lazy(() => import("../pages/VerifyMessage/VerifyMessage"));
+const Onboarding = lazy(() => import("../pages/Onboarding/Onboarding"));
 
-import NotFound from "../pages/NotFound/NotFound";
+const NotFound = lazy(() => import("../pages/NotFound/NotFound"));
 
-import ComponentLibrary from "../pages/ComponentLibrary/ComponentLibrary";
+const ComponentLibrary = lazy(() => import("../pages/ComponentLibrary/ComponentLibrary"));
+
+// Loading fallback for lazy-loaded routes
+function PageLoader() {
+  return (
+    <div className="flex items-center justify-center min-h-[60vh]">
+      <div className="text-center">
+        <div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-3" />
+        <p className="text-sm text-gray-500">Loading...</p>
+      </div>
+    </div>
+  );
+}
 
 export default function AppRoutes() {
   return (
     <BrowserRouter>
+      <Suspense fallback={<PageLoader />}>
       <Routes>
 
         {/* Public Routes */}
@@ -127,6 +142,7 @@ export default function AppRoutes() {
             <Route path="profile" element={<Profile />} />
             <Route path="settings" element={<Settings />} />
             <Route path="security-checklist" element={<SecurityChecklist />} />
+            <Route path="security-checklist/:projectId" element={<SecurityChecklist />} />
             <Route path="ai-checklist" element={<AIChecklist />} />
             <Route path="compliance" element={<ComplianceDashboard />} />
             <Route path="executive-dashboard" element={<ExecutiveDashboard />} />
@@ -142,6 +158,7 @@ export default function AppRoutes() {
         <Route path="*" element={<NotFound />} />
 
       </Routes>
+      </Suspense>
     </BrowserRouter>
   );
 }

@@ -307,6 +307,9 @@ def get_learning_path(user_id: str, current_topic: str, skill_level: str) -> Lis
 # Threat-model recommendation helpers (used by services/threat_model_service.py)
 # ─────────────────────────────────────────────────────────────────────────────
 
+import re as _re
+
+
 def _severity_to_priority(severity: str) -> str:
     return {
         "Critical": "P1",
@@ -316,13 +319,159 @@ def _severity_to_priority(severity: str) -> str:
     }.get(severity, "P3")
 
 
-def generate_recommendations(threats: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
-    """
-    Build prioritized recommendations from a list of (risk-scored) threats.
+def _parse_json_response(raw: str) -> Any:
+    """Parse AI JSON response, handling markdown fences and messy output."""
+    text = raw.strip()
+    fence = _re.search(r"```(?:json)?\s*\n?(.*?)```", text, _re.DOTALL)
+    if fence:
+        text = fence.group(1).strip()
+    try:
+        return json.loads(text)
+    except json.JSONDecodeError:
+        pass
+    brace = text.find("{")
+    bracket = text.find("[")
+    start = -1
+    if brace != -1 and bracket != -1:
+        start = min(brace, bracket)
+    elif brace != -1:
+        start = brace
+    elif bracket != -1:
+        start = bracket
+    if start != -1:
+        # Try object first, then array
+        for opener, closer in [("{", "}"), ("[", "]")]:
+            s = text.find(opener, start)
+            e = text.rfind(closer)
+            if s != -1 and e > s:
+                try:
+                    return json.loads(text[s:e + 1])
+                except json.JSONDecodeError:
+                    pass
+    return None
 
-    Each threat is expected to contain at least: id, threat, severity,
-    recommendation, impact (and optionally category/technology).
-    """
+
+RECOMMENDATION_PROMPT = """You are a senior security architect. Given the following project and threats, generate prioritized security recommendations tailored to this specific tech stack.
+
+PROJECT CONTEXT:
+{project_context}
+
+THREATS:
+{threats_text}
+
+Return ONLY a JSON array (no markdown). Each element:
+{{
+  "priority": "P1|P2|P3|P4",
+  "title": "<short title>",
+  "category": "<category>",
+  "severity": "Critical|High|Medium|Low",
+  "description": "<why this matters, 1-2 sentences>",
+  "recommendation": "<specific actionable fix using the project's actual technologies>"
+}}
+
+Sort by priority (P1 first). Recommendations MUST reference the project's specific technologies. Return ONLY the JSON array."""
+
+
+FIX_PLAN_PROMPT = """You are a security remediation planner. Given this project and its threats, create a structured fix plan tailored to the specific tech stack.
+
+PROJECT CONTEXT:
+{project_context}
+
+THREATS:
+{threats_text}
+
+Return ONLY a JSON object (no markdown):
+{{
+  "immediate": ["<action 1>", "<action 2>", ...],
+  "short_term": ["<action 1>", "<action 2>", ...],
+  "long_term": ["<action 1>", "<action 2>", ...]
+}}
+
+- immediate: actions to take within 24 hours (Critical/High threats)
+- short_term: actions within 1-7 days (Medium threats)
+- long_term: actions within 1-4 weeks (Low/hardening)
+Each action should be specific and actionable. 3-5 items per category. Return ONLY the JSON object."""
+
+
+SECURITY_REPORT_PROMPT = """You are a security analyst writing an executive security report for a project.
+
+PROJECT CONTEXT:
+{project_context}
+
+Risk Level: {risk_level}
+Threats Found: {threats_found}
+
+THREATS:
+{threats_text}
+
+SEVERITY BREAKDOWN:
+{severity_text}
+
+Return ONLY a JSON object (no markdown):
+{{
+  "executive_summary": "<2-3 paragraph executive summary of the security posture, specific to this project's technologies>",
+  "risk_matrix": {{
+    "Critical": "<description of critical risks>",
+    "High": "<description of high risks>",
+    "Medium": "<description of medium risks>",
+    "Low": "<description of low risks>"
+  }},
+  "severity_breakdown": {{
+    "Critical": "<analysis of critical severity threats>",
+    "High": "<analysis of high severity threats>",
+    "Medium": "<analysis of medium severity threats>",
+    "Low": "<analysis of low severity threats>"
+  }},
+  "compliance_gaps": ["<gap specific to project technologies>", ...]
+}}
+
+Write professionally. Reference specific technologies from the project. 3-6 compliance gaps. Return ONLY the JSON object."""
+
+
+def _threats_to_text(threats: List[Dict[str, Any]]) -> str:
+    lines = []
+    for t in threats or []:
+        lines.append(
+            f"- [{t.get('severity','Medium')}] {t.get('threat','Unknown')} "
+            f"({t.get('category','General')}) — {t.get('impact','')}"
+        )
+    return "\n".join(lines) if lines else "No threats identified"
+
+
+def _build_project_context(project: Dict[str, Any]) -> str:
+    """Build a human-readable project context string for AI prompts."""
+    lines = [f"Project: {project.get('project_name', 'Unknown')}"]
+    if project.get("description"):
+        lines.append(f"Description: {project['description']}")
+    lines.append(f"Frontend: {project.get('frontend', 'N/A')}")
+    lines.append(f"Backend: {project.get('backend', 'N/A')}")
+    lines.append(f"Database: {project.get('database', 'N/A')}")
+    lines.append(f"Authentication: {project.get('authentication', 'N/A')}")
+    if project.get("cloud"):
+        lines.append(f"Cloud: {project['cloud']}")
+    if project.get("third_party"):
+        lines.append(f"Third-Party APIs: {', '.join(project['third_party'])}")
+    if project.get("assets"):
+        lines.append(f"Sensitive Assets: {', '.join(project['assets'])}")
+    return "\n".join(lines)
+
+
+async def generate_recommendations(threats: List[Dict[str, Any]], project: Dict[str, Any] = None) -> List[Dict[str, Any]]:
+    """Generate AI-powered recommendations, falling back to rule-based."""
+    # Try AI
+    try:
+        from app.ai.gemini_client import is_available, generate
+        if is_available():
+            project_context = _build_project_context(project) if project else "No project context available"
+            prompt = RECOMMENDATION_PROMPT.format(project_context=project_context, threats_text=_threats_to_text(threats))
+            raw = await generate(prompt)
+            parsed = _parse_json_response(raw)
+            if isinstance(parsed, list) and len(parsed) >= 2:
+                return parsed
+    except Exception as e:
+        print(f"[RecEngine] AI recommendations failed: {e}")
+
+    # Fallback: rule-based
     recommendations = []
     for t in threats or []:
         recommendations.append({
@@ -333,15 +482,26 @@ def generate_recommendations(threats: List[Dict[str, Any]]) -> List[Dict[str, An
             "description": t.get("impact", ""),
             "recommendation": t.get("recommendation", "Review and remediate this threat."),
         })
-    # Highest priority first
     recommendations.sort(key=lambda r: r["priority"])
     return recommendations
 
 
-def generate_fix_plan(threats: List[Dict[str, Any]]) -> Dict[str, Any]:
-    """
-    Produce a structured remediation plan grouped by priority.
-    """
+async def generate_fix_plan(threats: List[Dict[str, Any]], project: Dict[str, Any] = None) -> Dict[str, Any]:
+    """Generate AI-powered fix plan, falling back to rule-based."""
+    # Try AI
+    try:
+        from app.ai.gemini_client import is_available, generate
+        if is_available():
+            project_context = _build_project_context(project) if project else "No project context available"
+            prompt = FIX_PLAN_PROMPT.format(project_context=project_context, threats_text=_threats_to_text(threats))
+            raw = await generate(prompt)
+            parsed = _parse_json_response(raw)
+            if isinstance(parsed, dict) and any(parsed.get(k) for k in ("immediate", "short_term", "long_term")):
+                return parsed
+    except Exception as e:
+        print(f"[RecEngine] AI fix plan failed: {e}")
+
+    # Fallback: rule-based
     plan = {"immediate": [], "short_term": [], "long_term": []}
     for t in threats or []:
         item = {
@@ -360,14 +520,38 @@ def generate_fix_plan(threats: List[Dict[str, Any]]) -> Dict[str, Any]:
     return plan
 
 
-def generate_security_report(
+async def generate_security_report(
     project_name: str,
     threats: List[Dict[str, Any]],
-    risk_summary: Dict[str, Any]
+    risk_summary: Dict[str, Any],
+    risk_level: str = "Medium",
+    project: Dict[str, Any] = None,
 ) -> Dict[str, Any]:
-    """
-    Assemble a human-readable security report for a threat model.
-    """
+    """Generate AI-powered security report, falling back to rule-based."""
+    # Try AI
+    try:
+        from app.ai.gemini_client import is_available, generate
+        if is_available():
+            threats_text = _threats_to_text(threats)
+            severity_text = "\n".join(
+                f"- {k}: {v}" for k, v in (risk_summary or {}).items()
+            ) or "No data"
+            project_context = _build_project_context(project) if project else f"Project: {project_name}"
+            prompt = SECURITY_REPORT_PROMPT.format(
+                project_context=project_context,
+                risk_level=risk_level,
+                threats_found=len(threats or []),
+                threats_text=threats_text,
+                severity_text=severity_text,
+            )
+            raw = await generate(prompt)
+            parsed = _parse_json_response(raw)
+            if isinstance(parsed, dict) and "executive_summary" in parsed:
+                return parsed
+    except Exception as e:
+        print(f"[RecEngine] AI security report failed: {e}")
+
+    # Fallback: rule-based
     severity_counts = risk_summary or {}
     report_lines = [
         f"Security Report for: {project_name}",
@@ -392,8 +576,19 @@ def generate_security_report(
 
     report_text = "\n".join(report_lines)
     return {
+        "executive_summary": report_text,
+        "risk_matrix": {
+            sev: f"{count} threats identified" for sev, count in severity_counts.items()
+        } if severity_counts else {"Info": "No severity data available"},
+        "severity_breakdown": {
+            sev: f"{count} threats at this severity level" for sev, count in severity_counts.items()
+        } if severity_counts else {"Info": "No data"},
+        "compliance_gaps": [
+            "Review authentication mechanisms",
+            "Validate input sanitization across all endpoints",
+            "Ensure HTTPS is enforced in production",
+        ],
         "project_name": project_name,
         "severity_summary": severity_counts,
         "threat_count": len(threats or []),
-        "report": report_text,
     }

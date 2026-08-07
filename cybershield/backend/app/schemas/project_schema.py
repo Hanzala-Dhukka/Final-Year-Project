@@ -10,6 +10,7 @@ class ProjectCreate(BaseModel):
     description: str = ""
     tech_stack: List[str] = Field(default_factory=list)
     status: str = "Active"
+    repo_url: str = ""  # GitHub repository URL for scanner integration
 
 
 class ProjectUpdate(BaseModel):
@@ -17,6 +18,7 @@ class ProjectUpdate(BaseModel):
     description: Optional[str] = None
     tech_stack: Optional[List[str]] = None
     status: Optional[str] = None
+    repo_url: Optional[str] = None
 
 
 class MemberInvite(BaseModel):
@@ -33,6 +35,7 @@ class ProjectResponse(BaseModel):
     description: str = ""
     tech_stack: List[str] = Field(default_factory=list)
     status: str = "Active"
+    repo_url: str = ""
     created_at: Optional[str] = None
     member_count: int = 0
     report_count: int = 0

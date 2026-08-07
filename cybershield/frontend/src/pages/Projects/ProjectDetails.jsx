@@ -15,14 +15,14 @@ import {
   Alert,
   MenuItem,
 } from "@mui/material";
-import { ArrowBack } from "@mui/icons-material";
+import { ArrowBack, GitHub } from "@mui/icons-material";
 import { projectApi } from "../../api/projectApi";
 
 export default function ProjectDetails() {
   const { id } = useParams();
   const navigate = useNavigate();
   const [project, setProject] = useState(null);
-  const [form, setForm] = useState({ name: "", description: "", tech_stack: "", status: "Active" });
+  const [form, setForm] = useState({ name: "", description: "", tech_stack: "", repo_url: "", status: "Active" });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
@@ -36,6 +36,7 @@ export default function ProjectDetails() {
           name: data.name,
           description: data.description,
           tech_stack: (data.tech_stack || []).join(", "),
+          repo_url: data.repo_url || "",
           status: data.status,
         });
       } catch (e) {
@@ -53,6 +54,7 @@ export default function ProjectDetails() {
         name: form.name,
         description: form.description,
         tech_stack: form.tech_stack.split(",").map((s) => s.trim()).filter(Boolean),
+        repo_url: form.repo_url.trim(),
         status: form.status,
       });
       toast.success("Project updated");
@@ -104,6 +106,16 @@ export default function ProjectDetails() {
               minRows={3}
               value={form.description}
               onChange={(e) => setForm({ ...form, description: e.target.value })}
+            />
+            <TextField
+              label="Repository URL"
+              placeholder="https://github.com/username/repository"
+              value={form.repo_url}
+              onChange={(e) => setForm({ ...form, repo_url: e.target.value })}
+              helperText="GitHub repository URL for automated security scanning"
+              InputProps={{
+                startAdornment: <GitHub sx={{ mr: 1, color: "text.secondary" }} />,
+              }}
             />
             <TextField
               label="Tech Stack (comma separated)"

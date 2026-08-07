@@ -25,7 +25,8 @@ def can(role: str, action: str) -> bool:
 
 
 def build_project_doc(owner_id: str, name: str, description: str,
-                      tech_stack: List[str], status: str = "Active") -> dict:
+                      tech_stack: List[str], status: str = "Active",
+                      repo_url: str = "") -> dict:
     """Construct a new project document."""
     return {
         "owner_id": owner_id,
@@ -33,6 +34,7 @@ def build_project_doc(owner_id: str, name: str, description: str,
         "description": description,
         "tech_stack": tech_stack or [],
         "status": status,
+        "repo_url": repo_url,
         "created_at": datetime.utcnow(),
         "updated_at": datetime.utcnow(),
     }

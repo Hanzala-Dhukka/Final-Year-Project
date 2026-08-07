@@ -140,7 +140,7 @@ export default function Login() {
     setServerError("");
     setLoading(true);
     try {
-      await login({ email: email.trim(), password, remember_me: rememberMe });
+      const response = await login({ email: email.trim(), password, remember_me: rememberMe });
       try {
         if (rememberMe) localStorage.setItem(REMEMBER_KEY, "true");
         else localStorage.removeItem(REMEMBER_KEY);

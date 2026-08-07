@@ -22,6 +22,28 @@ export const checklistApi = {
   // GET /api/v1/checklist/projects/{projectId}/checklist-score
   getScore: (projectId) =>
     API.get(`/checklist/projects/${projectId}/checklist-score`),
+
+  // Module SC4: Security Posture
+  getSecurityPosture: (projectId) =>
+    API.get(`/checklist/projects/${projectId}/security-posture`),
+
+  getPostureHistory: (projectId, limit = 30) =>
+    API.get(`/checklist/projects/${projectId}/posture-history`, {
+      params: { limit },
+    }),
+
+  // Module SC5: AI Recommendations & Score Tracking
+  generateFromFindings: (projectId, scanId) =>
+    API.post(`/sc5/${projectId}/generate-from-findings`, { scan_id: scanId }),
+
+  getScoreHistory: (projectId, limit = 30) =>
+    API.get(`/sc5/${projectId}/score-history`, { params: { limit } }),
+
+  getImprovement: (projectId) =>
+    API.get(`/sc5/${projectId}/improvement`),
+
+  trackCompletion: (projectId) =>
+    API.post(`/sc5/${projectId}/track-completion`),
 };
 
 export default checklistApi;

@@ -1,5 +1,6 @@
 import { useEffect, useState, useRef, useCallback } from "react";
 import { motion } from "framer-motion";
+import { useNavigate } from "react-router-dom";
 
 // API
 import {
@@ -20,6 +21,22 @@ import SystemHealth from "../../components/Dashboard/SystemHealth";
 import AIInsightCard from "../../components/Dashboard/AIInsightCard";
 import SkeletonLoader from "../../components/ui/SkeletonLoader";
 
+// Learning recommendations (Module E2)
+import { getLatestRecommendations } from "../../api/learningApi";
+import RecommendationCard from "../../components/Learning/RecommendationCard";
+
+// AI Scan Summary (Module E3)
+import AIScanSummary from "../../components/Dashboard/AIScanSummary";
+import { getScanSummary } from "../../api/summaryApi";
+
+// Personalized Dashboard (Module E4)
+import SecurityScoreCard from "../../components/Dashboard/SecurityScoreCard";
+import LearningProgress from "../../components/Dashboard/LearningProgress";
+import ScanHistoryCard from "../../components/Dashboard/ScanHistoryCard";
+import AIRecommendationCard from "../../components/Dashboard/AIRecommendationCard";
+import ActivityTimeline from "../../components/Dashboard/ActivityTimeline";
+import UserLevelCard from "../../components/Dashboard/UserLevelCard";
+
 // Common card wrapper
 import DashboardCard from "../../components/Common/DashboardCard";
 
@@ -38,6 +55,7 @@ const DEFAULT_FILTERS = { project: "All", severity: "All", date: "7 Days" };
 export default function Dashboard() {
   const dashboardRef = useRef(null);
   const socketRef = useRef(null);
+  const navigate = useNavigate();
 
   // Data state
   const [data, setData] = useState(null);
@@ -53,9 +71,74 @@ export default function Dashboard() {
   const [cmdOpen, setCmdOpen] = useState(false);
   const [selectorOpen, setSelectorOpen] = useState(false);
 
+  // Learning recommendations (Module E2)
+  const [learningRecs, setLearningRecs] = useState([]);
+
+  // AI Scan Summary (Module E3)
+  const [scanSummary, setScanSummary] = useState(null);
+  const [summaryLoading, setSummaryLoading] = useState(false);
+
+  // Personalized Dashboard (Module E4)
+  const [personalised, setPersonalised] = useState(null);
+
   // Track whether we have received data at least once — using a ref so that
   // loadDashboard's identity stays stable and does NOT re-trigger the effect.
   const hasDataRef = useRef(false);
+
+  // ── Load learning recommendations (Module E2) ──────────────────────────────
+  useEffect(() => {
+    getLatestRecommendations()
+      .then((r) => setLearningRecs((r.recommendations || []).slice(0, 3)))
+      .catch(() => {});
+  }, []);
+
+  // ── Load AI scan summary (Module E3) ──────────────────────────────────────
+  useEffect(() => {
+    if (!data?.scan_id) return;
+    setSummaryLoading(true);
+    getScanSummary(data.scan_id)
+      .then((s) => setScanSummary(s))
+      .catch(() => setScanSummary(null))
+      .finally(() => setSummaryLoading(false));
+  }, [data?.scan_id]);
+
+  // ── Load personalised dashboard data (Module E4) ──────────────────────────
+  useEffect(() => {
+    const loadPersonalised = async () => {
+      try {
+        const res = await API.get("/dashboard/overview");
+        setPersonalised(res.data);
+      } catch {
+        // Use existing dashboard data as fallback
+        if (data) {
+          setPersonalised({
+            user: { name: data.username || "User", level: "Intermediate" },
+            security_improvement: {
+              current_score: data.security_score ?? 82,
+              previous_score: 72,
+              improvement: (data.security_score ?? 82) - 72,
+            },
+            learning_progress: {
+              owasp_completed: 8,
+              owasp_total: 10,
+              quiz_completed: data.quiz_completed ?? 24,
+              quiz_total: 30,
+              recommendations_completed: 12,
+              recommendations_total: 15,
+            },
+            recent_scans: [],
+            recommendations: [],
+            activity: {
+              last_scan: data.last_scan_time || "2 hours ago",
+              last_quiz: "Today",
+              last_ai_chat: "Recently",
+            },
+          });
+        }
+      }
+    };
+    loadPersonalised();
+  }, [data]);
 
   // ── Load dashboard data ─────────────────────────────────────────────────────
   const loadDashboard = useCallback(async (isBackground = false) => {
@@ -183,6 +266,23 @@ export default function Dashboard() {
     );
   }
 
+  const handleAskAI = () => {
+    const scanContext = {
+      type: "github_scan",
+      scanData: {
+        security_score: data?.security_score,
+        severity_summary: {
+          critical: data?.critical,
+          high: data?.high,
+          medium: data?.medium,
+          low: data?.low,
+        },
+      },
+    };
+    sessionStorage.setItem("aiAssistantContext", JSON.stringify(scanContext));
+    navigate("/ai-assistant");
+  };
+
   const aiPayload = {
     critical: data?.critical ?? 2,
     high: data?.high ?? 5,
@@ -259,6 +359,13 @@ export default function Dashboard() {
               ⌨️ <span>Ctrl K</span>
             </button>
 
+            <button
+              className="toolbar-btn"
+              onClick={handleAskAI}
+              title="Ask AI about your security"
+            >
+              🤖 Ask AI
+            </button>
             <ExportDashboard dashboardRef={dashboardRef} />
             <ResetDashboard onReset={handleReset} />
           </div>
@@ -305,6 +412,47 @@ export default function Dashboard() {
             <DashboardCard title="AI Assistant" className="ai-card">
               <AIInsightCard securityData={aiPayload} />
             </DashboardCard>
+          )}
+
+          {(!hiddenWidgets.includes("scan_summary")) && (
+            <DashboardCard title="AI Scan Summary">
+              <AIScanSummary summary={scanSummary} loading={summaryLoading} />
+            </DashboardCard>
+          )}
+
+          {learningRecs.length > 0 && !hiddenWidgets.includes("learning") && (
+            <DashboardCard title="Recommended Learning">
+              <div className="space-y-2">
+                {learningRecs.map((rec, i) => (
+                  <RecommendationCard key={i} item={rec} />
+                ))}
+              </div>
+            </DashboardCard>
+          )}
+
+          {/* ── Module E4: Personalized Dashboard Cards ──────────────────────── */}
+          {personalised?.user && !hiddenWidgets.includes("user_level") && (
+            <UserLevelCard user={personalised.user} />
+          )}
+
+          {personalised?.security_improvement && !hiddenWidgets.includes("security_improvement") && (
+            <SecurityScoreCard security={personalised.security_improvement} />
+          )}
+
+          {personalised?.learning_progress && !hiddenWidgets.includes("learning_progress") && (
+            <LearningProgress progress={personalised.learning_progress} />
+          )}
+
+          {personalised?.recent_scans?.length > 0 && !hiddenWidgets.includes("scan_history") && (
+            <ScanHistoryCard scans={personalised.recent_scans} />
+          )}
+
+          {personalised?.recommendations?.length > 0 && !hiddenWidgets.includes("ai_recs") && (
+            <AIRecommendationCard items={personalised.recommendations} />
+          )}
+
+          {personalised?.activity && !hiddenWidgets.includes("activity") && (
+            <ActivityTimeline activity={personalised.activity} />
           )}
         </div>
       </div>

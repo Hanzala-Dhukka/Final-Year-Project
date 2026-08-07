@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import owaspApi, { OWASP_DIFFICULTIES } from "../../api/owaspApi";
 import ScenarioCard from "../../components/OWASP/ScenarioCard";
 import HintPanel from "../../components/OWASP/HintPanel";
@@ -16,6 +17,21 @@ export default function AttackMode({ initialLab, onBack, onComplete }) {
   const [hintsUsed, setHintsUsed] = useState(0);
   const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
+
+  const handleAskAI = () => {
+    const owaspContext = {
+      type: "owasp",
+      scanData: {
+        vulnerability: vuln,
+        difficulty: difficulty,
+        simulation: sim,
+        result: result,
+      },
+    };
+    sessionStorage.setItem("aiAssistantContext", JSON.stringify(owaspContext));
+    navigate("/ai-assistant");
+  };
 
   const start = async () => {
     setLoading(true);
@@ -85,7 +101,16 @@ export default function AttackMode({ initialLab, onBack, onComplete }) {
         </div>
       ) : (
         <div className="space-y-4">
-          <ScenarioCard simulation={sim} />
+          <div className="flex justify-between items-center">
+            <ScenarioCard simulation={sim} />
+            <button
+              onClick={handleAskAI}
+              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm font-medium"
+              title="Ask AI about this vulnerability"
+            >
+              🤖 Ask AI
+            </button>
+          </div>
           <HintPanel hints={sim.hints} onHint={(n) => setHintsUsed(n)} />
           {!result && <PayloadEditor onSubmit={submit} disabled={loading} />}
           {result && (

@@ -64,7 +64,7 @@ export default function ScannerSetup() {
   useEffect(() => {
     const loadRecent = async () => {
       try {
-        const res = await API.get("/scanner/recent-scans")
+        const res = await API.get("/scanner/my-scans")
         setRecentScans(res.data?.scans || [])
       } catch {
         // silent

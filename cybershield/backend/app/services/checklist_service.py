@@ -1,10 +1,13 @@
 """
-Security Checklist service (Module 6.1).
+Security Checklist service (Module 6.1 + Module SC1).
 
 Handles seeding the predefined checklists, loading per-project progress,
 updating task status, computing security scores and generating a
 project-specific checklist by combining the default catalogue with the
 user's findings (GitHub scan / threat report / OWASP simulator).
+
+Module SC1 adds scanner integration fields (scan_id, recommended, matched_rule)
+so the GitHub Scanner can push recommendations into the checklist.
 """
 from datetime import datetime
 from typing import List, Optional
@@ -17,6 +20,7 @@ from app.models.checklist_model import (
     build_progress_doc,
     CHECKLIST_CATEGORIES,
     CHECKLIST_STATUSES,
+    get_risk_weight,
 )
 
 CHECK_COLLECTION = "security_checklists"
@@ -57,7 +61,11 @@ async def _get_checklist_by_id(checklist_id: str) -> Optional[dict]:
 
 
 async def get_user_progress(user_id: str, project_id: str) -> List[dict]:
-    """Return the user's progress rows joined with checklist details."""
+    """Return the user's progress rows joined with checklist details.
+
+    Includes scanner integration fields (scan_id, recommended, matched_rule)
+    from Module SC1.
+    """
     rows = await database[USER_CHECK_COLLECTION].find(
         {"user_id": str(user_id), "project_id": str(project_id)}
     ).to_list(length=1000)
@@ -79,6 +87,12 @@ async def get_user_progress(user_id: str, project_id: str) -> List[dict]:
             "frameworks": item.get("frameworks", []),
             "status": prog["status"] if prog else "pending",
             "completed_at": prog.get("completed_at").isoformat() if prog and prog.get("completed_at") else None,
+            # Scanner Integration Fields (Module SC1)
+            "scan_id": prog.get("scan_id") if prog else None,
+            "recommended": prog.get("recommended", False) if prog else False,
+            "matched_rule": prog.get("matched_rule") if prog else None,
+            # Module SC4: Risk weight based on severity
+            "risk_weight": get_risk_weight(item["severity"]),
         })
     return result
 
@@ -144,11 +158,24 @@ async def update_status(user_id: str, project_id: str, checklist_id: str, status
     if status == "completed":
         update["completed_at"] = now
 
+    # Build the insert doc WITHOUT status to avoid conflict with $set
+    insert_doc = build_user_checklist_doc(str(user_id), str(project_id), str(checklist_id), status)
+    insert_doc.pop("status", None)
+    insert_doc["status"] = status  # Will be set by $set, not $setOnInsert
+
     result = await database[USER_CHECK_COLLECTION].update_one(
         {"user_id": str(user_id), "project_id": str(project_id), "checklist_id": str(checklist_id)},
         {
             "$set": update,
-            "$setOnInsert": build_user_checklist_doc(str(user_id), str(project_id), str(checklist_id), status),
+            "$setOnInsert": {
+                "user_id": str(user_id),
+                "project_id": str(project_id),
+                "checklist_id": str(checklist_id),
+                "created_at": now,
+                "scan_id": None,
+                "recommended": False,
+                "matched_rule": None,
+            },
         },
         upsert=True,
     )
@@ -157,7 +184,8 @@ async def update_status(user_id: str, project_id: str, checklist_id: str, status
 
 async def generate_project_checklist(user_id: str, project_id: str,
                                      finding: Optional[str] = None,
-                                     technology: Optional[str] = None) -> dict:
+                                     technology: Optional[str] = None,
+                                     scan_id: Optional[str] = None) -> dict:
     """
     Generate (seed) a project-specific checklist.
 
@@ -165,6 +193,8 @@ async def generate_project_checklist(user_id: str, project_id: str,
     catalogue (so every task is visible for the project) and stamps any extra
     requirement derived from an inbound finding. Future AI phases will expand
     the `finding` branch to analyse the threat report + tech stack.
+
+    Module SC1: Accepts optional scan_id to link generated items to a scan.
     """
     all_items = await get_all_checklists()
 
@@ -178,7 +208,8 @@ async def generate_project_checklist(user_id: str, project_id: str,
             },
             {
                 "$setOnInsert": build_user_checklist_doc(
-                    str(user_id), str(project_id), item["id"], "pending"
+                    str(user_id), str(project_id), item["id"], "pending",
+                    scan_id=scan_id,
                 ),
             },
             upsert=True,
@@ -192,3 +223,70 @@ async def generate_project_checklist(user_id: str, project_id: str,
         "total": len(all_items),
         "message": "Project checklist generated from the security hardening catalogue.",
     }
+
+
+# ── Scanner Integration (Module SC1) ─────────────────────────────────────────
+async def add_scan_recommendation(
+    user_id: str,
+    project_id: str,
+    checklist_id: str,
+    scan_id: str,
+    matched_rule: str,
+    status: str = "pending",
+) -> dict:
+    """
+    Create or update a checklist item recommended by the scanner.
+
+    Called by Module SC3 (Auto Recommendation Service) after a scan completes.
+    Upserts into user_checklists with scanner fields populated.
+    """
+    if status not in CHECKLIST_STATUSES:
+        raise ValueError(f"Invalid status '{status}'. Must be one of {CHECKLIST_STATUSES}")
+
+    item = await _get_checklist_by_id(checklist_id)
+    if not item:
+        raise ValueError(f"Checklist item {checklist_id} not found")
+
+    now = datetime.utcnow()
+    result = await database[USER_CHECK_COLLECTION].update_one(
+        {
+            "user_id": str(user_id),
+            "project_id": str(project_id),
+            "checklist_id": str(checklist_id),
+        },
+        {
+            "$set": {
+                "scan_id": scan_id,
+                "recommended": True,
+                "matched_rule": matched_rule,
+                "updated_at": now,
+            },
+            "$setOnInsert": build_user_checklist_doc(
+                str(user_id), str(project_id), str(checklist_id), status,
+                scan_id=scan_id,
+                recommended=True,
+                matched_rule=matched_rule,
+            ),
+        },
+        upsert=True,
+    )
+    return {
+        "matched": result.matched_count,
+        "upserted": bool(result.upserted_id),
+        "scan_id": scan_id,
+        "recommended": True,
+        "matched_rule": matched_rule,
+    }
+
+
+async def get_scan_recommendations(user_id: str, project_id: str, scan_id: str) -> List[dict]:
+    """Return all checklist items recommended by a specific scan."""
+    rows = await database[USER_CHECK_COLLECTION].find(
+        {
+            "user_id": str(user_id),
+            "project_id": str(project_id),
+            "scan_id": scan_id,
+            "recommended": True,
+        }
+    ).to_list(length=1000)
+    return rows

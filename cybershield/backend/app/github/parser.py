@@ -35,16 +35,28 @@ def _check_rate_limit(client: Github):
             raise
 
 
-def validate_repository(repo_name: str) -> bool:
-    """Return True if the repository exists and is accessible."""
+def validate_repository(repo_name: str) -> dict:
+    """
+    Validate that a GitHub repository exists and is accessible.
+
+    Returns a dict with ``ok`` (bool) and, when ``ok`` is False, an
+    ``error`` message explaining the failure reason.
+    """
     client = _get_client()
     try:
         client.get_repo(repo_name)
-        return True
-    except (GithubException, RateLimitExceededException):
-        return False
-    except Exception:
-        return False
+        return {"ok": True}
+    except RateLimitExceededException:
+        return {"ok": False, "error": "GitHub API rate limit exceeded. Please wait or configure a GITHUB_TOKEN."}
+    except GithubException as e:
+        status = getattr(e, "status", None)
+        if status == 404:
+            return {"ok": False, "error": "Repository not found. Check the URL and try again."}
+        if status in (403, 401):
+            return {"ok": False, "error": "Access denied. The repository may be private or the GitHub token lacks permissions."}
+        return {"ok": False, "error": f"GitHub API error (HTTP {status})."}
+    except Exception as e:
+        return {"ok": False, "error": f"Could not reach GitHub: {e}"}
 
 
 def get_repository(repo_name: str):

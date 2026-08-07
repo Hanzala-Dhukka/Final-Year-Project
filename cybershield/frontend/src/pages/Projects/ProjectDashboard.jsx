@@ -202,7 +202,10 @@ export default function ProjectDashboard() {
                 Quick Actions
               </Typography>
               <Stack spacing={1.5}>
-                <Button variant="contained" onClick={() => navigate(`/threat-analysis`)}>
+                <Button variant="contained" onClick={() => navigate(`/security-checklist/${id}`)}>
+                  Security Checklist
+                </Button>
+                <Button variant="outlined" onClick={() => navigate(`/threat-analysis`)}>
                   Run Threat Analysis
                 </Button>
                 <Button variant="outlined" onClick={() => navigate(`/projects/${id}/versions`)}>

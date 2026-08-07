@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import owaspApi from "../../api/owaspApi";
 
 /**
@@ -6,6 +7,7 @@ import owaspApi from "../../api/owaspApi";
  */
 export default function Home({ onAttack, onDefense, onDaily, onProgress, onLab }) {
   const [labs, setLabs] = useState([]);
+  const navigate = useNavigate();
 
   useEffect(() => {
     owaspApi
@@ -13,6 +15,15 @@ export default function Home({ onAttack, onDefense, onDaily, onProgress, onLab }
       .then((r) => setLabs(r.data.labs || []))
       .catch(() => setLabs([]));
   }, []);
+
+  const handleAskAI = () => {
+    const owaspContext = {
+      type: "owasp",
+      scanData: { vulnerability: "General OWASP", source: "owasp_home" },
+    };
+    sessionStorage.setItem("aiAssistantContext", JSON.stringify(owaspContext));
+    navigate("/ai-assistant");
+  };
 
   const tiles = [
     { key: "attack", title: "⚔️ Attack Mode", desc: "Exploit vulnerable apps safely", onClick: onAttack },
@@ -28,7 +39,16 @@ export default function Home({ onAttack, onDefense, onDaily, onProgress, onLab }
 
   return (
     <div className="container mx-auto px-4 py-8 max-w-5xl">
-      <h1 className="text-3xl font-bold text-gray-900 mb-1">🛡️ OWASP Learning Center</h1>
+      <div className="flex items-center justify-between mb-1">
+        <h1 className="text-3xl font-bold text-gray-900">🛡️ OWASP Learning Center</h1>
+        <button
+          onClick={handleAskAI}
+          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm font-medium flex items-center gap-2"
+          title="Ask AI about OWASP topics"
+        >
+          🤖 Ask AI
+        </button>
+      </div>
       <p className="text-gray-500 mb-6">
         Hands-on, safe cybersecurity training — attack, defend, and learn with AI.
       </p>

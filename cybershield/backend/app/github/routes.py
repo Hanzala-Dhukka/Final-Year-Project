@@ -24,9 +24,9 @@ async def validate_repo(data: dict, current_user: dict = Depends(get_current_use
     except ValueError:
         raise HTTPException(status_code=400, detail="Invalid GitHub repository URL format.")
 
-    is_valid = validate_repository(repo_name)
-    if not is_valid:
-        raise HTTPException(status_code=404, detail="Repository not found or not accessible.")
+    result = validate_repository(repo_name)
+    if not result["ok"]:
+        raise HTTPException(status_code=400, detail=result["error"])
 
     return {"valid": True, "repository": repo_name}
 

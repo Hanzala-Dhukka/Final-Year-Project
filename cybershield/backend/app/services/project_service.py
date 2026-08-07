@@ -38,6 +38,7 @@ def _serialize_project(doc: dict) -> dict:
         "description": doc.get("description", ""),
         "tech_stack": doc.get("tech_stack", []),
         "status": doc.get("status", "Active"),
+        "repo_url": doc.get("repo_url", ""),
         "created_at": doc.get("created_at").isoformat()
         if isinstance(doc.get("created_at"), datetime) else None,
     }
@@ -52,6 +53,7 @@ async def create_project(user: dict, payload: ProjectCreate) -> dict:
         description=payload.description,
         tech_stack=payload.tech_stack,
         status=payload.status,
+        repo_url=payload.repo_url,
     )
     result = await database.projects.insert_one(doc)
     project_id = str(result.inserted_id)
@@ -95,7 +97,20 @@ async def get_project(user: dict, project_id: str) -> dict:
     doc = await database.projects.find_one({"_id": ObjectId(project_id)})
     if not doc:
         raise ValueError("Project not found")
-    return _serialize_project(doc)
+    serialized = _serialize_project(doc)
+    # Enrich with counts (same as list_projects)
+    serialized["member_count"] = await database.project_members.count_documents(
+        {"project_id": project_id}
+    )
+    serialized["report_count"] = await database.project_reports.count_documents(
+        {"project_id": project_id}
+    )
+    latest = await database.project_reports.find_one(
+        {"project_id": project_id}, sort=[("created_at", -1)]
+    )
+    serialized["latest_risk_score"] = latest.get("risk_score") if latest else None
+    serialized["latest_risk_level"] = latest.get("risk_level") if latest else None
+    return serialized
 
 
 async def update_project(user: dict, project_id: str, payload: ProjectUpdate) -> dict:

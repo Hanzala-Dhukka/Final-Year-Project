@@ -33,7 +33,7 @@ export default function ScannerResults() {
     const fetchResults = async () => {
       try {
         setLoading(true)
-        const res = await API.get(`/scanner/results/${id}`)
+        const res = await API.get(`/scanner/${id}/results`)
         setResult(res.data)
       } catch (err) {
         setError(err.response?.data?.detail || "Failed to load scan results.")

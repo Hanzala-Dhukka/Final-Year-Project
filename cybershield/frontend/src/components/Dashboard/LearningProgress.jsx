@@ -1,51 +1,64 @@
-import { Zap, Award, Target } from "lucide-react";
+import { motion } from "framer-motion";
 
-export default function LearningProgress({
-  progress = 65,
-  xp = 1820,
-  level = 4,
-  nextLevelXp = 2500
-}) {
-  const currentLevelMinXp = (level - 1) * 500;
-  const xpInCurrentLevel = xp - currentLevelMinXp;
-  const totalXpForCurrentLevel = nextLevelXp - currentLevelMinXp;
-  const calculatedPct = Math.min(
-    100,
-    Math.max(0, Math.round((xpInCurrentLevel / (totalXpForCurrentLevel || 1)) * 100))
-  );
+/**
+ * Module E4, Step 10 — Learning Progress Card.
+ * Displays progress across OWASP modules, quizzes, and AI recommendations.
+ */
+export default function LearningProgress({ progress }) {
+  if (!progress) return null;
+
+  const items = [
+    {
+      label: "OWASP Modules",
+      completed: progress.owasp_completed || 0,
+      total: progress.owasp_total || 10,
+      color: "bg-blue-500",
+    },
+    {
+      label: "Quizzes Completed",
+      completed: progress.quiz_completed || 0,
+      total: progress.quiz_total || 30,
+      color: "bg-purple-500",
+    },
+    {
+      label: "AI Recommendations",
+      completed: progress.recommendations_completed || 0,
+      total: progress.recommendations_total || 15,
+      color: "bg-green-500",
+    },
+  ];
 
   return (
-    <div className="widget-card learning-progress-widget">
-      <div className="widget-header">
-        <div className="header-title">
-          <Zap className="widget-icon" />
-          <h3>Learning Progress</h3>
-        </div>
-        <span className="level-badge">Level {level}</span>
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: 0.1 }}
+      className="bg-white rounded-xl border border-gray-200 p-5 hover:shadow-md transition"
+    >
+      <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-4">
+        Learning Progress
+      </h2>
+      <div className="space-y-4">
+        {items.map((item) => {
+          const pct = Math.round((item.completed / Math.max(item.total, 1)) * 100);
+          return (
+            <div key={item.label}>
+              <div className="flex justify-between text-sm mb-1">
+                <span className="font-medium text-gray-700">{item.label}</span>
+                <span className="text-gray-500">
+                  {item.completed} / {item.total}
+                </span>
+              </div>
+              <div className="w-full bg-gray-100 rounded-full h-2.5">
+                <div
+                  className={`${item.color} h-2.5 rounded-full transition-all duration-700`}
+                  style={{ width: `${Math.min(pct, 100)}%` }}
+                />
+              </div>
+            </div>
+          );
+        })}
       </div>
-
-      <div className="progress-metrics">
-        <div className="metric">
-          <span className="label">Current XP</span>
-          <span className="value">{xp} XP</span>
-        </div>
-        <div className="metric">
-          <span className="label">Next Level Target</span>
-          <span className="value">{nextLevelXp} XP</span>
-        </div>
-      </div>
-
-      <div className="progress-bar-container">
-        <div
-          className="progress-bar-fill"
-          style={{ width: `${calculatedPct || progress}%` }}
-        />
-      </div>
-
-      <div className="progress-footer">
-        <span>{calculatedPct || progress}% complete</span>
-        <span>{nextLevelXp - xp} XP to Level {level + 1}</span>
-      </div>
-    </div>
+    </motion.div>
   );
 }

@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
 import { FaShieldAlt, FaGithub } from "react-icons/fa";
-import { githubGetProgress } from "../../../services/scanService";
+import { scannerGetStatus, scannerGetLogs } from "../../../services/scanService";
 import ScanStats from "./ScanStats";
 import ScanStages from "./ScanStages";
 import ScanLogs from "./ScanLogs";
@@ -44,7 +44,23 @@ export default function ScanDashboard({ scanId, onScanComplete }) {
 
     pollRef.current = setInterval(async () => {
       try {
-        const data = await githubGetProgress(scanId);
+        const status = await scannerGetStatus(scanId);
+        // Map scanner-engine fields to what the dashboard expects
+        const data = {
+          ...status,
+          stage: status.current_stage || status.stage || "Initializing",
+          completed: status.status === "completed" || status.status === "failed",
+          message: status.current_file || "",
+        };
+
+        // Fetch logs separately
+        try {
+          const logsRes = await scannerGetLogs(scanId);
+          data.logs = logsRes.logs || [];
+        } catch {
+          data.logs = [];
+        }
+
         setScan(data);
 
         if (data.completed) {
@@ -55,7 +71,7 @@ export default function ScanDashboard({ scanId, onScanComplete }) {
       } catch (err) {
         console.log("Progress poll error:", err);
       }
-    }, 1000);
+    }, 1500);
 
     return () => {
       clearInterval(pollRef.current);

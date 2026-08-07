@@ -91,23 +91,21 @@ async def generate_report(
 
 
 # ---------------------------------------------------------------------------
-# 2. GET /{report_id}
+# 2. GET /history  (MUST be before /{report_id} to avoid param capture)
 # ---------------------------------------------------------------------------
 
-@router.get("/{report_id}")
-async def get_report(
-    report_id: str,
+@router.get("/history")
+async def report_history(
+    limit: int = Query(default=50, ge=1, le=200),
     current_user: dict = Depends(get_current_user),
 ):
-    """Retrieve a full report by its unique report_id."""
-    report = await get_report_by_id(report_id)
-    if not report:
-        raise HTTPException(status_code=404, detail="Report not found")
-    return {"report": report}
+    """Get paginated report history for the current user."""
+    reports = await get_report_history(user_id=current_user["_id"], limit=limit)
+    return {"reports": reports, "count": len(reports)}
 
 
 # ---------------------------------------------------------------------------
-# 3. GET /by-scan/{scan_id}
+# 3. GET /by-scan/{scan_id}  (MUST be before /{report_id})
 # ---------------------------------------------------------------------------
 
 @router.get("/by-scan/{scan_id}")
@@ -123,17 +121,56 @@ async def get_report_by_scan(
 
 
 # ---------------------------------------------------------------------------
-# 4. GET /history
+# 4. GET /score-history/{repository}  (MUST be before /{report_id})
 # ---------------------------------------------------------------------------
 
-@router.get("/history")
-async def report_history(
-    limit: int = Query(default=50, ge=1, le=200),
+@router.get("/score-history/{repository}")
+async def score_history(
+    repository: str,
+    limit: int = Query(default=30, ge=1, le=200),
     current_user: dict = Depends(get_current_user),
 ):
-    """Get paginated report history for the current user."""
-    reports = await get_report_history(user_id=current_user["_id"], limit=limit)
-    return {"reports": reports, "count": len(reports)}
+    """Get security score trend for a repository."""
+    history = await get_score_history(repository, limit=limit)
+    return {"repository": repository, "history": history}
+
+
+# ---------------------------------------------------------------------------
+# 5. GET /chart-data/{report_id}  (MUST be before /{report_id})
+# ---------------------------------------------------------------------------
+
+@router.get("/chart-data/{report_id}")
+async def chart_data(
+    report_id: str,
+    current_user: dict = Depends(get_current_user),
+):
+    """Get pie and bar chart data for the report's vulnerabilities."""
+    report = await get_report_by_id(report_id)
+    if not report:
+        raise HTTPException(status_code=404, detail="Report not found")
+
+    pie_data = get_severity_pie_data(report)
+
+    return {
+        "report_id": report_id,
+        "severity_pie": pie_data,
+    }
+
+
+# ---------------------------------------------------------------------------
+# 6. GET /{report_id}  (MUST be LAST among GET routes)
+# ---------------------------------------------------------------------------
+
+@router.get("/{report_id}")
+async def get_report(
+    report_id: str,
+    current_user: dict = Depends(get_current_user),
+):
+    """Retrieve a full report by its unique report_id."""
+    report = await get_report_by_id(report_id)
+    if not report:
+        raise HTTPException(status_code=404, detail="Report not found")
+    return {"report": report}
 
 
 # ---------------------------------------------------------------------------
@@ -280,22 +317,7 @@ async def email_report(
 
 
 # ---------------------------------------------------------------------------
-# 9. GET /score-history/{repository}
-# ---------------------------------------------------------------------------
-
-@router.get("/score-history/{repository}")
-async def score_history(
-    repository: str,
-    limit: int = Query(default=30, ge=1, le=200),
-    current_user: dict = Depends(get_current_user),
-):
-    """Get security score trend for a repository."""
-    history = await get_score_history(repository, limit=limit)
-    return {"repository": repository, "history": history}
-
-
-# ---------------------------------------------------------------------------
-# 10. POST /compare
+# 9. POST /compare
 # ---------------------------------------------------------------------------
 
 @router.post("/compare")
@@ -315,7 +337,7 @@ async def compare_two_scans(
 
 
 # ---------------------------------------------------------------------------
-# 11. POST /ai-summary/{scan_id}
+# 10. POST /ai-summary/{scan_id}
 # ---------------------------------------------------------------------------
 
 @router.post("/ai-summary/{scan_id}")
@@ -344,7 +366,7 @@ async def ai_summary(
 
 
 # ---------------------------------------------------------------------------
-# 12. DELETE /{report_id}
+# 11. DELETE /{report_id}
 # ---------------------------------------------------------------------------
 
 @router.delete("/{report_id}")
@@ -357,25 +379,3 @@ async def delete_report_endpoint(
     if not deleted:
         raise HTTPException(status_code=404, detail="Report not found or already deleted")
     return {"message": "Report deleted successfully", "report_id": report_id}
-
-
-# ---------------------------------------------------------------------------
-# 13. GET /chart-data/{report_id}
-# ---------------------------------------------------------------------------
-
-@router.get("/chart-data/{report_id}")
-async def chart_data(
-    report_id: str,
-    current_user: dict = Depends(get_current_user),
-):
-    """Get pie and bar chart data for the report's vulnerabilities."""
-    report = await get_report_by_id(report_id)
-    if not report:
-        raise HTTPException(status_code=404, detail="Report not found")
-
-    pie_data = get_severity_pie_data(report)
-
-    return {
-        "report_id": report_id,
-        "severity_pie": pie_data,
-    }

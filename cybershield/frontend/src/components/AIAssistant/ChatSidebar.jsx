@@ -1,6 +1,6 @@
 /**
  * Sidebar listing the user's conversations, grouped by recency.
- * Supports selecting, starting, and deleting conversations.
+ * Supports selecting, starting, deleting, and clearing conversations.
  */
 function groupByDate(conversations) {
   const today = new Date();
@@ -30,19 +30,28 @@ export default function ChatSidebar({
   onSelect,
   onNewChat,
   onDelete,
+  onClearChat,
 }) {
   const groups = groupByDate(conversations);
   const order = ["Today", "Yesterday", "Last Week", "Older"];
 
   return (
     <aside className="w-64 shrink-0 border-r border-gray-200 bg-gray-50 flex flex-col h-full">
-      <div className="p-4">
+      <div className="p-4 space-y-2">
         <button
           onClick={onNewChat}
           className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm font-medium"
         >
           + New Chat
         </button>
+        {activeId && onClearChat && (
+          <button
+            onClick={() => onClearChat(activeId)}
+            className="w-full px-4 py-2 bg-red-50 text-red-600 border border-red-200 rounded-lg hover:bg-red-100 text-sm font-medium"
+          >
+            🗑 Clear Chat
+          </button>
+        )}
       </div>
 
       <div className="flex-1 overflow-y-auto px-2 pb-4">

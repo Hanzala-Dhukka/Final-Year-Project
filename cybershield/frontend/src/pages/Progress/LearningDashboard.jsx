@@ -1,13 +1,20 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Row, Col, Typography, Card, Progress, Badge, Button, List, Avatar, Statistic, Tabs } from 'antd';
+import { Row, Col, Typography, Card, Progress, Badge, Button, List, Avatar, Statistic } from 'antd';
 import { TrophyOutlined, FireOutlined, CheckCircleOutlined, DownloadOutlined, ArrowRightOutlined } from '@ant-design/icons';
 import API from '../api/api';
+import { getLatestRecommendations, getLearningProgress } from '../../api/learningApi';
+import RecommendedTopics from '../../components/Learning/RecommendedTopics';
+import LearningPath from '../../components/Learning/LearningPath';
+import ProgressCard from '../../components/Learning/ProgressCard';
 
 const { Title, Text, Paragraph } = Typography;
 
 const LearningDashboard = () => {
   const [dashboardData, setDashboardData] = useState(null);
+  const [recommendations, setRecommendations] = useState([]);
+  const [aiPath, setAiPath] = useState(null);
+  const [learningProgress, setLearningProgress] = useState(null);
   const [loading, setLoading] = useState(true);
   const [certificateLoading, setCertificateLoading] = useState(false);
   const userId = localStorage.getItem('user_id') || 'anonymous';
@@ -23,7 +30,6 @@ const LearningDashboard = () => {
       setDashboardData(response.data.data);
     } catch (error) {
       console.error('Error loading dashboard:', error);
-      // Set default data for demo
       setDashboardData({
         user_id: userId,
         xp: 1850,
@@ -49,6 +55,24 @@ const LearningDashboard = () => {
       setLoading(false);
     }
   };
+
+  // Load learning recommendations (Module E2)
+  useEffect(() => {
+    const loadRecommendations = async () => {
+      try {
+        const [recs, progress] = await Promise.all([
+          getLatestRecommendations(),
+          getLearningProgress(),
+        ]);
+        setRecommendations(recs.recommendations || []);
+        setAiPath(recs.ai_path || null);
+        setLearningProgress(progress);
+      } catch (e) {
+        console.error('Error loading learning recommendations:', e);
+      }
+    };
+    loadRecommendations();
+  }, []);
 
   const downloadCertificate = async () => {
     setCertificateLoading(true);
@@ -213,6 +237,29 @@ const LearningDashboard = () => {
             </Button>
           </Card>
         </Col>
+
+        {/* AI Learning Recommendations (Module E2) */}
+        {recommendations.length > 0 && (
+          <Col xs={24}>
+            <Card title="🤖 AI Learning Recommendations">
+              <RecommendedTopics recommendations={recommendations} />
+            </Card>
+          </Col>
+        )}
+
+        {/* AI Learning Path (Module E2, Step 5) */}
+        {aiPath && (
+          <Col xs={24}>
+            <LearningPath path={aiPath} />
+          </Col>
+        )}
+
+        {/* Security Growth Progress (Module E2, Step 13) */}
+        {learningProgress && (
+          <Col xs={24} md={12}>
+            <ProgressCard progress={learningProgress} />
+          </Col>
+        )}
 
         {/* Learning Roadmap */}
         <Col xs={24}>
