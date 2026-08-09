@@ -103,9 +103,8 @@ async def related(term_id: str):
     if not term:
         raise HTTPException(status_code=404, detail="Term not found")
     # get_term returns dict without _id; refetch raw for related resolution
-    from bson import ObjectId
     from app.database.db import database
-    raw = await database["glossary_terms"].find_one({"_id": ObjectId(term_id)})
+    raw = await database["glossary_terms"].find_one({"_id": term_id})
     if not raw:
         return []
     return await glossary_service.related_terms(raw)

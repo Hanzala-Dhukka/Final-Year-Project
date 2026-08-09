@@ -37,6 +37,12 @@ async def create_goal(user_id: str, payload) -> Dict[str, Any]:
     return await _enrich(doc)
 
 
+async def delete_goal(user_id: str, goal_id: str) -> bool:
+    """Delete a goal owned by the user. Returns True if deleted."""
+    result = await database[GOALS].delete_one({"_id": goal_id, "user_id": user_id})
+    return result.deleted_count > 0
+
+
 async def _enrich(goal: Dict[str, Any]) -> Dict[str, Any]:
     """Count matching activity since the period start and update progress."""
     goal_type = goal.get("goal_type")

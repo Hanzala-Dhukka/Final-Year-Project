@@ -2,8 +2,8 @@ import {
   PieChart,
   Pie,
   Cell,
-  BarChart,
-  Bar,
+  LineChart,
+  Line,
   XAxis,
   YAxis,
   CartesianGrid,
@@ -15,118 +15,159 @@ import {
   PolarAngleAxis,
   PolarRadiusAxis,
   Radar,
+  Area,
+  AreaChart,
 } from "recharts";
-import { Card, CardContent, CardHeader, Grid, Typography } from "@mui/material";
+import { Card, CardContent, Typography, Box } from "@mui/material";
+import { frameworkMeta, FRAMEWORK_ORDER } from "./frameworkMeta";
 
-const FRAMEWORK_COLORS = {
-  OWASP: "#2563EB",
-  CWE: "#7C3AED",
-  MITRE: "#DC2626",
-  NIST: "#059669",
-};
-
-// Pie of the four framework scores.
-function FrameworkPie({ frameworks }) {
-  const data = Object.entries(frameworks || {}).map(([name, value]) => ({
-    name,
-    value,
-  }));
-  const total = data.reduce((s, d) => s + d.value, 0);
+function ChartCard({ title, subtitle, children }) {
   return (
     <Card sx={{ height: "100%" }}>
-      <CardHeader title="Framework Distribution" subheader="Compliance score share" />
       <CardContent>
-        {total === 0 ? (
-          <Typography color="text.secondary" sx={{ py: 6, textAlign: "center" }}>
-            No compliance data yet.
-          </Typography>
-        ) : (
-          <ResponsiveContainer width="100%" height={260}>
+        <Typography variant="subtitle1" fontWeight={700}>
+          {title}
+        </Typography>
+        <Typography variant="caption" color="text.secondary" display="block" sx={{ mb: 2 }}>
+          {subtitle}
+        </Typography>
+        {children}
+      </CardContent>
+    </Card>
+  );
+}
+
+const TOOLTIP_STYLE = {
+  background: "var(--cardBg)",
+  border: "1px solid var(--borderColor)",
+  borderRadius: 12,
+  color: "var(--textPrimary)",
+  fontSize: 13,
+};
+
+// Radar of the four framework scores.
+function FrameworkRadar({ frameworks }) {
+  const data = FRAMEWORK_ORDER.map((name) => ({ framework: name, score: frameworks[name] ?? 0 }));
+  return (
+    <ChartCard title="Framework Coverage" subtitle="Relative strength per standard">
+      <ResponsiveContainer width="100%" height={250}>
+        <RadarChart data={data} outerRadius={95}>
+          <PolarGrid stroke="rgba(148,163,184,0.2)" />
+          <PolarAngleAxis dataKey="framework" tick={{ fill: "var(--chartLabel)", fontSize: 12 }} />
+          <PolarRadiusAxis domain={[0, 100]} tick={{ fill: "var(--chartLabel)", fontSize: 10 }} />
+          <Radar dataKey="score" stroke="#2563EB" fill="#2563EB" fillOpacity={0.45} strokeWidth={2} />
+          <Tooltip contentStyle={TOOLTIP_STYLE} />
+        </RadarChart>
+      </ResponsiveContainer>
+    </ChartCard>
+  );
+}
+
+// Line/area chart of the overall compliance trend over time.
+function ComplianceTrend({ history }) {
+  const data = (history || []).map((h) => ({
+    date: h.date,
+    overall: h.overall,
+    ...(h.frameworks || {}),
+  }));
+  return (
+    <ChartCard title="Compliance Trend" subtitle="Overall score over time">
+      <ResponsiveContainer width="100%" height={250}>
+        <AreaChart data={data}>
+          <defs>
+            <linearGradient id="scoreGrad" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor="#2563EB" stopOpacity={0.4} />
+              <stop offset="100%" stopColor="#2563EB" stopOpacity={0} />
+            </linearGradient>
+          </defs>
+          <CartesianGrid strokeDasharray="3 3" stroke="rgba(148,163,184,0.14)" />
+          <XAxis dataKey="date" tick={{ fill: "var(--chartLabel)", fontSize: 11 }} />
+          <YAxis domain={[0, 100]} tick={{ fill: "var(--chartLabel)", fontSize: 11 }} />
+          <Tooltip contentStyle={TOOLTIP_STYLE} />
+          <Area
+            type="monotone"
+            dataKey="overall"
+            name="Overall"
+            stroke="#2563EB"
+            strokeWidth={2.5}
+            fill="url(#scoreGrad)"
+          />
+        </AreaChart>
+      </ResponsiveContainer>
+    </ChartCard>
+  );
+}
+
+// Pie showing the share of each framework score.
+function FrameworkPie({ frameworks }) {
+  const data = FRAMEWORK_ORDER.map((name) => ({
+    name,
+    value: frameworks[name] ?? 0,
+    color: frameworkMeta(name).color,
+  })).filter((d) => d.value > 0);
+  const total = data.reduce((s, d) => s + d.value, 0);
+
+  return (
+    <ChartCard title="Distribution" subtitle="Score share per framework">
+      {total === 0 ? (
+        <Typography color="text.secondary" sx={{ py: 6, textAlign: "center" }}>
+          No compliance data yet.
+        </Typography>
+      ) : (
+        <>
+          <ResponsiveContainer width="100%" height={250}>
             <PieChart>
               <Pie
                 data={data}
                 dataKey="value"
                 nameKey="name"
-                innerRadius={55}
+                innerRadius={60}
                 outerRadius={90}
-                paddingAngle={2}
-                label={(d) => `${d.name}: ${d.value}%`}
+                paddingAngle={3}
+                stroke="none"
               >
                 {data.map((d) => (
-                  <Cell key={d.name} fill={FRAMEWORK_COLORS[d.name] || "#999"} />
+                  <Cell key={d.name} fill={d.color} />
                 ))}
               </Pie>
-              <Tooltip />
-              <Legend />
+              <Tooltip contentStyle={TOOLTIP_STYLE} />
+              <Legend
+                iconType="circle"
+                wrapperStyle={{ fontSize: 12, color: "var(--textSecondary)" }}
+              />
             </PieChart>
           </ResponsiveContainer>
-        )}
-      </CardContent>
-    </Card>
+          <Box sx={{ display: "flex", justifyContent: "center", gap: 2, flexWrap: "wrap" }}>
+            {data.map((d) => (
+              <Box key={d.name} sx={{ textAlign: "center" }}>
+                <Typography variant="h6" fontWeight={800} sx={{ color: d.color }}>
+                  {d.value}%
+                </Typography>
+                <Typography variant="caption" color="text.secondary">
+                  {d.name}
+                </Typography>
+              </Box>
+            ))}
+          </Box>
+        </>
+      )}
+    </ChartCard>
   );
 }
 
-// Bar chart of compliance trend over time.
-function ComplianceTrend({ history }) {
-  const data = (history || []).map((h) => ({
-    date: h.date,
-    score: h.overall,
-  }));
-  return (
-    <Card sx={{ height: "100%" }}>
-      <CardHeader title="Compliance Trend" subheader="Overall score over time" />
-      <CardContent>
-        <ResponsiveContainer width="100%" height={260}>
-          <BarChart data={data}>
-            <CartesianGrid strokeDasharray="3 3" />
-            <XAxis dataKey="date" />
-            <YAxis domain={[0, 100]} />
-            <Tooltip />
-            <Bar dataKey="score" fill="#2563EB" radius={[4, 4, 0, 0]} />
-          </BarChart>
-        </ResponsiveContainer>
-      </CardContent>
-    </Card>
-  );
-}
-
-// Radar comparing the four frameworks.
-function FrameworkRadar({ frameworks }) {
-  const data = Object.entries(frameworks || {}).map(([framework, score]) => ({
-    framework,
-    score,
-  }));
-  return (
-    <Card sx={{ height: "100%" }}>
-      <CardHeader title="Framework Coverage" subheader="Relative strength per framework" />
-      <CardContent>
-        <ResponsiveContainer width="100%" height={260}>
-          <RadarChart data={data} outerRadius={90}>
-            <PolarGrid />
-            <PolarAngleAxis dataKey="framework" />
-            <PolarRadiusAxis domain={[0, 100]} />
-            <Radar dataKey="score" stroke="#2563EB" fill="#2563EB" fillOpacity={0.5} />
-            <Tooltip />
-          </RadarChart>
-        </ResponsiveContainer>
-      </CardContent>
-    </Card>
-  );
-}
-
-// Composite chart block used by the dashboard.
+// Composite chart row used by the dashboard.
 export default function ComplianceChart({ frameworks, history }) {
   return (
-    <Grid container spacing={3}>
-      <Grid item xs={12} md={4}>
-        <FrameworkPie frameworks={frameworks} />
-      </Grid>
-      <Grid item xs={12} md={4}>
-        <ComplianceTrend history={history} />
-      </Grid>
-      <Grid item xs={12} md={4}>
-        <FrameworkRadar frameworks={frameworks} />
-      </Grid>
-    </Grid>
+    <Box
+      sx={{
+        display: "grid",
+        gridTemplateColumns: { xs: "1fr", md: "1fr 1fr 1fr" },
+        gap: 3,
+      }}
+    >
+      <FrameworkRadar frameworks={frameworks} />
+      <ComplianceTrend history={history} />
+      <FrameworkPie frameworks={frameworks} />
+    </Box>
   );
 }

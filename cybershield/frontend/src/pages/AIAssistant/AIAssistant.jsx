@@ -1,10 +1,13 @@
 import { useState, useEffect, useCallback, useRef } from "react";
+import { Bot, Moon, Sun, AlertCircle, Trash2 } from "lucide-react";
 import chatApi from "../../api/chatApi";
 import { projectApi } from "../../api/projectApi";
 import ChatSidebar from "../../components/AIAssistant/ChatSidebar";
 import ChatWindow from "../../components/AIAssistant/ChatWindow";
 import MessageInput from "../../components/AIAssistant/MessageInput";
 import ContextSelector from "../../components/AIAssistant/ContextSelector";
+import { useTheme } from "../../theme/useTheme";
+import "./AIAssistant.css";
 
 /**
  * Generate an initial question based on the context type and scan data
@@ -29,11 +32,16 @@ function generateInitialQuestion(type, scanData) {
 /**
  * AI Security Assistant (Modules 5.1 & 5.2)
  *
+ * Professional chat UI connected to the /chat backend. Fully theme-aware:
+ * adapts to both dark and light mode, with an in-page toggle.
+ *
  * Layout: sidebar (conversations) + chat window + input, with a project
  * selector and context dropdown so the assistant is aware of the user's
  * CyberShield data (GitHub scans, threat reports, OWASP, quizzes).
  */
 export default function AIAssistant() {
+  const { isDark, toggleTheme } = useTheme();
+
   const [conversations, setConversations] = useState([]);
   const [activeId, setActiveId] = useState(null);
   const [messages, setMessages] = useState([]);
@@ -45,6 +53,8 @@ export default function AIAssistant() {
   const [projectId, setProjectId] = useState(null);
   const [context, setContext] = useState("general");
   const [contextMeta, setContextMeta] = useState({});
+
+  const [mobileSidebar, setMobileSidebar] = useState(false);
 
   const scrollRef = useRef(null);
   const initDoneRef = useRef(false);
@@ -93,7 +103,7 @@ export default function AIAssistant() {
     if (storedContext) {
       try {
         const ctx = JSON.parse(storedContext);
-        // Set the context domain based on the source
+        // Set the project/context domain based on the source
         if (ctx.type === "github_scan") {
           setContext("github_scan");
           changeContext("github_scan");
@@ -147,12 +157,14 @@ export default function AIAssistant() {
     setActiveId(id);
     setError("");
     await loadMessages(id);
+    setMobileSidebar(false);
   };
 
   const handleNewChat = () => {
     setActiveId(null);
     setMessages([]);
     setError("");
+    setMobileSidebar(false);
   };
 
   const handleDelete = async (id) => {
@@ -176,79 +188,91 @@ export default function AIAssistant() {
   };
 
   // Update the active context on the backend whenever project/context changes
-  const changeContext = useCallback(async (nextContext) => {
-    setContext(nextContext);
-    try {
-      const res = await chatApi.updateContext(projectId, nextContext);
-      setContextMeta(res.data || {});
-    } catch (e) {
-      console.error("Failed to update context", e);
-    }
-  }, [projectId]);
-
-  const changeProject = useCallback(async (nextProjectId) => {
-    setProjectId(nextProjectId);
-    try {
-      const res = await chatApi.updateContext(nextProjectId, context);
-      setContextMeta(res.data || {});
-    } catch (e) {
-      console.error("Failed to update project context", e);
-    }
-  }, [context]);
-
-  const handleSend = useCallback(async (text) => {
-    setLoading(true);
-    setError("");
-    const userMsg = { role: "user", content: text };
-    setMessages((prev) => [...prev, userMsg]);
-
-    try {
-      const res = await chatApi.sendMessage(activeId, text, context, projectId);
-      const data = res.data;
-      const conversationId = data.conversation_id;
-
-      setMessages((prev) => [
-        ...prev,
-        { role: "assistant", content: data.reply },
-      ]);
-
-      if (!activeId || activeId !== conversationId) {
-        setActiveId(conversationId);
+  const changeContext = useCallback(
+    async (nextContext) => {
+      setContext(nextContext);
+      try {
+        const res = await chatApi.updateContext(projectId, nextContext);
+        setContextMeta(res.data || {});
+      } catch (e) {
+        console.error("Failed to update context", e);
       }
-      // Refresh sidebar (title may have been auto-generated)
-      await loadConversations();
-    } catch (e) {
-      setError("Sorry, I couldn't process your message. Please try again.");
-      setMessages((prev) => prev.slice(0, -1)); // remove the optimistic user msg
-    } finally {
-      setLoading(false);
-    }
-  }, [activeId, context, projectId]);
+    },
+    [projectId]
+  );
+
+  const changeProject = useCallback(
+    async (nextProjectId) => {
+      setProjectId(nextProjectId);
+      try {
+        const res = await chatApi.updateContext(nextProjectId, context);
+        setContextMeta(res.data || {});
+      } catch (e) {
+        console.error("Failed to update project context", e);
+      }
+    },
+    [context]
+  );
+
+  const handleSend = useCallback(
+    async (text) => {
+      setLoading(true);
+      setError("");
+      const userMsg = { role: "user", content: text };
+      setMessages((prev) => [...prev, userMsg]);
+
+      try {
+        const res = await chatApi.sendMessage(activeId, text, context, projectId);
+        const data = res.data;
+        const conversationId = data.conversation_id;
+
+        setMessages((prev) => [
+          ...prev,
+          { role: "assistant", content: data.reply },
+        ]);
+
+        if (!activeId || activeId !== conversationId) {
+          setActiveId(conversationId);
+        }
+        // Refresh sidebar (title may have been auto-generated)
+        await loadConversations();
+      } catch (e) {
+        setError("Sorry, I couldn't process your message. Please try again.");
+        setMessages((prev) => prev.slice(0, -1)); // remove the optimistic user msg
+      } finally {
+        setLoading(false);
+      }
+    },
+    [activeId, context, projectId]
+  );
 
   const activeProject = projects.find((p) => p._id === projectId || p.id === projectId);
+  const activeConversation = conversations.find((c) => c.id === activeId);
 
   return (
-    <div className="flex h-[calc(100vh-140px)] bg-white rounded-lg shadow overflow-hidden">
-      <ChatSidebar
-        conversations={conversations}
-        activeId={activeId}
-        onSelect={handleSelect}
-        onNewChat={handleNewChat}
-        onDelete={handleDelete}
-        onClearChat={handleClearChat}
-      />
+    <div className="cs-ai-assistant">
+      {/* Header */}
+      <header className="cs-ai-header">
+        <div className="cs-ai-brand">
+          <div className="cs-ai-logo">
+            <Bot size={22} />
+          </div>
+          <div>
+            <h1>CyberShield AI</h1>
+            <p className="subtitle">Security Copilot &amp; Learning Assistant</p>
+          </div>
+        </div>
 
-      <div className="flex-1 flex flex-col min-w-0">
-        <header className="px-6 py-3 border-b border-gray-200 flex flex-wrap items-center gap-3">
-          <span className="text-blue-600 font-bold text-lg">🛡️ CyberShield AI</span>
+        <div className="cs-ai-header-spacer" />
 
-          {/* Project selector (context switching) */}
-          <div className="flex items-center gap-2">
-            <span className="text-sm text-gray-500">Project:</span>
+        <div className="cs-ai-controls">
+          {/* Active project selector */}
+          <span className="cs-ai-field">
+            <span className="cs-ai-select__label">Project:</span>
             <select
               value={projectId || ""}
               onChange={(e) => changeProject(e.target.value || null)}
-              className="border border-gray-300 rounded-lg px-3 py-1.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="cs-ai-select"
             >
               <option value="">General (no project)</option>
               {projects.map((p) => (
@@ -257,36 +281,106 @@ export default function AIAssistant() {
                 </option>
               ))}
             </select>
-          </div>
+          </span>
 
           {/* Context domain selector */}
-          <div className="flex items-center gap-2">
-            <span className="text-sm text-gray-500">Context:</span>
-            <ContextSelector value={context} onChange={changeContext} />
-          </div>
+          <ContextSelector value={context} onChange={changeContext} />
 
-          {activeId && (
-            <span className="text-sm text-gray-400 truncate ml-auto">
-              {conversations.find((c) => c.id === activeId)?.title}
-            </span>
-          )}
-        </header>
+          {/* In-page theme toggle (light mode) */}
+          <button
+            className="cs-ai-icon-btn"
+            onClick={toggleTheme}
+            aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"}
+            title={isDark ? "Light mode" : "Dark mode"}
+          >
+            {isDark ? <Sun size={18} /> : <Moon size={18} />}
+          </button>
+        </div>
+      </header>
 
-        <div ref={scrollRef} className="flex-1 min-h-0">
-          <ChatWindow
-            messages={messages}
-            loading={loading}
-            onSuggestion={handleSend}
-            context={context}
+      {/* Body */}
+      <div className="cs-ai-body">
+        {/* Sidebar — mobile overlay */}
+        <div
+          className={`cs-ai-sidebar ${mobileSidebar ? "cs-ai-sidebar--open" : ""}`}
+        >
+          <ChatSidebar
+            conversations={conversations}
+            activeId={activeId}
+            onSelect={handleSelect}
+            onNewChat={handleNewChat}
+            onDelete={handleDelete}
+            onClearChat={handleClearChat}
           />
+          {/* Mobile close */}
+          {mobileSidebar && (
+            <button
+              className="cs-ai-clearchat"
+              style={{ margin: 8, width: "auto" }}
+              onClick={() => setMobileSidebar(false)}
+            >
+              ← Close
+            </button>
+          )}
         </div>
 
-        {error && (
-          <p className="text-sm text-red-500 px-6 py-2 bg-red-50">{error}</p>
-        )}
+        <div className="cs-ai-main">
+          {/* Context summary strip */}
+          <div
+            className="cs-ai-status"
+            style={{ margin: "12px 20px 0", alignSelf: "flex-start" }}
+          >
+            <span className="cs-ai-status__dot" />
+            {activeProject
+              ? `Context: ${activeProject.name} · ${contextLabel(context)}`
+              : `Context: ${contextLabel(context)}`}
+          </div>
 
-        <MessageInput onSend={handleSend} disabled={loading} />
+          {error && (
+            <div className="cs-ai-error">
+              <AlertCircle size={16} />
+              <span>{error}</span>
+              <button
+                onClick={() => setError("")}
+                style={{
+                  marginLeft: "auto",
+                  background: "none",
+                  border: "none",
+                  color: "inherit",
+                  cursor: "pointer",
+                }}
+                aria-label="Dismiss error"
+              >
+                <span style={{ opacity: 0.6 }}>✕</span>
+              </button>
+            </div>
+          )}
+
+          <div ref={scrollRef} style={{ flex: 1, minHeight: 0, overflowY: "auto" }}>
+            <ChatWindow
+              messages={messages}
+              loading={loading}
+              onSuggestion={handleSend}
+              context={context}
+            />
+          </div>
+
+          <MessageInput onSend={handleSend} disabled={loading} />
+        </div>
       </div>
     </div>
   );
+}
+
+/** Human-readable label for the internal context keys. */
+function contextLabel(context) {
+  const labels = {
+    general: "General",
+    github_scan: "GitHub Scanner",
+    threat_report: "Threat Reports",
+    owasp: "OWASP Simulator",
+    quiz: "Quiz",
+    glossary: "Glossary",
+  };
+  return labels[context] || "General";
 }

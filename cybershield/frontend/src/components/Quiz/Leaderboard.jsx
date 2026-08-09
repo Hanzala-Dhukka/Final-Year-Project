@@ -1,38 +1,46 @@
+import { Trophy } from "lucide-react";
+
 /**
- * XP leaderboard table (spec Step 18).
+ * XP leaderboard list (spec Step 18). Rank = position in list (backend
+ * entries do not carry a rank field).
  */
 export default function Leaderboard({ entries = [] }) {
   if (!entries.length) {
     return (
-      <p className="text-sm text-gray-400 px-2 py-4">No leaderboard data yet.</p>
+      <p className="cs-qz-state" style={{ padding: "20px 8px", margin: 0 }}>
+        No leaderboard data yet.
+      </p>
     );
   }
+
+  const topClass = (rank) => {
+    if (rank === 1) return "cs-qz-board__rank--top1";
+    if (rank === 2) return "cs-qz-board__rank--top2";
+    if (rank === 3) return "cs-qz-board__rank--top3";
+    return "";
+  };
+
   return (
-    <div className="overflow-x-auto">
-      <table className="w-full text-sm">
-        <thead>
-          <tr className="text-left text-gray-500 border-b border-gray-200">
-            <th className="py-2 px-2">#</th>
-            <th className="py-2 px-2">Name</th>
-            <th className="py-2 px-2">XP</th>
-            <th className="py-2 px-2">Avg</th>
-            <th className="py-2 px-2">Quizzes</th>
-            <th className="py-2 px-2">Lvl</th>
-          </tr>
-        </thead>
-        <tbody>
-          {entries.map((e) => (
-            <tr key={e.user_id} className="border-b border-gray-100 hover:bg-gray-50">
-              <td className="py-2 px-2 font-semibold text-gray-700">{e.rank}</td>
-              <td className="py-2 px-2 text-gray-800">{e.name}</td>
-              <td className="py-2 px-2 text-indigo-600 font-semibold">{e.xp}</td>
-              <td className="py-2 px-2 text-gray-600">{e.average_score}%</td>
-              <td className="py-2 px-2 text-gray-600">{e.quizzes_completed}</td>
-              <td className="py-2 px-2 text-gray-600">{e.level}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+    <div className="cs-qz-board">
+      {entries.map((e, i) => {
+        const rank = i + 1;
+        return (
+          <div key={e.user_id || i} className="cs-qz-board__row">
+            <span className={`cs-qz-board__rank ${topClass(rank)}`}>
+              {rank <= 3 ? <Trophy size={14} /> : rank}
+            </span>
+            <div className="cs-qz-board__name">
+              {e.name}
+              {e.level != null && (
+                <div className="cs-qz-board__meta">
+                  Level {e.level} · {e.quizzes_completed} quizzes
+                </div>
+              )}
+            </div>
+            <span className="cs-qz-board__xp">{e.xp} XP</span>
+          </div>
+        );
+      })}
     </div>
   );
 }

@@ -643,3 +643,46 @@
   background: #475569;
   border-radius: 3px;
 }
+
+/* ── Light Mode Support ────────────────────────────────────── */
+/* Cards sit on var(--bg-secondary) / var(--glass-border) surfaces
+   which are light in light mode, while text was hard-coded white.
+   Map body/labels/tooltips back to the theme text tokens so both
+   modes stay legible. The chart tooltip keeps its own dark style
+   (readable in both modes), so it is not overridden. */
+[data-theme="light"] .analytics-title,
+[data-theme="light"] .dashboardCardTitle,
+[data-theme="light"] .stat-value,
+[data-theme="light"] .tech-category-title,
+[data-theme="light"] .timeline-event-title,
+[data-theme="light"] .activity-stat-value {
+  color: var(--textPrimary);
+}
+
+[data-theme="light"] .stat-label,
+[data-theme="light"] .timeline-meta,
+[data-theme="light"] .timeline-date,
+[data-theme="light"] .activity-stat-label {
+  color: var(--textMuted);
+}
+
+[data-theme="light"] .tech-chip {
+  color: var(--textSecondary);
+}
+
+[data-theme="light"] .stat-card,
+[data-theme="light"] .tech-category,
+[data-theme="light"] .activity-stat {
+  background: var(--surfaceHover);
+  border-color: var(--borderColor);
+}
+
+/* Recharts labels/legend drawn over the (light) chart card */
+[data-theme="light"] .recharts-legend-item-text {
+  color: var(--textSecondary) !important;
+}
+
+[data-theme="light"] .recharts-pie-label-text {
+  fill: var(--textSecondary) !important;
+  color: var(--textSecondary) !important;
+}

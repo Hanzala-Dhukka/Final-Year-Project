@@ -30,6 +30,7 @@ from app.services import gamification_service
 from app.services.learning_goal_service import (
     list_goals,
     create_goal,
+    delete_goal,
 )
 from app.models.gamification import learning_goal_document
 from app.database.db import database
@@ -77,8 +78,17 @@ async def goals(user=Depends(get_current_user)):
 
 
 @router.post("/goals", response_model=LearningGoalOut)
-async def create_goal(payload: LearningGoalRequest, user=Depends(get_current_user)):
+async def create_goal_route(payload: LearningGoalRequest, user=Depends(get_current_user)):
     return await create_goal(str(user["_id"]), payload)
+
+
+@router.delete("/goals/{goal_id}", response_model=dict)
+async def delete_goal_route(goal_id: str, user=Depends(get_current_user)):
+    """Delete one of the user's learning goals."""
+    deleted = await delete_goal(str(user["_id"]), goal_id)
+    if not deleted:
+        raise HTTPException(status_code=404, detail="Goal not found")
+    return {"deleted": True, "id": goal_id}
 
 
 @router.get("/certificate/{certificate_id}/download")

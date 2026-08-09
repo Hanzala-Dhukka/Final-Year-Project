@@ -297,7 +297,7 @@ async def generate_compliance(
     # Step 3: per-framework scores + gap analysis.
     frameworks: Dict[str, float] = {}
     breakdown: Dict[str, Dict] = {}
-    gap_analysis: List[Dict] = {}
+    gap_analysis: List[Dict] = []
     for key in FRAMEWORK_KEYS:
         all_controls = framework_all(key)
         hit = mapped.get(key, set())

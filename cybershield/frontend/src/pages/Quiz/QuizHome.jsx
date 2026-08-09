@@ -1,4 +1,8 @@
 import { useState, useEffect } from "react";
+import {
+  Brain, Gauge, Minus, Plus, ShieldCheck,
+  Zap, Cpu, AlertCircle, ListChecks, Sparkles,
+} from "lucide-react";
 import quizApi from "../../api/quizApi";
 import DifficultySelector from "../../components/Quiz/DifficultySelector";
 import CategorySelector from "../../components/Quiz/CategorySelector";
@@ -47,58 +51,129 @@ export default function QuizHome({ onStart }) {
   };
 
   return (
-    <div className="container mx-auto px-4 py-8 max-w-4xl">
-      <h1 className="text-3xl font-bold text-gray-900 mb-1">🛡️ CyberShield AI Quiz</h1>
-      <p className="text-gray-500 mb-6">
-        Generate project- and technology-aware cybersecurity questions with AI.
-      </p>
+    <div className="cs-qz-row">
+      <div className="cs-qz-main">
+        <section className="cs-qz-card cs-qz-card--hero cs-qz-hero">
+          <span className="cs-qz-hero-badge">
+            <ShieldCheck size={14} />
+            Adaptive Learning · AI Generated
+          </span>
+          <h2>Test yourself with AI-crafted questions</h2>
+          <p>
+            Pick a domain, stack and difficulty — the AI builds questions matched
+            to your project, grades your answers instantly, and recommends what to
+            review next.
+          </p>
+          <div className="cs-qz-hero__badges">
+            <span className="cs-qz-badge cs-qz-badge--category">
+              <Brain size={12} /> 16 categories
+            </span>
+            <span className="cs-qz-badge cs-qz-badge--tech">
+              <Cpu size={12} /> 14 technologies
+            </span>
+            <span className="cs-qz-badge cs-qz-badge--category">
+              <Gauge size={12} /> 4 difficulty levels
+            </span>
+          </div>
+        </section>
 
-      <div className="bg-white shadow-md rounded-lg p-6 mb-6 space-y-6">
-        <div>
-          <label className="block text-sm font-semibold text-gray-700 mb-2">
-            Difficulty
-          </label>
-          <DifficultySelector value={difficulty} onChange={setDifficulty} />
+        <div className="cs-qz-card">
+          <h3 className="cs-qz-section-title">
+            <span className="cs-qz-icon-wrap">
+              <ListChecks size={17} />
+            </span>
+            Quiz Setup
+          </h3>
+
+          <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
+            <div className="cs-qz-field">
+              <label>Difficulty</label>
+              <DifficultySelector value={difficulty} onChange={setDifficulty} />
+            </div>
+
+            <CategorySelector
+              category={category}
+              technology={technology}
+              onCategoryChange={setCategory}
+              onTechnologyChange={setTechnology}
+            />
+
+            <div className="cs-qz-field">
+              <label>Number of questions</label>
+              <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
+                <div className="cs-qz-stepper">
+                  <button
+                    className="cs-qz-step-btn"
+                    onClick={() => setCount((c) => Math.max(1, Number(c) - 1))}
+                    disabled={Number(count) <= 1}
+                  >
+                    <Minus size={16} />
+                  </button>
+                  <span className="cs-qz-step-value">{count}</span>
+                  <button
+                    className="cs-qz-step-btn"
+                    onClick={() => setCount((c) => Math.min(30, Number(c) + 1))}
+                    disabled={Number(count) >= 30}
+                  >
+                    <Plus size={16} />
+                  </button>
+                </div>
+                <span className="cs-qz-count">max 30</span>
+              </div>
+            </div>
+
+            {error && (
+              <p className="cs-qz-error">
+                <AlertCircle size={15} />
+                {error}
+              </p>
+            )}
+
+            <button
+              className="cs-qz-btn cs-qz-btn--primary"
+              style={{ width: "100%" }}
+              onClick={start}
+              disabled={loading}
+            >
+              {loading ? (
+                <>
+                  <span className="cs-qz-spinner" style={{ width: 18, height: 18, borderWidth: 2 }} />
+                  Generating with AI…
+                </>
+              ) : (
+                <>
+                  <Sparkles size={18} />
+                  Start Quiz
+                </>
+              )}
+            </button>
+          </div>
         </div>
-
-        <CategorySelector
-          category={category}
-          technology={technology}
-          onCategoryChange={setCategory}
-          onTechnologyChange={setTechnology}
-        />
-
-        <div>
-          <label className="block text-sm font-semibold text-gray-700 mb-2">
-            Questions
-          </label>
-          <input
-            type="number"
-            min={1}
-            max={30}
-            value={count}
-            onChange={(e) => setCount(e.target.value)}
-            className="border border-gray-300 rounded-lg px-3 py-1.5 w-24 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
-        </div>
-
-        {error && (
-          <p className="text-sm text-red-500 bg-red-50 px-3 py-2 rounded">{error}</p>
-        )}
-
-        <button
-          onClick={start}
-          disabled={loading}
-          className="w-full px-4 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
-        >
-          {loading ? "Generating with AI…" : "Start Quiz"}
-        </button>
       </div>
 
-      <div className="bg-white shadow-md rounded-lg p-6">
-        <h2 className="text-xl font-semibold mb-3">🏆 Leaderboard</h2>
-        <Leaderboard entries={leaderboard} />
-      </div>
+      <aside className="cs-qz-side">
+        <div className="cs-qz-sticky">
+          <div className="cs-qz-card">
+            <h3 className="cs-qz-section-title">
+              <span className="cs-qz-icon-wrap" style={{ background: "rgba(245, 158, 11, 0.15)", color: "var(--warning, #f59e0b)" }}>
+                <Zap size={17} />
+              </span>
+              XP Leaderboard
+            </h3>
+            <Leaderboard entries={leaderboard} />
+          </div>
+
+          <div className="cs-qz-tip">
+            <div className="cs-qz-tip__icon">
+              <Sparkles size={16} />
+            </div>
+            <div className="cs-qz-tip-body">
+              <h4>How it works</h4>
+              <p>Generate → answer each question → get your score, XP and a ranked leaderboard instantly.</p>
+            </div>
+          </div>
+        </div>
+      </aside>
     </div>
   );
 }

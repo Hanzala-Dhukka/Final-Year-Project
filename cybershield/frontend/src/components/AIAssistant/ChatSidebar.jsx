@@ -1,3 +1,5 @@
+import { MessageSquare, Plus, Trash2, Sparkles } from "lucide-react";
+
 /**
  * Sidebar listing the user's conversations, grouped by recency.
  * Supports selecting, starting, deleting, and clearing conversations.
@@ -24,6 +26,19 @@ function groupByDate(conversations) {
   return groups;
 }
 
+/** Format an ISO timestamp into a compact "HH:MM" or relative label. */
+function formatTime(iso) {
+  if (!iso) return "";
+  const d = new Date(iso);
+  const now = new Date();
+  const sameDay =
+    d.toDateString() === now.toDateString();
+  if (sameDay) {
+    return d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+  }
+  return d.toLocaleDateString([], { month: "short", day: "numeric" });
+}
+
 export default function ChatSidebar({
   conversations,
   activeId,
@@ -36,57 +51,60 @@ export default function ChatSidebar({
   const order = ["Today", "Yesterday", "Last Week", "Older"];
 
   return (
-    <aside className="w-64 shrink-0 border-r border-gray-200 bg-gray-50 flex flex-col h-full">
-      <div className="p-4 space-y-2">
-        <button
-          onClick={onNewChat}
-          className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm font-medium"
-        >
-          + New Chat
+    <aside className="cs-ai-sidebar">
+      <div className="cs-ai-sidebar__actions">
+        <button onClick={onNewChat} className="cs-ai-newchat">
+          <Plus size={18} />
+          <span>New Chat</span>
         </button>
         {activeId && onClearChat && (
-          <button
-            onClick={() => onClearChat(activeId)}
-            className="w-full px-4 py-2 bg-red-50 text-red-600 border border-red-200 rounded-lg hover:bg-red-100 text-sm font-medium"
-          >
-            🗑 Clear Chat
+          <button onClick={() => onClearChat(activeId)} className="cs-ai-clearchat">
+            <Trash2 size={15} />
+            <span>Clear Chat</span>
           </button>
         )}
       </div>
 
-      <div className="flex-1 overflow-y-auto px-2 pb-4">
+      <div className="cs-ai-sidebar__list">
         {conversations.length === 0 && (
-          <p className="text-xs text-gray-400 px-2 mt-2">No conversations yet.</p>
+          <div className="cs-ai-sidebar__empty">
+            <Sparkles size={20} style={{ margin: "0 auto 8px", opacity: 0.5 }} />
+            <p>No conversations yet.<br />Start a new chat with the AI assistant.</p>
+          </div>
         )}
 
         {order.map((label) =>
           groups[label].length > 0 ? (
-            <div key={label} className="mb-3">
-              <p className="px-2 text-xs font-semibold uppercase tracking-wide text-gray-400 mb-1">
-                {label}
-              </p>
+            <div key={label}>
+              <p className="cs-ai-group-label">{label}</p>
               {groups[label].map((c) => (
-                <div
+                <button
                   key={c.id}
-                  className={`group flex items-center justify-between rounded-lg px-2 py-2 cursor-pointer text-sm ${
-                    c.id === activeId
-                      ? "bg-blue-100 text-blue-700"
-                      : "hover:bg-gray-200 text-gray-700"
-                  }`}
+                  className={`cs-ai-conv ${c.id === activeId ? "cs-ai-conv--active" : ""}`}
                   onClick={() => onSelect(c.id)}
                 >
-                  <span className="truncate flex-1">{c.title}</span>
-                  <button
+                  <span className="cs-ai-conv__icon">
+                    <MessageSquare size={16} />
+                  </span>
+                  <span className="cs-ai-conv__meta">
+                    <span className="cs-ai-conv__title">{c.title}</span>
+                    <span className="cs-ai-conv__time">
+                      {formatTime(c.updated_at || c.created_at)}
+                    </span>
+                  </span>
+                  <span
+                    role="button"
+                    tabIndex={0}
+                    className="cs-ai-conv__del"
                     onClick={(e) => {
                       e.stopPropagation();
                       onDelete(c.id);
                     }}
-                    className="opacity-0 group-hover:opacity-100 text-gray-400 hover:text-red-500 ml-2"
                     title="Delete conversation"
                   >
-                    ✕
-                  </button>
-                </div>
+                    <Trash2 size={14} />
+                  </span>
+                </button>
               ))}
             </div>
           ) : null

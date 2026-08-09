@@ -117,13 +117,14 @@ async def _checklist_score(user_id: str, project_id: Optional[str] = None) -> fl
 
 
 async def _owasp_score(user_id: str, project_id: Optional[str] = None) -> float:
-    """OWASP simulator completion percentage."""
+    """OWASP simulator completion percentage (from simulation_sessions)."""
     try:
         total = 10
         query = {"user_id": str(user_id), "status": "completed"}
         if project_id:
-            query["project_id"] = str(project_id)
-        completed = await database["owasp_sessions"].count_documents(query)
+            # Sessions are not project-scoped, so fall back to overall progress.
+            query = {"user_id": str(user_id), "status": "completed"}
+        completed = await database["simulation_sessions"].count_documents(query)
         return round(min(100.0, (completed / total) * 100), 1)
     except Exception:
         return 0.0
@@ -337,16 +338,27 @@ async def build_dashboard(user_id: str, sort_by: str = "security_score") -> Dict
     last = await last_scan_date(user_id)
     trends = await trend_service.get_trends(user_id)
 
-    # Record a fresh analytics snapshot so trends stay current between scans.
+    # Record a fresh analytics snapshot so trends stay current (skip when nothing
+    # changed since the last one, to avoid spamming the chart with duplicates).
     try:
-        await trend_service.record_snapshot(
-            user_id=user_id,
-            project_id=None,
-            security_score=score,
-            risk_score=round(100.0 - score, 1),
-            compliance_score=comp,
-            sev_override=sev,
+        prev = await trend_service.latest_snapshot(user_id, None)
+        same = bool(prev) and (
+            float(prev.get("security_score", 0) or 0) == score
+            and float(prev.get("compliance_score", 0) or 0) == comp
+            and prev.get("critical_vulnerabilities", 0) == sev["critical"]
+            and prev.get("high_vulnerabilities", 0) == sev["high"]
+            and prev.get("medium_vulnerabilities", 0) == sev["medium"]
+            and prev.get("low_vulnerabilities", 0) == sev["low"]
         )
+        if not same:
+            await trend_service.record_snapshot(
+                user_id=user_id,
+                project_id=None,
+                security_score=score,
+                risk_score=round(100.0 - score, 1),
+                compliance_score=comp,
+                sev_override=sev,
+            )
     except Exception as e:  # pragma: no cover - defensive
         print(f"Analytics: snapshot recording failed: {e}")
 

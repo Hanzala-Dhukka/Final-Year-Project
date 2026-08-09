@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Timer as TimerIcon } from "lucide-react";
 
 /**
  * Countdown timer (spec Step 14). Calls onExpire when it reaches zero.
@@ -24,16 +25,15 @@ export default function Timer({ durationSec = 600, onExpire, running = true }) {
   const mm = String(Math.floor(remaining / 60)).padStart(2, "0");
   const ss = String(remaining % 60).padStart(2, "0");
 
+  const low = remaining <= 60;
+
   return (
-    <div className="flex items-center gap-2 text-sm">
-      <span className="text-gray-400">Time Left</span>
-      <span
-        className={`font-mono font-semibold ${
-          remaining <= 60 ? "text-red-500" : "text-gray-700"
-        }`}
-      >
+    <span className={`cs-qz-timer ${low ? "cs-qz-timer--danger" : ""}`}>
+      <TimerIcon size={15} />
+      Time Left:
+      <span className="cs-qz-timer__time">
         {mm}:{ss}
       </span>
-    </div>
+    </span>
   );
 }

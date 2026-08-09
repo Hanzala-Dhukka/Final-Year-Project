@@ -1,36 +1,81 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
+import { ArrowLeft, CalendarClock, Clock, Trophy, CheckCircle2 } from "lucide-react";
 import owaspApi from "../../api/owaspApi";
 import AttackMode from "./AttackMode";
+import ProgressBar from "../../components/OWASP/ProgressBar";
+
+function diffChipClass(d) {
+  const map = {
+    Beginner: "cs-ow-chip--easy",
+    Intermediate: "cs-ow-chip--medium",
+    Advanced: "cs-ow-chip--hard",
+    Expert: "cs-ow-chip--danger",
+  };
+  return map[d] || "cs-ow-chip--neutral";
+}
+
+function useCountdown(expiresAt) {
+  const [remaining, setRemaining] = useState(0);
+  useEffect(() => {
+    if (!expiresAt) return;
+    const update = () => {
+      const diff = new Date(expiresAt).getTime() - Date.now();
+      setRemaining(diff > 0 ? diff : 0);
+    };
+    update();
+    const id = setInterval(update, 1000);
+    return () => clearInterval(id);
+  }, [expiresAt]);
+  return remaining;
+}
+
+function formatTime(ms) {
+  const total = Math.floor(ms / 1000);
+  const h = Math.floor(total / 3600);
+  const m = Math.floor((total % 3600) / 60);
+  const s = total % 60;
+  const pad = (n) => String(n).padStart(2, "0");
+  return `${pad(h)}:${pad(m)}:${pad(s)}`;
+}
 
 /**
- * Daily Challenge (spec Step 9). Shows today's challenge with a countdown; once
- * completed the reward is granted only once. On "Start", opens AttackMode for
- * the challenge's vulnerability.
+ * Daily Challenge (spec Step 9). Shows today's challenge with a live countdown;
+ * the reward is granted once per day. On "Start", opens AttackMode for the
+ * challenge's vulnerability.
  */
 export default function DailyChallenge({ onBack }) {
   const [challenge, setChallenge] = useState(null);
   const [launch, setLaunch] = useState(false);
   const [msg, setMsg] = useState("");
+  const [msgError, setMsgError] = useState(false);
+  const mounted = useRef(true);
 
-  const load = () => {
+  const load = useCallback(() => {
     owaspApi
       .daily()
-      .then((r) => setChallenge(r.data))
-      .catch(() => setChallenge(null));
-  };
+      .then((r) => mounted.current && setChallenge(r.data))
+      .catch(() => mounted.current && setChallenge(null));
+  }, []);
 
   useEffect(() => {
     load();
-  }, []);
+    return () => {
+      mounted.current = false;
+    };
+  }, [load]);
+
+  const remaining = useCountdown(challenge?.expires_at);
 
   const complete = async () => {
+    setMsgError(false);
     try {
       const r = await owaspApi.completeDaily();
-      const xp = r.data.xp_awarded;
-      setMsg(xp > 0 ? `🎉 Daily challenge complete! +${xp} XP` : "Already completed today.");
+      const xp = r.data?.xp_awarded || 0;
+      setMsg(xp > 0 ? `Daily challenge complete! +${xp} XP awarded.` : "You already completed today's challenge.");
       load();
     } catch (e) {
-      setMsg("Failed to complete challenge.");
+      setMsgError(true);
+      setMsg("Could not complete the challenge. Please try again.");
     }
   };
 
@@ -45,36 +90,61 @@ export default function DailyChallenge({ onBack }) {
   }
 
   return (
-    <div className="container mx-auto px-4 py-8 max-w-2xl">
-      <button onClick={onBack} className="text-sm text-gray-400 hover:text-gray-600 mb-4">← Back</button>
-      <h1 className="text-2xl font-bold text-gray-900 mb-4">📅 Daily Challenge</h1>
+    <div className="cs-ow-wrap">
+      <button className="cs-ow-back" onClick={onBack}>
+        <ArrowLeft size={15} /> Back
+      </button>
 
       {!challenge ? (
-        <p className="text-gray-400">Loading today's challenge…</p>
+        <div className="cs-ow-loading">
+          <span className="cs-ow-spin" /> Loading today&apos;s challenge…
+        </div>
       ) : (
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="text-xs text-gray-400 mb-1">Today's Challenge</div>
-          <h2 className="text-xl font-semibold text-gray-800">{challenge.vulnerability}</h2>
-          <div className="mt-2 flex gap-2 text-xs">
-            <span className="px-2 py-0.5 rounded bg-gray-100 text-gray-500">{challenge.difficulty}</span>
-            <span className="px-2 py-0.5 rounded bg-indigo-50 text-indigo-600">Reward: {challenge.reward_xp} XP</span>
+        <div className="cs-ow-daily">
+          <span className="cs-ow-daily-eyebrow">
+            <CalendarClock size={14} /> Today&apos;s Challenge
+          </span>
+
+          <div className="cs-ow-daily-head">
+            <h2>{challenge.vulnerability}</h2>
+            <span className="cs-ow-countdown">
+              <Clock size={15} /> {formatTime(remaining)}
+            </span>
           </div>
-          <p className="text-sm text-gray-500 mt-3">
-            Expires: {new Date(challenge.expires_at).toLocaleString()}
-          </p>
-          {challenge.completed && (
-            <p className="text-green-600 text-sm mt-2">✅ Completed today</p>
+
+          <div className="cs-ow-daily-meta">
+            <span className={`cs-ow-chip ${diffChipClass(challenge.difficulty)}`}>
+              {challenge.difficulty}
+            </span>
+            <span className="cs-ow-chip cs-ow-chip--warning">
+              <Trophy size={11} /> Reward {challenge.reward_xp} XP
+            </span>
+          </div>
+
+          <ProgressBar value={remaining} max={86400000} label="Expires in" />
+
+          {challenge.completed ? (
+            <div className="cs-ow-daily-done">
+              <CheckCircle2 size={18} /> Completed today — you earned the reward!
+            </div>
+          ) : (
+            <div className="cs-ow-daily-note">
+              <button
+                className="cs-ow-btn cs-ow-btn--primary"
+                onClick={() => setLaunch(true)}
+              >
+                <Trophy size={16} /> Start Challenge
+              </button>
+            </div>
           )}
-          <button
-            onClick={() => setLaunch(true)}
-            className="mt-4 w-full px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
-          >
-            Start Challenge
-          </button>
+
+          {msg && (
+            <div className={`cs-ow-alert ${msgError ? "cs-ow-alert--error" : "cs-ow-alert--info"}`} style={{ marginTop: 16 }}>
+              {msg}
+            </div>
+          )}
         </div>
       )}
-
-      {msg && <p className="mt-4 text-center text-green-600 font-semibold">{msg}</p>}
     </div>
   );
 }

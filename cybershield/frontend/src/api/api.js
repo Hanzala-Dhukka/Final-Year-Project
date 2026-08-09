@@ -1,16 +1,19 @@
 import axios from "axios";
 
 // Create axios instance
+const API_BASE_URL = "http://127.0.0.1:8000";
+
+// Create axios instance
 const API = axios.create({
-  baseURL: "http://localhost:8000/api/v1",
+  baseURL: `${API_BASE_URL}/api/v1`,
   headers: {
     "Content-Type": "application/json",
   },
 });
 
-// Create separate admin API instance for admin routes (which use /api/admin prefix)
+// Create separate admin API instance for admin APIs (which use /api/admin prefix)
 const ADMIN_API = axios.create({
-  baseURL: "http://localhost:8000/api",
+  baseURL: `${API_BASE_URL}/api`,
   headers: {
     "Content-Type": "application/json",
   },
@@ -53,8 +56,8 @@ API.interceptors.response.use(
       if (refreshToken) {
         try {
           // Try to refresh the access token
-          // Backend route is /auth/refresh-token (not /auth/refresh)
-          const response = await API.post("/auth/refresh-token", {
+          // Backend route is /auth/refresh (mounted router exposes /refresh)
+          const response = await API.post("/auth/refresh", {
             refresh_token: refreshToken
           });
 

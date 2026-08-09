@@ -1406,3 +1406,72 @@
     grid-template-columns: 1fr 1fr;
   }
 }
+
+/* ============================================================
+   Light Mode Support
+   The `.gs-*` surfaces use theme variables (--bg-primary /
+   --bg-secondary) which flip to light in light mode, while the
+   text colors were hard-coded for dark mode. These overrides map
+   the body/labels back to the theme text tokens so everything
+   stays legible in both modes. Code/editor panels are kept dark
+   in light mode so syntax-highlighted text remains readable.
+   ============================================================ */
+[data-theme="light"] .gs-page {
+  color: var(--textPrimary);
+}
+
+[data-theme="light"] .gs-repo-name,
+[data-theme="light"] .gs-preview-name,
+[data-theme="light"] .gs-last-scan-title,
+[data-theme="light"] .gs-card-title,
+[data-theme="light"] .gs-text-bold,
+[data-theme="light"] .gs-cat-count,
+[data-theme="light"] .gs-report-value,
+[data-theme="light"] .gs-empty-state h2,
+[data-theme="light"] .gs-expanded-title,
+[data-theme="light"] .gs-issue-type,
+[data-theme="light"] .gs-ai-severity-count,
+[data-theme="light"] .gs-ai-severity-label {
+  color: var(--textPrimary);
+}
+
+[data-theme="light"] .gs-url-input {
+  color: var(--textPrimary);
+}
+
+[data-theme="light"] .gs-repo-desc,
+[data-theme="light"] .gs-stat-chip,
+[data-theme="light"] .gs-preview-desc,
+[data-theme="light"] .gs-last-scan-sub,
+[data-theme="light"] .gs-table td,
+[data-theme="light"] .gs-ai-section p,
+[data-theme="light"] .gs-list li,
+[data-theme="light"] .gs-pre-line,
+[data-theme="light"] .gs-ordered-list li,
+[data-theme="light"] .gs-dep-analysis-box p {
+  color: var(--textSecondary);
+}
+
+[data-theme="light"] .gs-table th,
+[data-theme="light"] .gs-cat-label,
+[data-theme="light"] .gs-cat-name,
+[data-theme="light"] .gs-score-label,
+[data-theme="light"] .gs-ai-section h4,
+[data-theme="light"] .gs-tab-btn,
+[data-theme="light"] .gs-filter-btn {
+  color: var(--textMuted);
+}
+
+[data-theme="light"] .gs-tab-btn:hover,
+[data-theme="light"] .gs-filter-btn:hover {
+  color: var(--textPrimary);
+}
+
+/* Code / editor panels stay dark in light mode so code text is legible */
+[data-theme="light"] .vscode-layout,
+[data-theme="light"] .gs-code-context,
+[data-theme="light"] .gs-issue-snippet,
+[data-theme="light"] .gs-mini-code-context,
+[data-theme="light"] .gs-snippet-note code {
+  background: #0d1117;
+}

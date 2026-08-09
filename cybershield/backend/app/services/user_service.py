@@ -136,7 +136,7 @@ async def upload_avatar(user_id: str, file: UploadFile):
     # Update user's profile_image in database
     profile_image_path = f"/uploads/profile/{unique_filename}"
     await database.users.update_one(
-        {"_id": user_id},
+        {"_id": _to_object_id(user_id)},
         {"$set": {"profile_image": profile_image_path, "updated_at": datetime.utcnow()}}
     )
     
@@ -170,7 +170,7 @@ async def delete_avatar(user_id: str):
     
     # Remove profile_image from database
     await database.users.update_one(
-        {"_id": user_id},
+        {"_id": _to_object_id(user_id)},
         {"$set": {"profile_image": None, "updated_at": datetime.utcnow()}}
     )
     

@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { CheckCircle2, XCircle } from "lucide-react";
 
 /**
  * Mini quiz for a glossary term (spec Step 10). Shows a single multiple-choice
@@ -20,51 +21,47 @@ export default function MiniQuiz({ quiz, onComplete }) {
   };
 
   return (
-    <div className="bg-white rounded-lg shadow p-5">
-      <h3 className="font-semibold text-gray-800 mb-3">📝 Mini Quiz</h3>
-      <p className="text-gray-700 mb-4">{quiz.question}</p>
+    <div className="cs-gs-quiz">
+      <p className="cs-gs-quiz__question">{quiz.question}</p>
 
-      <div className="space-y-2">
-        {quiz.options.map((opt, i) => {
-          let cls = "border-gray-200 hover:border-blue-400 text-gray-700";
-          if (done) {
-            if (opt === quiz.correct_answer)
-              cls = "border-green-500 bg-green-50 text-green-700";
-            else if (opt === selected)
-              cls = "border-red-500 bg-red-50 text-red-600";
-            else cls = "border-gray-200 text-gray-400";
-          } else if (selected === opt) {
-            cls = "border-blue-600 bg-blue-50 text-blue-700";
-          }
-          return (
-            <button
-              key={i}
-              disabled={done}
-              onClick={() => setSelected(opt)}
-              className={`w-full text-left px-4 py-2.5 rounded-lg border transition ${cls}`}
-            >
-              {opt}
-            </button>
-          );
-        })}
-      </div>
+      {quiz.options.map((opt, i) => {
+        let cls = "";
+        if (done) {
+          if (opt === quiz.correct_answer) cls = "cs-gs-option--correct";
+          else if (opt === selected) cls = "cs-gs-option--wrong";
+        } else if (selected === opt) {
+          cls = "cs-gs-option--selected";
+        }
+        return (
+          <button
+            key={i}
+            className={`cs-gs-option ${cls}`}
+            disabled={done}
+            onClick={() => setSelected(opt)}
+          >
+            {opt}
+          </button>
+        );
+      })}
 
-      {!done && (
+      {!done ? (
         <button
+          className="cs-gs-btn cs-gs-btn--primary"
+          style={{ width: "100%" }}
           onClick={submit}
           disabled={selected == null}
-          className="mt-4 w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
         >
           Check Answer
         </button>
-      )}
-
-      {done && (
-        <div className="mt-4 text-sm">
-          <p className={`font-semibold ${isCorrect ? "text-green-600" : "text-red-600"}`}>
-            {isCorrect ? "✅ Correct!" : `❌ Correct answer: ${quiz.correct_answer}`}
-          </p>
-          <p className="text-gray-600 mt-1">{quiz.explanation}</p>
+      ) : (
+        <div className={`cs-gs-quiz-result ${isCorrect ? "cs-gs-quiz-result--pass" : "cs-gs-quiz-result--fail"}`}>
+          {isCorrect ? <CheckCircle2 size={18} /> : <XCircle size={18} />}
+          <div>
+            <strong>{isCorrect ? "Correct!" : `Correct answer: ${quiz.correct_answer}`}</strong>
+            <div style={{ marginTop: 3, fontSize: "0.82rem", opacity: 0.9 }}>
+              {quiz.explanation}
+            </div>
+          </div>
         </div>
       )}
     </div>

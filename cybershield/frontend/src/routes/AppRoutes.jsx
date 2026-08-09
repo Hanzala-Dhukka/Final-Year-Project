@@ -44,6 +44,7 @@ const SecurityChecklist = lazy(() => import("../pages/SecurityChecklist/Security
 const AIChecklist = lazy(() => import("../pages/AIChecklist/AIChecklist"));
 const ComplianceDashboard = lazy(() => import("../pages/Compliance/ComplianceDashboard"));
 const ExecutiveDashboard = lazy(() => import("../pages/ExecutiveDashboard/ExecutiveDashboard"));
+const AnalyticsPage = lazy(() => import("../pages/Analytics/AnalyticsPage"));
 const SecurityReport = lazy(() => import("../pages/Reports/SecurityReport"));
 const CodeViewerPage = lazy(() => import("../pages/CodeViewerPage/CodeViewerPage"));
 const ScannerSetup = lazy(() => import("../pages/SecurityScanner/ScannerSetup"));
@@ -135,6 +136,7 @@ export default function AppRoutes() {
             <Route path="quiz" element={<Quiz />} />
             <Route path="glossary" element={<Glossary />} />
             <Route path="progress" element={<Progress />} />
+            <Route path="analytics" element={<AnalyticsPage />} />
             <Route path="achievements" element={<Achievements />} />
             <Route path="leaderboard" element={<Leaderboard />} />
             <Route path="learning-goals" element={<LearningGoals />} />

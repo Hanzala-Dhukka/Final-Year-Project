@@ -1,23 +1,43 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import owaspApi, { OWASP_DIFFICULTIES } from "../../api/owaspApi";
+import {
+  Shield,
+  ArrowLeft,
+  CheckCircle2,
+  AlertTriangle,
+  XCircle,
+  Sparkles,
+  Lightbulb,
+} from "lucide-react";
+import owaspApi, { OWASP_VULNERABILITIES, OWASP_DIFFICULTIES } from "../../api/owaspApi";
 import ScenarioCard from "../../components/OWASP/ScenarioCard";
 import HintPanel from "../../components/OWASP/HintPanel";
 import CodeEditor from "../../components/OWASP/CodeEditor";
 import AIExplanation from "../../components/OWASP/AIExplanation";
+
+function statusMeta(status) {
+  if (status === "Passed") {
+    return { cls: "cs-ow-status--success", Icon: CheckCircle2, text: "Passed" };
+  }
+  if (status === "Partial") {
+    return { cls: "cs-ow-status--partial", Icon: AlertTriangle, text: "Partial" };
+  }
+  return { cls: "cs-ow-status--failed", Icon: XCircle, text: "Failed" };
+}
 
 /**
  * Defense Mode (spec Step 16). Start a defense session, edit the vulnerable
  * code, submit for AI review + validation, receive score + feedback.
  */
 export default function DefenseMode({ initialLab, onBack, onComplete }) {
-  const [vuln, setVuln] = useState(initialLab || "SQL Injection");
+  const [vuln, setVuln] = useState(initialLab || OWASP_VULNERABILITIES[0]);
   const [difficulty, setDifficulty] = useState("Beginner");
   const [sim, setSim] = useState(null);
   const [hintsUsed, setHintsUsed] = useState(0);
   const [code, setCode] = useState("");
   const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
   const navigate = useNavigate();
 
   const handleAskAI = () => {
@@ -25,9 +45,9 @@ export default function DefenseMode({ initialLab, onBack, onComplete }) {
       type: "owasp",
       scanData: {
         vulnerability: vuln,
-        difficulty: difficulty,
+        difficulty,
         simulation: sim,
-        result: result,
+        result,
         userCode: code,
       },
     };
@@ -36,6 +56,7 @@ export default function DefenseMode({ initialLab, onBack, onComplete }) {
   };
 
   const start = async () => {
+    setError("");
     setLoading(true);
     setResult(null);
     setHintsUsed(0);
@@ -44,105 +65,169 @@ export default function DefenseMode({ initialLab, onBack, onComplete }) {
       const r = await owaspApi.start({ vulnerability: vuln, mode: "defense", difficulty });
       setSim(r.data);
     } catch (e) {
-      alert(e.response?.data?.detail || "Failed to start simulation");
+      setError(e.response?.data?.detail || "Could not start the lab. Is the backend running?");
     } finally {
       setLoading(false);
     }
   };
 
   const submit = async () => {
+    setError("");
     setLoading(true);
     try {
       const r = await owaspApi.defense({ session_id: sim.session_id, user_code: code, hints_used: hintsUsed });
       setResult(r.data);
       if (r.data.status === "Passed" && onComplete) onComplete();
     } catch (e) {
-      alert(e.response?.data?.detail || "Submission failed");
+      setError(e.response?.data?.detail || "Submission failed. Please try again.");
     } finally {
       setLoading(false);
     }
   };
 
-  return (
-    <div className="container mx-auto px-4 py-8 max-w-3xl">
-      <button onClick={onBack} className="text-sm text-gray-400 hover:text-gray-600 mb-4">← Back</button>
+  const reset = () => {
+    setSim(null);
+    setResult(null);
+    setCode("");
+    setError("");
+    setHintsUsed(0);
+  };
 
-      {!sim ? (
-        <div className="bg-white rounded-lg shadow p-6 space-y-4">
-          <h2 className="text-xl font-semibold text-gray-800">🛡️ Defense Mode</h2>
-          <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-1">Vulnerability</label>
-            <input
+  if (!sim) {
+    return (
+      <div className="cs-ow-wrap">
+        <button className="cs-ow-back" onClick={onBack}>
+          <ArrowLeft size={15} /> Back
+        </button>
+
+        <div className="cs-ow-setup">
+          <div className="cs-ow-setup-head">
+            <span className="cs-ow-setup-title">
+              <span className="cs-ow-setup-title-icon cs-ow-setup-title-icon--defense">
+                <Shield size={18} />
+              </span>
+              Defense Mode
+            </span>
+            <span className="cs-ow-chip cs-ow-chip--success">Defensive</span>
+          </div>
+          <p className="cs-ow-setup-sub">
+            Patch a vulnerable code snippet and get validation plus AI feedback on your fix.
+          </p>
+
+          <div className="cs-ow-field">
+            <label htmlFor="owasp-defense-vuln">Vulnerability</label>
+            <select
+              id="owasp-defense-vuln"
+              className="cs-ow-select"
               value={vuln}
               onChange={(e) => setVuln(e.target.value)}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2"
-            />
+            >
+              {OWASP_VULNERABILITIES.map((v) => (
+                <option key={v} value={v}>
+                  {v}
+                </option>
+              ))}
+            </select>
           </div>
-          <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-1">Difficulty</label>
-            <div className="flex gap-2">
+
+          <div className="cs-ow-field">
+            <label>Difficulty</label>
+            <div className="cs-ow-diffs">
               {OWASP_DIFFICULTIES.map((d) => (
                 <button
                   key={d}
+                  type="button"
+                  className={`cs-ow-pill ${difficulty === d ? "cs-ow-pill--active" : ""}`}
                   onClick={() => setDifficulty(d)}
-                  className={`px-3 py-1 rounded-full text-sm border ${
-                    difficulty === d ? "bg-blue-600 text-white border-blue-600" : "bg-white text-gray-600 border-gray-300"
-                  }`}
                 >
                   {d}
                 </button>
               ))}
             </div>
           </div>
-          <button
-            onClick={start}
-            disabled={loading}
-            className="w-full px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50"
-          >
-            {loading ? "Loading…" : "Start Lab"}
+
+          {error && <div className="cs-ow-alert cs-ow-alert--error">{error}</div>}
+
+          <button className="cs-ow-btn cs-ow-btn--defense cs-ow-btn--block" disabled={loading} onClick={start}>
+            {loading ? <span className="cs-ow-spin" /> : <Shield size={16} />}
+            {loading ? "Starting lab…" : "Start Lab"}
           </button>
         </div>
-      ) : (
-        <div className="space-y-4">
-          <div className="flex justify-between items-center">
-            <ScenarioCard simulation={sim} />
-            <button
-              onClick={handleAskAI}
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm font-medium"
-              title="Ask AI about this vulnerability"
-            >
-              🤖 Ask AI
+      </div>
+    );
+  }
+
+  return (
+    <div className="cs-ow-wrap">
+      <button className="cs-ow-back" onClick={reset}>
+        <ArrowLeft size={16} /> New Lab
+      </button>
+
+      <ScenarioCard simulation={sim} onAskAI={handleAskAI} />
+
+      <HintPanel hints={sim.hints} onHint={(n) => setHintsUsed(n)} />
+
+      {!result && <CodeEditor value={code} onChange={setCode} onSubmit={submit} disabled={loading} />}
+
+      {error && <div className="cs-ow-alert cs-ow-alert--error">{error}</div>}
+
+      {result && (
+        <div className="cs-ow-result">
+          <div className="cs-ow-result-header">
+            {result.status && (() => {
+              const m = statusMeta(result.status);
+              const Icon = m.Icon;
+              return (
+                <span className={`cs-ow-status ${m.cls}`}>
+                  <Icon size={16} /> {m.text}
+                </span>
+              );
+            })()}
+            {result.xp_earned > 0 && <span className="cs-ow-xp-tag">+{result.xp_earned} XP</span>}
+          </div>
+
+          <div className="cs-ow-result-stats">
+            {typeof result.score === "number" && (
+              <div className="cs-ow-result-stat">
+                <b>{result.score}</b>
+                <span>Score</span>
+              </div>
+            )}
+            <div className="cs-ow-result-stat">
+              <b>{result.hints_used ?? hintsUsed}</b>
+              <span>Hints used</span>
+            </div>
+            {result.owasp_reference && (
+              <div className="cs-ow-result-stat">
+                <b style={{ fontSize: "0.78rem" }}>{result.owasp_reference}</b>
+                <span>OWASP</span>
+              </div>
+            )}
+          </div>
+
+          {result.feedback && <p className="cs-ow-para">{result.feedback}</p>}
+
+          {result.recommendation && (
+            <p className="cs-ow-para">
+              <b>Recommendation: </b>
+              {result.recommendation}
+            </p>
+          )}
+
+          <AIExplanation
+            explanation={result.coach}
+            bestPractices={result.best_practices || []}
+            secureCodeExample={result.secure_code_example}
+          />
+
+          <div className="cs-ow-editor-actions">
+            <button className="cs-ow-btn cs-ow-btn--ghost" onClick={reset}>
+              <Lightbulb size={15} /> Try Another
+            </button>
+            <button className="cs-ow-btn cs-ow-btn--primary" onClick={handleAskAI}>
+              <Sparkles size={15} /> Ask AI
             </button>
           </div>
-          <HintPanel hints={sim.hints} onHint={(n) => setHintsUsed(n)} />
-          {!result ? (
-            <CodeEditor value={code} onChange={setCode} onSubmit={submit} disabled={loading} />
-          ) : (
-            <div className="space-y-4">
-              <div className={`rounded-lg p-4 text-center font-semibold ${
-                result.status === "Passed"
-                  ? "bg-green-50 text-green-700"
-                  : result.status === "Partial"
-                  ? "bg-yellow-50 text-yellow-700"
-                  : "bg-red-50 text-red-600"
-              }`}>
-                {result.status} · Score {result.score} · +{result.xp_earned} XP
-              </div>
-              <div className="bg-white rounded-lg shadow p-4 text-sm text-gray-700 whitespace-pre-line">
-                {result.feedback}
-                {result.recommendation && (
-                  <p className="mt-2 text-gray-600"><strong>Recommendation:</strong> {result.recommendation}</p>
-                )}
-              </div>
-              <AIExplanation explanation={result.coach} owasp={result.owasp_reference} />
-              <button
-                onClick={() => { setSim(null); setResult(null); }}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg text-gray-600 hover:bg-gray-50"
-              >
-                Try Another
-              </button>
-            </div>
-          )}
         </div>
       )}
     </div>

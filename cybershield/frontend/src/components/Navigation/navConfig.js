@@ -38,7 +38,7 @@ export const navSections = [
     items: [
       { path: "/dashboard", label: "Dashboard", icon: LayoutDashboard, breadcrumb: "Dashboard" },
       { path: "/projects", label: "Projects", icon: FolderKanban, breadcrumb: "Projects" },
-      { path: "/progress", label: "Analytics", icon: BarChart3, breadcrumb: "Analytics" },
+      { path: "/analytics", label: "Analytics", icon: BarChart3, breadcrumb: "Analytics" },
     ],
   },
   {

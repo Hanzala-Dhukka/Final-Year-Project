@@ -1,0 +1,807 @@
+/* ============================================================
+   CYBERSHIELD AI ASSISTANT — Professional Chat Interface
+   Fully theme-aware: uses design tokens so it adapts to both
+   dark and light modes automatically.
+   ============================================================ */
+
+.cs-ai-assistant {
+  display: flex;
+  flex-direction: column;
+  height: calc(100vh - 120px);
+  min-height: 560px;
+  overflow: hidden;
+  border-radius: 20px;
+  border: 1px solid var(--border-color, rgba(148, 163, 184, 0.12));
+  background: var(--bg-primary, #0f172a);
+  box-shadow: var(--shadow, 0 8px 32px rgba(0, 0, 0, 0.35));
+}
+
+/* ── Assistant header ─────────────────────────────────────── */
+.cs-ai-header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 14px 20px;
+  background: var(--glass-bg, rgba(17, 24, 39, 0.72));
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border-color, rgba(148, 163, 184, 0.12));
+  flex-wrap: wrap;
+}
+
+.cs-ai-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.cs-ai-logo {
+  width: 42px;
+  height: 42px;
+  flex-shrink: 0;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  background: linear-gradient(135deg, #2563eb 0%, #7c3aed 100%);
+  box-shadow: var(--glow, 0 0 20px rgba(37, 99, 235, 0.45));
+}
+
+.cs-ai-brand h1 {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--text-primary, #f1f5f9);
+  margin: 0;
+  white-space: nowrap;
+}
+
+.cs-ai-brand .subtitle {
+  font-size: 0.72rem;
+  color: var(--text-secondary, #94a3b8);
+  margin: 0;
+  white-space: nowrap;
+}
+
+.cs-ai-header-spacer {
+  flex: 1;
+}
+
+.cs-ai-controls {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+/* Status pill */
+.cs-ai-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: var(--success-soft, rgba(16, 185, 129, 0.12));
+  color: var(--success, #10b981);
+  border: 1px solid rgba(16, 185, 129, 0.25);
+  white-space: nowrap;
+}
+
+.cs-ai-status__dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: currentColor;
+  animation: cs-pulse 1.8s ease-in-out infinite;
+}
+
+.cs-ai-status--fallback {
+  background: var(--warning-soft, rgba(245, 158, 11, 0.12));
+  color: var(--warning, #f59e0b);
+  border-color: rgba(245, 158, 11, 0.28);
+}
+
+.cs-ai-status--offline {
+  background: var(--danger-soft, rgba(239, 68, 68, 0.12));
+  color: var(--danger, #ef4444);
+  border-color: rgba(239, 68, 68, 0.28);
+}
+
+@keyframes cs-pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.45; transform: scale(0.8); }
+}
+
+/* Selects */
+.cs-ai-select {
+  appearance: none;
+  background-color: var(--card-bg, #111827);
+  border: 1px solid var(--border-color, rgba(148, 163, 184, 0.16));
+  color: var(--text-primary, #f1f5f9);
+  font-family: inherit;
+  font-size: 0.8rem;
+  font-weight: 500;
+  padding: 8px 32px 8px 12px;
+  border-radius: 10px;
+  cursor: pointer;
+  outline: none;
+  max-width: 200px;
+  transition: border-color 0.2s ease, background-color 0.2s ease;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+}
+
+.cs-ai-select:hover {
+  border-color: var(--border-strong, rgba(148, 163, 184, 0.3));
+}
+
+.cs-ai-select:focus {
+  border-color: var(--primary, #2563eb);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.18);
+}
+
+.cs-ai-select__label {
+  font-size: 0.72rem;
+  color: var(--text-muted, #64748b);
+  font-weight: 500;
+  margin-right: 6px;
+}
+
+.cs-ai-field {
+  display: inline-flex;
+  align-items: center;
+}
+
+/* Icon button (theme toggle, etc.) */
+.cs-ai-icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  border: 1px solid var(--border-color, rgba(148, 163, 184, 0.16));
+  background: var(--card-bg, #111827);
+  color: var(--text-secondary, #94a3b8);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.cs-ai-icon-btn:hover {
+  color: var(--text-primary, #f1f5f9);
+  border-color: var(--primary, #2563eb);
+  background: var(--primary, #2563eb);
+  color: #fff;
+}
+
+.cs-ai-icon-btn--active {
+  color: var(--primary, #2563eb);
+  border-color: rgba(37, 99, 235, 0.4);
+}
+
+/* ── Body layout ──────────────────────────────────────────── */
+.cs-ai-body {
+  flex: 1;
+  display: flex;
+  min-height: 0;
+}
+
+/* ── Sidebar ──────────────────────────────────────────────── */
+.cs-ai-sidebar {
+  width: 280px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-secondary, #1e293b);
+  border-right: 1px solid var(--border-color, rgba(148, 163, 184, 0.12));
+}
+
+.cs-ai-sidebar__actions {
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  border-bottom: 1px solid var(--border-color, rgba(148, 163, 184, 0.12));
+}
+
+.cs-ai-newchat {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  padding: 10px 14px;
+  border: none;
+  border-radius: 12px;
+  font-family: inherit;
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: #fff;
+  background: linear-gradient(135deg, #2563eb 0%, #7c3aed 100%);
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.2s ease;
+  box-shadow: 0 4px 14px rgba(37, 99, 235, 0.35);
+}
+
+.cs-ai-newchat:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(37, 99, 235, 0.45);
+}
+
+.cs-ai-newchat:active {
+  transform: translateY(0);
+}
+
+.cs-ai-clearchat {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  padding: 9px 14px;
+  border-radius: 12px;
+  font-family: inherit;
+  font-size: 0.8rem;
+  font-weight: 500;
+  cursor: pointer;
+  background: var(--danger-soft, rgba(239, 68, 68, 0.12));
+  color: var(--danger, #ef4444);
+  border: 1px solid rgba(239, 68, 68, 0.25);
+  transition: background 0.2s ease;
+}
+
+.cs-ai-clearchat:hover {
+  background: rgba(239, 68, 68, 0.2);
+}
+
+.cs-ai-sidebar__list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 10px 12px 16px;
+}
+
+.cs-ai-group-label {
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-muted, #64748b);
+  padding: 12px 8px 6px;
+}
+
+.cs-ai-conv {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  text-align: left;
+  padding: 10px 10px;
+  margin-bottom: 4px;
+  border-radius: 12px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--text-secondary, #94a3b8);
+  cursor: pointer;
+  transition: all 0.18s ease;
+  position: relative;
+}
+
+.cs-ai-conv:hover {
+  background: var(--surface-hover, #1a2438);
+  color: var(--text-primary, #f1f5f9);
+}
+
+.cs-ai-conv--active {
+  background: var(--primary, #2563eb);
+  color: #fff;
+  border-color: rgba(255, 255, 255, 0.12);
+  box-shadow: 0 4px 14px rgba(37, 99, 235, 0.35);
+}
+
+.cs-ai-conv__icon {
+  flex-shrink: 0;
+  width: 34px;
+  height: 34px;
+  border-radius: 9px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--info-soft, rgba(59, 130, 246, 0.15));
+  color: var(--info, #3b82f6);
+}
+
+.cs-ai-conv--active .cs-ai-conv__icon {
+  background: rgba(255, 255, 255, 0.18);
+  color: #fff;
+}
+
+.cs-ai-conv__meta {
+  flex: 1;
+  min-width: 0;
+}
+
+.cs-ai-conv__title {
+  font-size: 0.8rem;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.cs-ai-conv__time {
+  font-size: 0.68rem;
+  opacity: 0.75;
+  margin-top: 2px;
+}
+
+.cs-ai-conv__del {
+  flex-shrink: 0;
+  width: 26px;
+  height: 26px;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: 7px;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  opacity: 0.7;
+}
+
+.cs-ai-conv:hover .cs-ai-conv__del {
+  display: inline-flex;
+}
+
+.cs-ai-conv__del:hover {
+  background: rgba(239, 68, 68, 0.25);
+  color: #fca5a5;
+}
+
+.cs-ai-sidebar__empty {
+  padding: 24px 12px;
+  text-align: center;
+  font-size: 0.78rem;
+  color: var(--text-muted, #64748b);
+}
+
+/* ── Main chat panel ──────────────────────────────────────── */
+.cs-ai-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  background: var(--bg-primary, #0f172a);
+}
+
+.cs-ai-messages {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 22px 24px;
+  min-height: 0;
+}
+
+.cs-ai-messages__inner {
+  width: 100%;
+  max-width: 860px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+/* Welcome / empty state */
+.cs-ai-welcome {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 24px;
+  gap: 10px;
+}
+
+.cs-ai-welcome__orb {
+  width: 78px;
+  height: 78px;
+  border-radius: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  background: linear-gradient(135deg, #2563eb 0%, #7c3aed 100%);
+  box-shadow: 0 0 0 8px rgba(124, 58, 237, 0.12), var(--glow, 0 0 24px rgba(37, 99, 235, 0.45));
+  margin-bottom: 12px;
+}
+
+.cs-ai-welcome h2 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--text-primary, #f1f5f9);
+  margin: 0;
+}
+
+.cs-ai-welcome__grad {
+  background: linear-gradient(120deg, #60a5fa, #a78bfa);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.cs-ai-welcome p {
+  font-size: 0.9rem;
+  color: var(--text-secondary, #94a3b8);
+  margin: 0 0 8px;
+  max-width: 460px;
+}
+
+.cs-ai-suggestions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: center;
+  max-width: 640px;
+  margin-top: 8px;
+}
+
+.cs-ai-suggestion {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  border-radius: 999px;
+  font-family: inherit;
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: var(--text-secondary, #cbd5e1);
+  background: var(--card-bg, #111827);
+  border: 1px solid var(--border-color, rgba(148, 163, 184, 0.16));
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.cs-ai-suggestion:hover {
+  border-color: var(--primary, #2563eb);
+  color: var(--text-primary, #fff);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-soft, 0 2px 8px rgba(0, 0, 0, 0.25));
+}
+
+.cs-ai-suggestion__icon {
+  color: var(--info, #3b82f6);
+}
+
+/* Domain chip under the welcome heading */
+.cs-ai-domain-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--primary, #2563eb);
+  background: var(--info-soft, rgba(59, 130, 246, 0.12));
+  border: 1px solid rgba(37, 99, 235, 0.25);
+  margin-bottom: 4px;
+}
+
+/* Message row */
+.cs-ai-row {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.cs-ai-row--user {
+  flex-direction: row-reverse;
+}
+
+.cs-ai-avatar {
+  flex-shrink: 0;
+  width: 36px;
+  height: 36px;
+  border-radius: 11px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+}
+
+.cs-ai-avatar--ai {
+  background: linear-gradient(135deg, #2563eb 0%, #7c3aed 100%);
+}
+
+.cs-ai-avatar--user {
+  background: var(--bg-secondary, #1e293b);
+  border: 1px solid var(--border-color, rgba(148, 163, 184, 0.2));
+  color: var(--text-secondary, #94a3b8);
+}
+
+.cs-ai-bubble-wrap {
+  max-width: 76%;
+  min-width: 0;
+}
+
+.cs-ai-role {
+  font-size: 0.68rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-muted, #64748b);
+  margin-bottom: 5px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.cs-ai-row--user .cs-ai-role {
+  justify-content: flex-end;
+}
+
+.cs-ai-bubble {
+  padding: 13px 16px;
+  border-radius: 16px;
+  font-size: 0.9rem;
+  line-height: 1.6;
+  color: var(--text-primary, #f1f5f9);
+  word-break: break-word;
+}
+
+.cs-ai-bubble--user {
+  background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+  color: #fff;
+  border-bottom-right-radius: 6px;
+  box-shadow: 0 4px 14px rgba(37, 99, 235, 0.3);
+}
+
+.cs-ai-bubble--ai {
+  background: var(--card-bg, #111827);
+  border: 1px solid var(--border-color, rgba(148, 163, 184, 0.12));
+  border-bottom-left-radius: 6px;
+}
+
+/* Markdown content inside AI bubbles */
+.cs-ai-bubble--ai .markdown-body p {
+  margin: 0 0 8px;
+}
+
+.cs-ai-bubble--ai .markdown-body p:last-child {
+  margin-bottom: 0;
+}
+
+.cs-ai-bubble--ai .markdown-body ul,
+.cs-ai-bubble--ai .markdown-body ol {
+  margin: 4px 0 8px;
+  padding-left: 20px;
+}
+
+.cs-ai-bubble--ai .markdown-body li {
+  margin-bottom: 3px;
+}
+
+.cs-ai-bubble--ai .markdown-body h1,
+.cs-ai-bubble--ai .markdown-body h2,
+.cs-ai-bubble--ai .markdown-body h3,
+.cs-ai-bubble--ai .markdown-body h4 {
+  color: var(--text-primary, #f1f5f9);
+  margin: 10px 0 6px;
+  line-height: 1.3;
+}
+
+.cs-ai-bubble--ai .markdown-body h1 { font-size: 1.15rem; }
+.cs-ai-bubble--ai .markdown-body h2 { font-size: 1.05rem; }
+.cs-ai-bubble--ai .markdown-body h3 { font-size: 0.98rem; }
+.cs-ai-bubble--ai .markdown-body h4 { font-size: 0.92rem; }
+
+.cs-ai-bubble--ai .markdown-body code:not([class]) {
+  background: var(--bg-secondary, #1e293b);
+  color: var(--info, #60a5fa);
+  padding: 2px 6px;
+  border-radius: 6px;
+  font-size: 0.82em;
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+}
+
+.cs-ai-bubble--ai .markdown-body blockquote {
+  border-left: 3px solid var(--primary, #2563eb);
+  padding-left: 12px;
+  margin: 8px 0;
+  color: var(--text-secondary, #94a3b8);
+}
+
+.cs-ai-bubble--ai .markdown-body table {
+  border-collapse: collapse;
+  width: 100%;
+  margin: 8px 0;
+}
+
+.cs-ai-bubble--ai .markdown-body th,
+.cs-ai-bubble--ai .markdown-body td {
+  border: 1px solid var(--border-color, rgba(148, 163, 184, 0.16));
+  padding: 6px 10px;
+  font-size: 0.82rem;
+}
+
+.cs-ai-bubble--ai .markdown-body th {
+  background: var(--bg-secondary, #1e293b);
+}
+
+/* ── Input area ───────────────────────────────────────────── */
+.cs-ai-inputbar {
+  padding: 14px 20px 16px;
+  border-top: 1px solid var(--border-color, rgba(148, 163, 184, 0.12));
+  background: var(--glass-bg, rgba(17, 24, 39, 0.72));
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+.cs-ai-inputbar__inner {
+  max-width: 860px;
+  margin: 0 auto;
+}
+
+.cs-ai-input-box {
+  display: flex;
+  align-items: flex-end;
+  gap: 10px;
+  background: var(--card-bg, #111827);
+  border: 1px solid var(--border-color, rgba(148, 163, 184, 0.18));
+  border-radius: 16px;
+  padding: 8px 8px 8px 16px;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.cs-ai-input-box:focus-within {
+  border-color: var(--primary, #2563eb);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.16);
+}
+
+.cs-ai-input-box textarea {
+  flex: 1;
+  min-width: 0;
+  background: transparent;
+  border: none;
+  outline: none;
+  resize: none;
+  color: var(--text-primary, #f1f5f9);
+  font-family: inherit;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  max-height: 140px;
+  padding: 8px 0;
+}
+
+.cs-ai-input-box textarea::placeholder {
+  color: var(--text-muted, #64748b);
+}
+
+.cs-ai-send {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border: none;
+  border-radius: 12px;
+  color: #fff;
+  background: linear-gradient(135deg, #2563eb 0%, #7c3aed 100%);
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.2s ease, opacity 0.2s ease;
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.35);
+}
+
+.cs-ai-send:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 18px rgba(37, 99, 235, 0.45);
+}
+
+.cs-ai-send:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.cs-ai-hint {
+  margin-top: 8px;
+  font-size: 0.7rem;
+  color: var(--text-muted, #64748b);
+  text-align: center;
+}
+
+/* ── Error banner ─────────────────────────────────────────── */
+.cs-ai-error {
+  margin: 12px 24px 0;
+  padding: 10px 14px;
+  border-radius: 12px;
+  background: var(--danger-soft, rgba(239, 68, 68, 0.12));
+  border: 1px solid rgba(239, 68, 68, 0.28);
+  color: var(--danger, #ef4444);
+  font-size: 0.82rem;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* ── Typing indicator ─────────────────────────────────────── */
+.cs-ai-typing {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 14px 18px;
+}
+
+.cs-ai-typing__dots {
+  display: inline-flex;
+  gap: 4px;
+}
+
+.cs-ai-typing__dots span {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--primary, #2563eb);
+  animation: cs-bounce 1.2s infinite ease-in-out;
+}
+
+.cs-ai-typing__dots span:nth-child(2) { animation-delay: 0.15s; }
+.cs-ai-typing__dots span:nth-child(3) { animation-delay: 0.3s; }
+
+@keyframes cs-bounce {
+  0%, 80%, 100% { transform: translateY(0); opacity: 0.4; }
+  40% { transform: translateY(-5px); opacity: 1; }
+}
+
+/* ── Responsive ───────────────────────────────────────────── */
+@media (max-width: 900px) {
+  .cs-ai-assistant {
+    height: calc(100vh - 110px);
+  }
+
+  .cs-ai-sidebar {
+    width: 230px;
+  }
+}
+
+@media (max-width: 767px) {
+  .cs-ai-assistant {
+    height: calc(100vh - 90px);
+    border-radius: 14px;
+  }
+
+  .cs-ai-sidebar {
+    position: absolute;
+    inset: 0 auto 0 0;
+    z-index: 30;
+    width: 260px;
+    box-shadow: var(--shadow, 0 8px 32px rgba(0, 0, 0, 0.5));
+    transform: translateX(-100%);
+    transition: transform 0.25s ease;
+  }
+
+  .cs-ai-sidebar--open {
+    transform: translateX(0);
+  }
+
+  .cs-ai-main {
+    width: 100%;
+  }
+
+  .cs-ai-select {
+    max-width: 150px;
+  }
+
+  .cs-ai-bubble-wrap {
+    max-width: 86%;
+  }
+
+  .cs-ai-field .cs-ai-select__label {
+    display: none;
+  }
+}

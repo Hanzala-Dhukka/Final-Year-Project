@@ -1,36 +1,79 @@
+import { Bot, ShieldAlert, Briefcase, Sparkles } from "lucide-react";
 import MarkdownRenderer from "../AIAssistant/MarkdownRenderer";
 
 /**
  * AI Coach explanation block (spec Step 18). Renders markdown from the coach,
  * plus optional OWASP reference / business impact / fix chips.
  */
-export default function AIExplanation({ explanation, provider, owasp, businessImpact, fix }) {
-  if (!explanation && !owasp) return null;
+export default function AIExplanation({
+  explanation,
+  provider,
+  owasp,
+  businessImpact,
+  fix,
+  bestPractices,
+  secureCodeExample,
+}) {
+  const hasFix = fix || secureCodeExample;
+  const hasPractices = bestPractices && bestPractices.length > 0;
+
+  if (!explanation && !owasp && !businessImpact && !hasFix && !hasPractices) return null;
+
   return (
-    <div className="bg-white rounded-lg shadow p-5">
-      <div className="flex items-center justify-between mb-2">
-        <h3 className="font-semibold text-gray-800">🤖 AI Coach</h3>
-        {provider && <span className="text-xs text-gray-400">via {provider}</span>}
+    <div className="cs-ow-ai">
+      <div className="cs-ow-ai-head">
+        <h4>
+          <Bot size={17} /> AI Coach
+        </h4>
+        {provider && <span className="cs-ow-provider">via {provider}</span>}
       </div>
 
       {owasp && (
-        <span className="inline-block mb-2 text-xs px-2 py-0.5 rounded bg-red-50 text-red-600">
-          {owasp}
-        </span>
-      )}
-
-      {explanation && <MarkdownRenderer content={explanation} />}
-
-      {businessImpact && (
-        <div className="mt-3">
-          <p className="text-sm font-semibold text-gray-700">Business Impact</p>
-          <p className="text-sm text-gray-600">{businessImpact}</p>
+        <div style={{ marginBottom: 10 }}>
+          <span className="cs-ow-chip cs-ow-chip--danger">
+            <ShieldAlert size={11} /> {owasp}
+          </span>
         </div>
       )}
-      {fix && (
-        <div className="mt-2">
-          <p className="text-sm font-semibold text-gray-700">How to Fix</p>
-          <p className="text-sm text-gray-600">{fix}</p>
+
+      {explanation && (
+        <div className="cs-ow-markdown">
+          <MarkdownRenderer content={explanation} />
+        </div>
+      )}
+
+      {businessImpact && (
+        <div className="cs-ow-kv" style={{ marginTop: 10, alignItems: "flex-start" }}>
+          <Briefcase size={15} style={{ flexShrink: 0, marginTop: 2 }} />
+          <div>
+            <b className="cs-ow-path-title">Business impact</b>
+            <p className="cs-ow-para" style={{ marginTop: 4 }}>{businessImpact}</p>
+          </div>
+        </div>
+      )}
+
+      {hasPractices && (
+        <div style={{ marginTop: 12 }}>
+          <span className="cs-ow-path-title">Best practices</span>
+          <ul className="cs-ow-list" style={{ marginTop: 8 }}>
+            {bestPractices.map((p, i) => (
+              <li key={i}>
+                <Sparkles size={14} style={{ color: "var(--success, #22c55e)" }} /> {p}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {(fix || secureCodeExample) && (
+        <div style={{ marginTop: 12 }}>
+          <span className="cs-ow-path-title">How to fix</span>
+          {fix && <p className="cs-ow-para" style={{ marginTop: 6 }}>{fix}</p>}
+          {secureCodeExample && (
+            <code className="cs-ow-code" style={{ marginTop: 8 }}>
+              {secureCodeExample}
+            </code>
+          )}
         </div>
       )}
     </div>

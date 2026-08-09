@@ -14,7 +14,7 @@ export default function ScanError({ error, onRetry }) {
           <FaExclamationTriangle />
         </div>
         <h2 style={{ color: "#ef4444" }}>Scan Failed</h2>
-        <p style={{ color: "#94a3b8", marginBottom: 24 }}>
+        <p style={{ color: "var(--textSecondary)", marginBottom: 24 }}>
           {error || "An unexpected error occurred during the scan."}
         </p>
         <button className="gs-btn-primary" onClick={onRetry}>

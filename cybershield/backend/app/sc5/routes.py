@@ -8,6 +8,8 @@ Endpoints:
   POST /api/v1/sc5/{project_id}/track-completion        → record score after task completion
 """
 
+from datetime import datetime
+
 from fastapi import APIRouter, HTTPException, Depends, Query
 from pydantic import BaseModel
 from typing import List, Optional, Dict, Any
@@ -166,7 +168,7 @@ async def score_history(
 ):
     """Get score improvement history for a project."""
     docs = await get_score_history(str(current_user["_id"]), project_id, limit)
-    return [ScoreHistoryOut(**doc) for doc in docs]
+    return [ScoreHistoryOut(**{**doc, "id": doc.get("_id") or doc.get("id", "")}) for doc in docs]
 
 
 @router.get("/{project_id}/improvement", response_model=ImprovementOut)
@@ -190,6 +192,18 @@ async def track_completion(
     user_id = str(current_user["_id"])
     tasks = await get_user_progress(user_id, project_id)
     snapshot = await track_task_completion(user_id, project_id, tasks)
+    if snapshot:
+        snapshot = {
+            "score": snapshot.get("score"),
+            "level": snapshot.get("level"),
+            "risk_reduced": snapshot.get("risk_reduced"),
+            "risk_remaining": snapshot.get("risk_remaining"),
+            "reason": snapshot.get("reason") or "",
+            "task_title": snapshot.get("task_title") or "",
+            "task_severity": snapshot.get("task_severity") or "",
+            "created_at": snapshot.get("created_at").isoformat()
+            if isinstance(snapshot.get("created_at"), datetime) else None,
+        }
     return {
         "recorded": snapshot is not None,
         "snapshot": snapshot,

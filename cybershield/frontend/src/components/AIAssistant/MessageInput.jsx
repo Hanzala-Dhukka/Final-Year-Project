@@ -1,7 +1,9 @@
 import { useState } from "react";
+import { Send } from "lucide-react";
 
 /**
  * Chat input box with a disabled Send button while waiting for a response.
+ * Supports multi-line input (Enter to send, Shift+Enter for a new line).
  */
 export default function MessageInput({ onSend, disabled }) {
   const [value, setValue] = useState("");
@@ -20,24 +22,38 @@ export default function MessageInput({ onSend, disabled }) {
     }
   };
 
+  const autoGrow = (e) => {
+    setValue(e.target.value);
+    e.target.style.height = "auto";
+    e.target.style.height = Math.min(e.target.scrollHeight, 140) + "px";
+  };
+
   return (
-    <div className="flex items-end gap-2 border-t border-gray-200 p-4 bg-white">
-      <textarea
-        rows={1}
-        value={value}
-        onChange={(e) => setValue(e.target.value)}
-        onKeyDown={handleKeyDown}
-        placeholder="Ask about OWASP, secure coding, authentication…"
-        className="flex-1 resize-none border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-        disabled={disabled}
-      />
-      <button
-        onClick={submit}
-        disabled={disabled || !value.trim()}
-        className="px-5 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
-      >
-        Send
-      </button>
+    <div className="cs-ai-inputbar">
+      <div className="cs-ai-inputbar__inner">
+        <div className="cs-ai-input-box">
+          <textarea
+            rows={1}
+            value={value}
+            onChange={autoGrow}
+            onKeyDown={handleKeyDown}
+            placeholder="Ask about OWASP, secure coding, authentication…"
+            disabled={disabled}
+          />
+          <button
+            onClick={submit}
+            disabled={disabled || !value.trim()}
+            className="cs-ai-send"
+            aria-label="Send message"
+          >
+            <Send size={18} />
+          </button>
+        </div>
+        <div className="cs-ai-hint">
+          Press <kbd style={{ opacity: 0.8 }}>Enter</kbd> to send ·{" "}
+          <kbd style={{ opacity: 0.8 }}>Shift+Enter</kbd> for a new line
+        </div>
+      </div>
     </div>
   );
 }

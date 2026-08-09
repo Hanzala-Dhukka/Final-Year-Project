@@ -292,3 +292,23 @@
   from { transform: rotate(0deg); }
   to { transform: rotate(360deg); }
 }
+
+/* ── Light Mode Support ──────────────────────────────────── */
+/* Surfaces use var(--bg-primary / --bg-secondary) (light in light
+   mode) but text was hard-coded for dark mode. Map back to the
+   theme text tokens so everything stays legible in both modes. */
+[data-theme="light"] .enterprise-dashboard,
+[data-theme="light"] .dashboard-title-box h2 {
+  color: var(--textPrimary);
+}
+
+[data-theme="light"] .stages-title,
+[data-theme="light"] .logs-title {
+  color: var(--textMuted);
+}
+
+[data-theme="light"] .stage-row.done,
+[data-theme="light"] .log-msg,
+[data-theme="light"] .progress-header-row {
+  color: var(--textSecondary);
+}

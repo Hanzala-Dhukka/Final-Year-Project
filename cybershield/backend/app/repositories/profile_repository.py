@@ -8,6 +8,25 @@ from app.core.database import get_collection
 from app.models.profile_model import UserProfile, UserSettings, LoginHistory, SecurityScore
 
 
+def _sanitize(doc: Optional[Dict[str, Any]]) -> Optional[Dict[str, Any]]:
+    """Convert BSON ObjectId/datetime values to JSON-safe primitives."""
+    if not isinstance(doc, dict):
+        return doc
+    out = {}
+    for k, v in doc.items():
+        if isinstance(v, ObjectId):
+            out[k] = str(v)
+        elif isinstance(v, datetime):
+            if v.tzinfo is None:
+                v = v.replace(tzinfo=timezone.utc)
+            out[k] = v.isoformat()
+        elif isinstance(v, list):
+            out[k] = [_sanitize(item) if isinstance(item, dict) else (str(item) if isinstance(item, ObjectId) else item.isoformat() if isinstance(item, datetime) else item) for item in v]
+        else:
+            out[k] = v
+    return out
+
+
 class ProfileRepository:
     """Repository for user profile database operations."""
     
@@ -23,7 +42,7 @@ class ProfileRepository:
         try:
             collection = get_collection(self.profile_collection)
             profile = await collection.find_one({"user_id": user_id})
-            return profile
+            return _sanitize(profile)
         except Exception as e:
             print(f"Error getting profile: {e}")
             return None
@@ -70,7 +89,7 @@ class ProfileRepository:
         try:
             collection = get_collection(self.settings_collection)
             settings = await collection.find_one({"user_id": user_id})
-            return settings
+            return _sanitize(settings)
         except Exception as e:
             print(f"Error getting settings: {e}")
             return None
@@ -130,7 +149,7 @@ class ProfileRepository:
             history = []
             cursor = collection.find({"user_id": user_id}).sort("login_time", -1).limit(limit)
             async for entry in cursor:
-                history.append(entry)
+                history.append(_sanitize(entry))
             return history
         except Exception as e:
             print(f"Error getting login history: {e}")
@@ -142,7 +161,7 @@ class ProfileRepository:
         try:
             collection = get_collection(self.security_score_collection)
             score = await collection.find_one({"user_id": user_id})
-            return score
+            return _sanitize(score)
         except Exception as e:
             print(f"Error getting security score: {e}")
             return None

@@ -1,7 +1,16 @@
+import {
+  Bot,
+  ScanSearch,
+  FileWarning,
+  Swords,
+  HelpCircle,
+  BookOpen,
+  Sparkles,
+} from "lucide-react";
 import MessageBubble from "./MessageBubble";
 import TypingIndicator from "./TypingIndicator";
 
-// Spec Step 11 — Suggested Questions
+// Suggested questions (Spec Step 11) for the general context
 const GENERAL_SUGGESTIONS = [
   "Explain SQL Injection",
   "Explain XSS",
@@ -11,40 +20,64 @@ const GENERAL_SUGGESTIONS = [
 ];
 
 // Context-aware suggested questions (Module 5.2, Step 12)
-const CONTEXT_SUGGESTIONS = {
-  github_scan: [
-    "Explain this report.",
-    "What is the highest risk?",
-    "How to fix SQL Injection?",
-    "Explain Hardcoded Secret.",
-    "Show recommendations.",
-  ],
-  threat_report: [
-    "Explain STRIDE.",
-    "Why is it Critical?",
-    "How to reduce the score?",
-    "Explain MITRE.",
-    "Why is Information Disclosure High?",
-  ],
-  owasp: [
-    "Why did my SQL Injection attack fail?",
-    "Explain the XSS simulation.",
-    "How could I improve my defense?",
-    "Teach me Broken Access Control.",
-  ],
-  quiz: [
-    "Why was my last answer wrong?",
-    "Teach me today's quiz topic.",
-    "Explain a missed question.",
-    "Quiz study tips?",
-  ],
-  glossary: [
-    "Define CSRF.",
-    "What is a Zero-Day?",
-    "Explain CORS.",
-    "Define RCE.",
-  ],
-  general: GENERAL_SUGGESTIONS,
+const CONTEXT_CONTENT = {
+  github_scan: {
+    title: "GitHub Scanner",
+    icon: ScanSearch,
+    suggestions: [
+      "Explain this report.",
+      "What is the highest risk?",
+      "How to fix SQL Injection?",
+      "Explain Hardcoded Secret.",
+      "Show recommendations.",
+    ],
+  },
+  threat_report: {
+    title: "Threat Reports",
+    icon: FileWarning,
+    suggestions: [
+      "Explain STRIDE.",
+      "Why is it Critical?",
+      "How to reduce the score?",
+      "Explain MITRE.",
+      "Why is Information Disclosure High?",
+    ],
+  },
+  owasp: {
+    title: "OWASP Simulator",
+    icon: Swords,
+    suggestions: [
+      "Why did my SQL Injection attack fail?",
+      "Explain the XSS simulation.",
+      "How could I improve my defense?",
+      "Teach me Broken Access Control.",
+    ],
+  },
+  quiz: {
+    title: "Quiz",
+    icon: HelpCircle,
+    suggestions: [
+      "Why was my last answer wrong?",
+      "Teach me today's quiz topic.",
+      "Explain a missed question.",
+      "Quiz study tips?",
+    ],
+  },
+  glossary: {
+    title: "Glossary",
+    icon: BookOpen,
+    suggestions: [
+      "Define CSRF.",
+      "What is a Zero-Day?",
+      "Explain CORS.",
+      "Define RCE.",
+    ],
+  },
+  general: {
+    title: "General",
+    icon: Sparkles,
+    suggestions: GENERAL_SUGGESTIONS,
+  },
 };
 
 /**
@@ -53,38 +86,63 @@ const CONTEXT_SUGGESTIONS = {
  */
 export default function ChatWindow({ messages, loading, onSuggestion, context = "general" }) {
   const isEmpty = !messages || messages.length === 0;
-  const suggestions = CONTEXT_SUGGESTIONS[context] || GENERAL_SUGGESTIONS;
+  const content = CONTEXT_CONTENT[context] || CONTEXT_CONTENT.general;
+  const Icon = content.icon;
 
   return (
-    <div className="flex-1 flex flex-col h-full bg-gray-100">
-      <div className="flex-1 overflow-y-auto px-6 py-4">
-        {isEmpty && !loading ? (
-          <div className="h-full flex flex-col items-center justify-center text-center">
-            <h2 className="text-2xl font-bold text-gray-800 mb-2">
-              Welcome to CyberShield AI
-            </h2>
-            <p className="text-gray-500 mb-6">Ask me about:</p>
-            <div className="flex flex-wrap gap-2 justify-center max-w-md">
-              {suggestions.map((s) => (
-                <button
-                  key={s}
-                  onClick={() => onSuggestion(s)}
-                  className="px-3 py-1.5 bg-white border border-gray-200 rounded-full text-sm text-gray-700 hover:border-blue-400 hover:text-blue-600"
-                >
-                  • {s}
-                </button>
-              ))}
-            </div>
+    <div className="cs-ai-messages">
+      {isEmpty && !loading ? (
+        <div className="cs-ai-welcome">
+          <div className="cs-ai-welcome__orb">
+            <Bot size={38} />
           </div>
-        ) : (
-          <div className="max-w-3xl mx-auto">
-            {messages.map((m, i) => (
-              <MessageBubble key={i} message={m} />
+          <h2>
+            Welcome to{" "}
+            <span className="cs-ai-welcome__grad">CyberShield AI</span>
+          </h2>
+          <p>
+            Your AI-powered security assistant. Ask about vulnerabilities,
+            secure coding, threat models, and more — I'm tuned to your
+            CyberShield data.
+          </p>
+
+          <span className="cs-ai-domain-chip">
+            <Icon size={14} />
+            {content.title} mode
+          </span>
+
+          <div className="cs-ai-suggestions">
+            {content.suggestions.map((s) => (
+              <button
+                key={s}
+                className="cs-ai-suggestion"
+                onClick={() => onSuggestion(s)}
+              >
+                <Icon size={15} className="cs-ai-suggestion__icon" />
+                {s}
+              </button>
             ))}
-            {loading && <TypingIndicator />}
           </div>
-        )}
-      </div>
+        </div>
+      ) : (
+        <div className="cs-ai-messages__inner">
+          {messages.map((m, i) => (
+            <MessageBubble key={i} message={m} />
+          ))}
+          {loading && (
+            <div className="cs-ai-row">
+              <span className="cs-ai-avatar cs-ai-avatar--ai">
+                <Bot size={18} />
+              </span>
+              <div className="cs-ai-bubble-wrap">
+                <div className="cs-ai-typing cs-ai-bubble--ai">
+                  <TypingIndicator />
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }

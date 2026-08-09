@@ -1,48 +1,79 @@
-import { Card, CardContent, Typography, Box, LinearProgress } from "@mui/material";
+import { Card, CardContent, Typography, Box, LinearProgress, Stack } from "@mui/material";
+import { frameworkMeta, scoreStatus } from "./frameworkMeta";
 
-// Color per framework for consistent chart/card theming.
-const FRAMEWORK_COLORS = {
-  OWASP: "#2563EB",
-  CWE: "#7C3AED",
-  MITRE: "#DC2626",
-  NIST: "#059669",
-};
+// Framework breakdown card: score, status chip, satisfied/total controls.
+export default function FrameworkCard({ name, score, satisfied, total }) {
+  const meta = frameworkMeta(name);
+  const status = scoreStatus(score);
+  const Icon = meta.icon;
 
-function scoreColor(score) {
-  if (score >= 80) return "#059669";
-  if (score >= 60) return "#F59E0B";
-  return "#DC2626";
-}
-
-// Single framework score card with a progress bar.
-export default function FrameworkCard({ name, score }) {
-  const color = FRAMEWORK_COLORS[name] || scoreColor(score);
   return (
-    <Card sx={{ height: "100%" }}>
-      <CardContent>
-        <Box
-          sx={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "baseline",
-            mb: 1,
-          }}
-        >
-          <Typography variant="subtitle1" fontWeight={700}>
-            {name}
+    <Card
+      sx={{
+        height: "100%",
+        position: "relative",
+        overflow: "hidden",
+        "&::before": {
+          content: '""',
+          position: "absolute",
+          top: 0,
+          left: 0,
+          right: 0,
+          height: 4,
+          background: meta.color,
+        },
+      }}
+    >
+      <CardContent sx={{ position: "relative" }}>
+        <Stack direction="row" alignItems="center" justifyContent="space-between" spacing={1}>
+          <Box
+            sx={{
+              width: 42,
+              height: 42,
+              borderRadius: 2.5,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              bgcolor: meta.soft,
+              color: meta.color,
+            }}
+          >
+            <Icon fontSize="small" />
+          </Box>
+          <Typography
+            variant="caption"
+            fontWeight={700}
+            sx={{ color: status.color, bgcolor: status.soft, px: 1.5, py: 0.4, borderRadius: 3 }}
+          >
+            {status.label}
           </Typography>
-          <Typography variant="h6" fontWeight={800} sx={{ color }}>
+        </Stack>
+
+        <Typography variant="h6" fontWeight={800} sx={{ mt: 1.5 }}>
+          {name}
+        </Typography>
+        <Typography variant="caption" color="text.secondary">
+          {meta.desc}
+        </Typography>
+
+        <Box sx={{ mt: 2, display: "flex", alignItems: "baseline", justifyContent: "space-between" }}>
+          <Typography variant="h4" fontWeight={900} sx={{ color: meta.color }}>
             {score}%
           </Typography>
+          <Typography variant="caption" color="text.secondary">
+            {satisfied}/{total} controls
+          </Typography>
         </Box>
+
         <LinearProgress
           variant="determinate"
           value={score}
           sx={{
-            height: 10,
-            borderRadius: 5,
-            backgroundColor: "#E5E7EB",
-            "& .MuiLinearProgress-bar": { backgroundColor: color, borderRadius: 5 },
+            mt: 1,
+            height: 8,
+            borderRadius: 4,
+            backgroundColor: "rgba(148,163,184,0.16)",
+            "& .MuiLinearProgress-bar": { backgroundColor: meta.color, borderRadius: 4 },
           }}
         />
       </CardContent>

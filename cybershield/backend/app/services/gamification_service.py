@@ -2,12 +2,15 @@
 Gamification service facade (Module 7.5).
 
 Aggregates XP/level progress, achievements, badges, certificates, the activity
-timeline, and streaks into the spec-shaped responses. Reuses the existing
-AchievementService / CertificateService / ProgressService and persists streak +
-activity data to MongoDB so it survives restarts (unlike the Google-Sheets
-backed streak_service).
+timeline, streaks, and learning-goal progress into the spec-shaped responses.
+
+The activity log (``activity_log``) is the single source of truth: every quiz /
+glossary / OWASP-lab completion is stored there, so streaks and progress
+counters are derived live from it and achievements are awarded automatically
+and idempotently on each new activity event.
 """
-from typing import List, Dict, Any, Optional
+from typing import List, Dict, Any, Optional, Set
+from datetime import datetime, timezone, timedelta
 
 from app.database.db import database
 from app.services.progress_service import ProgressService
@@ -18,13 +21,23 @@ from app.models.gamification import activity_document, utcnow
 
 PROGRESS = "user_progress"
 ACTIVITY = "activity_log"
+ACHIEVEMENTS = "achievements"
+
+# Activity types used by the learners (Module 7.5)
+ACT_QUIZ = "quiz"
+ACT_GLOSSARY = "glossary"
+ACT_OWASP = "owasp_lab"
+ACT_BADGE = "badge"
+ACT_LEVEL_UP = "level_up"
+
+_AI_TYPES = {"ai", "ai_assistant", "ai_tutor", "assistant", "chatbot"}
 
 
 # ── Progress ────────────────────────────────────────────────────────────────
-def _load_progress(user_id: str) -> Dict[str, Any]:
+async def _load_progress(user_id: str) -> Dict[str, Any]:
     """Load persisted progress from MongoDB (fallback to in-memory cache)."""
     try:
-        doc = database[PROGRESS].find_one({"user_id": user_id})
+        doc = await database[PROGRESS].find_one({"user_id": user_id})
         if doc:
             return doc
     except Exception:
@@ -33,19 +46,38 @@ def _load_progress(user_id: str) -> Dict[str, Any]:
     return ProgressService.get_user_progress(user_id)
 
 
+def _progress_snapshot(user_id: str) -> Dict[str, Any]:
+    """Sync snapshot of xp / level using the shared ProgressService store."""
+    try:
+        data = ProgressService.get_user_progress(user_id)
+        return {
+            "xp": data.get("xp", 0) or 0,
+            "level": data.get("level", 1) or 1,
+            "average_score": data.get("average_score", 0) or 0,
+        }
+    except Exception:
+        return {"xp": 0, "level": 1, "average_score": 0}
+
+
 async def get_progress(user_id: str) -> Dict[str, Any]:
-    doc = _load_progress(user_id)
+    doc = await _load_progress(user_id)
     xp = doc.get("xp", 0) or 0
     level = ProgressService.calculate_level(xp)
     title = ProgressService.LEVEL_TITLES.get(level, "Beginner")
     xp_to_next = ProgressService.get_xp_to_next_level(xp)
     level_progress = ProgressService.get_level_progress(xp)
 
-    # Counts
+    # Derive live counters + streaks from the activity log
+    stats = await _collect_stats(user_id)
+    streaks = await _compute_streak(user_id)
+
+    # Award any newly-eligible achievements (idempotent)
     try:
-        badge_count = len(AchievementService.get_user_achievements(user_id))
-    except Exception:
-        badge_count = 0
+        await _unlock_all(user_id)
+    except Exception as e:
+        print(f"Achievement evaluation failed: {e}")
+    unlocked_keys = await _unlocked_keys(user_id)
+
     try:
         certs = await _cert_count(user_id)
     except Exception:
@@ -58,13 +90,14 @@ async def get_progress(user_id: str) -> Dict[str, Any]:
         "level_title": title,
         "xp_to_next": xp_to_next,
         "level_progress": round(level_progress, 1),
-        "current_streak": doc.get("current_streak", 0) or 0,
-        "longest_streak": doc.get("longest_streak", 0) or 0,
-        "completed_labs": doc.get("completed_labs", 0) or 0,
-        "completed_quizzes": doc.get("completed_quizzes", 0) or 0,
-        "completed_glossary": doc.get("completed_glossary", 0) or 0,
-        "security_score": doc.get("security_score", 0) or 0,
-        "badges": badge_count,
+        "current_streak": streaks["current"],
+        "longest_streak": streaks["longest"],
+        "completed_labs": stats["labs"],
+        "completed_quizzes": stats["quiz_total"],
+        "completed_glossary": stats["glossary"],
+        # A weighted composite score so the number reflects real activity
+        "security_score": stats["security_score"],
+        "badges": len(unlocked_keys),
         "certificates": certs,
     }
 
@@ -76,35 +109,290 @@ async def _cert_count(user_id: str) -> int:
         return 0
 
 
+# ── Activity-derived stats (single source of truth) ─────────────────────────
+async def _collect_stats(user_id: str) -> Dict[str, Any]:
+    """
+    Aggregate a user's learning stats purely from the activity log. This is what
+    everyone else (progress, achievements, UI counters) reads from.
+    """
+    stats = {
+        "labs": 0,
+        "quiz_total": 0,
+        "glossary": 0,
+        "vulns": {},
+        "xss_defense": 0,
+        "perfect_labs": 0,      # labs completed without hints
+        "perfect_quizzes": 0,   # quizzes with 100%
+        "ai_uses": 0,
+        "quiz_percentages": [],
+        "security_score": 0,
+    }
+
+    try:
+        cursor = database[ACTIVITY].find({"user_id": user_id})
+        async for a in cursor:
+            atype = a.get("activity_type")
+            meta = a.get("meta") or {}
+
+            if atype == ACT_OWASP:
+                stats["labs"] += 1
+                vuln = meta.get("vulnerability")
+                if vuln:
+                    stats["vulns"][vuln] = stats["vulns"].get(vuln, 0) + 1
+                if vuln == "XSS" and meta.get("mode") == "defense":
+                    stats["xss_defense"] += 1
+                if meta.get("no_hint"):
+                    stats["perfect_labs"] += 1
+            elif atype == ACT_QUIZ:
+                stats["quiz_total"] += 1
+                pct = meta.get("percentage")
+                if pct is not None:
+                    stats["quiz_percentages"].append(float(pct))
+                    if pct >= 100:
+                        stats["perfect_quizzes"] += 1
+            elif atype == ACT_GLOSSARY:
+                stats["glossary"] += 1
+            elif atype in _AI_TYPES:
+                stats["ai_uses"] += 1
+    except Exception as e:
+        print(f"Failed to collect stats for {user_id}: {e}")
+
+    # Composite security score (0–100) so the counter reflects real activity
+    quiz_avg = (
+        sum(stats["quiz_percentages"]) / len(stats["quiz_percentages"])
+        if stats["quiz_percentages"]
+        else 0
+    )
+    score = 0
+    if quiz_avg:
+        score += min(40, quiz_avg * 0.4)
+    score += min(35, stats["labs"] * 2)          # up to 35
+    score += min(15, stats["glossary"] * 0.5)     # up to 15
+    stats["security_score"] = min(100, round(score))
+    return stats
+
+
+def _as_date(value) -> Any:
+    """Normalize a stored timestamp to a UTC date (or None)."""
+    if value is None:
+        return None
+    if isinstance(value, datetime):
+        dt = value
+    elif isinstance(value, str):
+        try:
+            dt = datetime.fromisoformat(value.replace("Z", "+00:00"))
+        except Exception:
+            return None
+    else:
+        return None
+    if dt.tzinfo is None:
+        dt = dt.replace(tzinfo=timezone.utc)
+    return dt.astimezone(timezone.utc).date()
+
+
+async def _compute_streak(user_id: str) -> Dict[str, int]:
+    """Current + longest consecutive-day streak, derived from activity dates."""
+    days: Set[Any] = set()
+    try:
+        cursor = database[ACTIVITY].find({"user_id": user_id}, {"created_at": 1})
+        async for a in cursor:
+            d = _as_date(a.get("created_at"))
+            if d is not None:
+                days.add(d)
+    except Exception:
+        return {"current": 0, "longest": 0}
+
+    if not days:
+        return {"current": 0, "longest": 0}
+
+    sorted_days = sorted(days)
+    longest = 1
+    run = 1
+    for i in range(1, len(sorted_days)):
+        if (sorted_days[i] - sorted_days[i - 1]).days == 1:
+            run += 1
+            longest = max(longest, run)
+        else:
+            run = 1
+
+    today = datetime.now(timezone.utc).date()
+    yesterday = today - timedelta(days=1)
+    current = 0
+    if today in days:
+        day = today
+        while day in days:
+            current += 1
+            day -= timedelta(days=1)
+    elif yesterday in days:
+        day = yesterday
+        while day in days:
+            current += 1
+            day -= timedelta(days=1)
+
+    return {"current": current, "longest": longest}
+
+
 # ── Achievements + Badges ───────────────────────────────────────────────────
+_ACHIE_DEFS = AchievementService.ACHIEVEMENTS
+
+_INJECTION_CATEGORIES = [
+    "SQL Injection",
+    "XSS",
+    "Command Injection",
+    "CSRF",
+    "SSRF",
+    "IDOR",
+]
+
+
+async def _condition_met(stats: Dict[str, Any], streaks: Dict[str, int], user_id: str, key: str) -> bool:
+    level = _progress_snapshot(user_id)["level"]
+    if key == "first_blood":
+        return stats["labs"] >= 1
+    if key == "sql_hunter":
+        return stats["vulns"].get("SQL Injection", 0) >= 2
+    if key == "xss_defender":
+        return stats["xss_defense"] >= 2
+    if key == "injection_master":
+        return all(stats["vulns"].get(v, 0) >= 1 for v in _INJECTION_CATEGORIES)
+    if key == "cyber_explorer":
+        return stats["labs"] >= 20
+    if key == "perfect_defender":
+        return stats["perfect_labs"] >= 10
+    if key == "quiz_champion":
+        return stats["perfect_quizzes"] >= 10
+    if key == "ai_learner":
+        return stats["ai_uses"] >= 20
+    if key == "daily_warrior":
+        return streaks["current"] >= 7
+    if key == "streak_master":
+        return streaks["longest"] >= 30
+    if key == "level_10":
+        return level >= 10
+    if key == "security_professional":
+        snap = _progress_snapshot(user_id)
+        return snap["xp"] >= 5000 and stats["labs"] >= 40
+    return False
+
+
+async def _unlocked_keys(user_id: str) -> Set[str]:
+    """Set of earned achievement keys (supports both new key-based and legacy name-based rows)."""
+    keys: Set[str] = set()
+    try:
+        cursor = database[ACHIEVEMENTS].find({"user_id": user_id})
+        async for doc in cursor:
+            k = doc.get("key")
+            if k:
+                keys.add(k)
+            else:
+                stored = doc.get("badge") or doc.get("name")
+                if stored:
+                    for key, defn in _ACHIE_DEFS.items():
+                        if defn.get("name") == stored:
+                            keys.add(key)
+    except Exception as e:
+        print(f"Failed to load unlocked achievements: {e}")
+    return keys
+
+
+async def _is_unlocked(user_id: str, key: str, name: str) -> bool:
+    try:
+        n = await database[ACHIEVEMENTS].count_documents(
+            {
+                "user_id": user_id,
+                "$or": [
+                    {"key": key},
+                    {"badge": name},
+                    {"name": name},
+                ],
+            }
+        )
+        return n > 0
+    except Exception:
+        return False
+
+
+async def _unlock(user_id: str, key: str, defn: Dict[str, Any]) -> bool:
+    name = defn.get("name", key)
+    if await _is_unlocked(user_id, key, name):
+        return False
+    try:
+        await database[ACHIEVEMENTS].insert_one(
+            {
+                "user_id": user_id,
+                "key": key,
+                "badge": name,
+                "name": name,
+                "xp_reward": defn.get("xp_reward", 0),
+                "date": utcnow().isoformat(),
+                "created_at": utcnow().isoformat(),
+            }
+        )
+    except Exception as e:
+        print(f"Failed to save achievement {key}: {e}")
+        return False
+    return True
+
+
+async def _unlock_all(user_id: str) -> None:
+    """Check every streaming achievement once and persist newly earned ones."""
+    stats = await _collect_stats(user_id)
+    streaks = await _compute_streak(user_id)
+    for key, defn in _ACHIE_DEFS.items():
+        try:
+            if await _condition_met(stats, streaks, user_id, key):
+                if await _unlock(user_id, key, defn):
+                    try:
+                        await log_activity(
+                            user_id,
+                            ACT_BADGE,
+                            f"Achievement unlocked: {defn.get('name')}",
+                            defn.get("xp_reward", 0),
+                            {"achievement": key},
+                        )
+                    except Exception:
+                        pass
+        except Exception as e:
+            print(f"Reward check failed for {key}: {e}")
+
+
 async def get_achievements(user_id: str) -> List[Dict[str, Any]]:
-    unlocked = AchievementService.get_user_achievements(user_id) or []
-    unlocked_set = {a.get("key") if isinstance(a, dict) else a for a in unlocked}
+    try:
+        await _unlock_all(user_id)
+    except Exception:
+        pass
+    unlocked_map: Dict[str, str] = {}
+    try:
+        async for doc in database[ACHIEVEMENTS].find({"user_id": user_id}):
+            k = doc.get("key")
+            if k:
+                unlocked_map[k] = doc.get("date") or doc.get("created_at") or ""
+    except Exception:
+        pass
+
     out = []
-    for key, defn in AchievementService.ACHIEVEMENTS.items():
+    for key, defn in _ACHIE_DEFS.items():
         out.append({
             "key": key,
             "name": defn.get("name"),
             "description": defn.get("description"),
             "icon": defn.get("icon"),
             "xp_reward": defn.get("xp_reward", 0),
-            "unlocked": key in unlocked_set,
-            "unlocked_at": None,
+            "unlocked": key in unlocked_map,
+            "unlocked_at": unlocked_map.get(key),
         })
     return out
 
 
 async def get_badges(user_id: str) -> List[Dict[str, Any]]:
-    unlocked = AchievementService.get_user_achievements(user_id) or []
-    unlocked_set = {a.get("key") if isinstance(a, dict) else a for a in unlocked}
-    # Badges = unlocked achievements surfaced as badges
+    keys = await _unlocked_keys(user_id)
     out = []
-    for key, defn in AchievementService.ACHIEVEMENTS.items():
+    for key, defn in _ACHIE_DEFS.items():
         out.append({
             "key": key,
             "name": defn.get("name"),
             "description": defn.get("description"),
-            "unlocked": key in unlocked_set,
+            "unlocked": key in keys,
         })
     return out
 
@@ -127,7 +415,6 @@ async def get_certificates(user_id: str) -> List[Dict[str, Any]]:
 # ── Leaderboard ─────────────────────────────────────────────────────────────
 async def get_leaderboard_entries(limit: int = 20) -> List[Dict[str, Any]]:
     entries = await get_leaderboard(limit=limit, skip=0)
-    # add badge count + rank
     for e in entries:
         e["badge_count"] = e.get("badges", 0) if "badges" in e else 0
     return entries
@@ -143,6 +430,12 @@ async def log_activity(
         )
     except Exception as e:
         print(f"Activity log failed: {e}")
+        return
+    # Every learning event can unlock achievements (idempotent)
+    try:
+        await _unlock_all(user_id)
+    except Exception as e:
+        print(f"Achievement evaluation failed: {e}")
 
 
 async def get_activity(user_id: str, limit: int = 30) -> List[Dict[str, Any]]:

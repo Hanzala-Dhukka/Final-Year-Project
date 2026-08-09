@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Rocket, Zap } from "lucide-react";
 
 /**
  * Payload editor for Attack Mode (spec Step 15). Free-text input + submit.
@@ -12,22 +13,31 @@ export default function PayloadEditor({ onSubmit, disabled }) {
   };
 
   return (
-    <div className="bg-white rounded-lg shadow p-4">
-      <label className="block text-sm font-semibold text-gray-700 mb-2">Payload</label>
+    <div className="cs-ow-editor">
+      <div className="cs-ow-editor-head">
+        <h4>Craft your payload</h4>
+        <span className="cs-ow-chip cs-ow-chip--danger">
+          <Zap size={11} /> Attack vector
+        </span>
+      </div>
       <textarea
+        className="cs-ow-textarea"
         value={payload}
         onChange={(e) => setPayload(e.target.value)}
         rows={3}
-        placeholder="Enter your exploit payload…"
-        className="w-full border border-gray-300 rounded-lg px-3 py-2 font-mono text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+        spellCheck={false}
+        placeholder="Enter your exploit payload… e.g. ' OR 1=1 --"
+        disabled={disabled}
       />
-      <button
-        onClick={submit}
-        disabled={disabled || !payload.trim()}
-        className="mt-3 w-full px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50"
-      >
-        🚀 Submit Attack
-      </button>
+      <div className="cs-ow-editor-actions">
+        <button
+          className="cs-ow-btn cs-ow-btn--attack cs-ow-btn--block"
+          onClick={submit}
+          disabled={disabled || !payload.trim()}
+        >
+          <Rocket size={16} /> Submit Attack
+        </button>
+      </div>
     </div>
   );
 }

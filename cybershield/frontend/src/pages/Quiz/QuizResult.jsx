@@ -1,4 +1,8 @@
 import { useState, useEffect } from "react";
+import {
+  Check, X, RotateCcw, Home, Lightbulb, Eye, EyeOff,
+  ShieldAlert, Trophy, Sparkles,
+} from "lucide-react";
 import quizApi from "../../api/quizApi";
 import ScoreCard from "../../components/Quiz/ScoreCard";
 import Leaderboard from "../../components/Quiz/Leaderboard";
@@ -23,102 +27,130 @@ export default function QuizResult({ result, onRetry, onHome }) {
   const results = result.results || [];
 
   return (
-    <div className="container mx-auto px-4 py-8 max-w-4xl">
-      <h1 className="text-3xl font-bold text-gray-900 mb-4">Quiz Complete</h1>
-
+    <div className="cs-qz-result">
       <ScoreCard
         score={result.score}
         total={result.total}
         percentage={result.percentage}
         xp={result.xp}
         rank={result.rank}
+        correct={result.correct}
       />
 
-      {/* AI recommendations (adaptive learning, Step 17) */}
       {result.recommendations?.length > 0 && (
-        <div className="bg-white shadow rounded-lg p-5 mt-5">
-          <h2 className="text-lg font-semibold mb-2">💡 AI Recommendations</h2>
-          <ul className="list-disc list-inside space-y-1 text-gray-700">
+        <div className="cs-qz-card">
+          <h3 className="cs-qz-section-title">
+            <span className="cs-qz-icon-wrap" style={{ background: "rgba(245, 158, 11, 0.15)", color: "var(--warning, #f59e0b)" }}>
+              <Lightbulb size={17} />
+            </span>
+            AI Recommendations
+          </h3>
+          <div className="cs-qz-recs">
             {result.recommendations.map((r, i) => (
-              <li key={i}>{r}</li>
+              <div key={i} className="cs-qz-rec">
+                <span className="cs-qz-rec__icon">
+                  <Sparkles size={14} />
+                </span>
+                {r}
+              </div>
             ))}
-          </ul>
+          </div>
         </div>
       )}
 
-      {/* Per-question AI feedback (Step 16) */}
-      <div className="bg-white shadow rounded-lg p-5 mt-5">
-        <div className="flex items-center justify-between mb-3">
-          <h2 className="text-lg font-semibold">Review Answers</h2>
+      <div className="cs-qz-card">
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            gap: 10,
+            flexWrap: "wrap",
+          }}
+        >
+          <h3 className="cs-qz-section-title" style={{ margin: 0 }}>
+            <span className="cs-qz-icon-wrap">
+              <Eye size={17} />
+            </span>
+            Review Answers
+          </h3>
           <button
+            className="cs-qz-btn cs-qz-btn--outline cs-qz-btn--sm"
             onClick={() => setShowAnswers((s) => !s)}
-            className="text-sm text-blue-600 hover:underline"
           >
-            {showAnswers ? "Hide" : "Show"} explanations
+            {showAnswers ? <EyeOff size={15} /> : <Eye size={15} />}
+            {showAnswers ? "Hide explanations" : "Show explanations"}
           </button>
         </div>
 
-        {results.map((r, i) => {
-          const correct = r.is_correct;
-          return (
-            <div
-              key={i}
-              className={`border rounded-lg p-3 mb-3 ${
-                correct ? "border-green-200 bg-green-50" : "border-red-200 bg-red-50"
-              }`}
-            >
-              <p className="font-medium text-gray-800 mb-1">
-                {i + 1}. {r.question}
-              </p>
-              <p className="text-sm">
-                <span className="text-gray-500">Your answer: </span>
-                <span className={correct ? "text-green-700" : "text-red-600"}>
-                  {r.user_answer || "—"}
-                </span>
-              </p>
-              {!correct && (
-                <p className="text-sm">
-                  <span className="text-gray-500">Correct answer: </span>
-                  <span className="text-green-700">{r.correct_answer}</span>
-                </p>
-              )}
-              {showAnswers && (
-                <div className="mt-2 text-sm text-gray-700 space-y-1">
-                  {r.explanation && (
-                    <div>
-                      <span className="font-semibold">Reason: </span>
-                      <MarkdownRenderer content={r.explanation} />
-                    </div>
-                  )}
-                  {r.owasp_reference && (
-                    <p>
-                      <span className="font-semibold">OWASP: </span>
-                      {r.owasp_reference}
+        <div className="cs-qz-review" style={{ marginTop: 16 }}>
+          {results.map((r, i) => {
+            const correct = r.is_correct;
+            return (
+              <div key={i} className="cs-qz-review__item">
+                <div className={`cs-qz-review__head ${correct ? "cs-qz-review__head--correct" : "cs-qz-review__head--wrong"}`}>
+                  <span className={`cs-qz-review__marker ${correct ? "cs-qz-review__marker--correct" : "cs-qz-review__marker--wrong"}`}>
+                    {correct ? <Check size={14} /> : <X size={14} />}
+                  </span>
+                  <span>{i + 1}. {r.question}</span>
+                </div>
+
+                <div className="cs-qz-review__body">
+                  <p className="cs-qz-review__answer" style={{ margin: 0 }}>
+                    <strong>Your answer: </strong>
+                    <span className={correct ? "cs-qz-review__answer--good" : "cs-qz-review__answer--bad"}>
+                      {r.user_answer || "—"}
+                    </span>
+                  </p>
+
+                  {!correct && (
+                    <p className="cs-qz-review__answer" style={{ margin: 0 }}>
+                      <strong>Correct answer: </strong>
+                      <span className="cs-qz-review__answer--good">{r.correct_answer}</span>
                     </p>
                   )}
+
+                  {r.owasp_reference && (
+                    <span className="cs-qz-owasp">
+                      <ShieldAlert size={12} />
+                      {r.owasp_reference}
+                    </span>
+                  )}
+
+                  {showAnswers && (
+                    <div className="cs-qz-review__detail">
+                      {r.explanation && (
+                        <MarkdownRenderer content={r.explanation} />
+                      )}
+                      {!r.explanation && !r.owasp_reference && (
+                        <span>No extra explanation for this question.</span>
+                      )}
+                    </div>
+                  )}
                 </div>
-              )}
-            </div>
-          );
-        })}
+              </div>
+            );
+          })}
+        </div>
       </div>
 
-      <div className="bg-white shadow rounded-lg p-5 mt-5">
-        <h2 className="text-lg font-semibold mb-3">🏆 Leaderboard</h2>
+      <div className="cs-qz-card">
+        <h3 className="cs-qz-section-title">
+          <span className="cs-qz-icon-wrap" style={{ background: "rgba(245, 158, 11, 0.15)", color: "var(--warning, #f59e0b)" }}>
+            <Trophy size={17} />
+          </span>
+          Leaderboard
+        </h3>
         <Leaderboard entries={leaderboard} />
       </div>
 
-      <div className="flex gap-3 mt-6">
-        <button
-          onClick={onRetry}
-          className="px-5 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-        >
+      <div className="cs-qz-result__actions">
+        <button className="cs-qz-btn cs-qz-btn--primary" onClick={onRetry}>
+          <RotateCcw size={17} />
           New Quiz
         </button>
-        <button
-          onClick={onHome}
-          className="px-5 py-2 border border-gray-300 rounded-lg text-gray-600 hover:bg-gray-50"
-        >
+        <button className="cs-qz-btn cs-qz-btn--outline" onClick={onHome}>
+          <Home size={17} />
           Back to Home
         </button>
       </div>

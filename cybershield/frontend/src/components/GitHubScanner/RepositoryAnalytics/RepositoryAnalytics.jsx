@@ -238,7 +238,7 @@ export default function RepositoryAnalytics({
         </div>
         {summary.recommendation && (
           <div style={{ marginTop: 16, padding: "12px 16px", background: "rgba(99,102,241,0.1)", borderRadius: 10, border: "1px solid rgba(99,102,241,0.2)" }}>
-            <p style={{ margin: 0, fontSize: 13, color: "#cbd5e1" }}>{summary.recommendation}</p>
+            <p style={{ margin: 0, fontSize: 13, color: "var(--textSecondary)" }}>{summary.recommendation}</p>
           </div>
         )}
       </div>
@@ -250,20 +250,20 @@ export default function RepositoryAnalytics({
           <div style={{ overflowX: "auto" }}>
             <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
               <thead>
-                <tr style={{ borderBottom: "1px solid #334155" }}>
-                  <th style={{ textAlign: "left", padding: "10px 12px", color: "#94a3b8", fontWeight: 600 }}>Package</th>
-                  <th style={{ textAlign: "left", padding: "10px 12px", color: "#94a3b8", fontWeight: 600 }}>Version</th>
-                  <th style={{ textAlign: "left", padding: "10px 12px", color: "#94a3b8", fontWeight: 600 }}>Status</th>
-                  <th style={{ textAlign: "left", padding: "10px 12px", color: "#94a3b8", fontWeight: 600 }}>Severity</th>
-                  <th style={{ textAlign: "left", padding: "10px 12px", color: "#94a3b8", fontWeight: 600 }}>Recommendation</th>
+                <tr style={{ borderBottom: "1px solid var(--borderColor)" }}>
+                  <th style={{ textAlign: "left", padding: "10px 12px", color: "var(--textMuted)", fontWeight: 600 }}>Package</th>
+                  <th style={{ textAlign: "left", padding: "10px 12px", color: "var(--textMuted)", fontWeight: 600 }}>Version</th>
+                  <th style={{ textAlign: "left", padding: "10px 12px", color: "var(--textMuted)", fontWeight: 600 }}>Status</th>
+                  <th style={{ textAlign: "left", padding: "10px 12px", color: "var(--textMuted)", fontWeight: 600 }}>Severity</th>
+                  <th style={{ textAlign: "left", padding: "10px 12px", color: "var(--textMuted)", fontWeight: 600 }}>Recommendation</th>
                 </tr>
               </thead>
               <tbody>
                 {dependencyFindings.map((pkg, idx) => (
-                  <tr key={idx} style={{ borderBottom: "1px solid #1e293b" }}>
-                    <td style={{ padding: "10px 12px", color: "#e2e8f0", fontWeight: 600 }}>{pkg.package}</td>
-                    <td style={{ padding: "10px 12px", color: "#94a3b8" }}>{pkg.version}</td>
-                    <td style={{ padding: "10px 12px", color: "#94a3b8" }}>{pkg.status}</td>
+                  <tr key={idx} style={{ borderBottom: "1px solid var(--borderColor)" }}>
+                    <td style={{ padding: "10px 12px", color: "var(--textPrimary)", fontWeight: 600 }}>{pkg.package}</td>
+                    <td style={{ padding: "10px 12px", color: "var(--textSecondary)" }}>{pkg.version}</td>
+                    <td style={{ padding: "10px 12px", color: "var(--textSecondary)" }}>{pkg.status}</td>
                     <td style={{ padding: "10px 12px" }}>
                       <span style={{
                         padding: "3px 10px",
@@ -276,7 +276,7 @@ export default function RepositoryAnalytics({
                         {pkg.severity}
                       </span>
                     </td>
-                    <td style={{ padding: "10px 12px", color: "#94a3b8" }}>{pkg.recommendation || "—"}</td>
+                    <td style={{ padding: "10px 12px", color: "var(--textSecondary)" }}>{pkg.recommendation || "—"}</td>
                   </tr>
                 ))}
               </tbody>

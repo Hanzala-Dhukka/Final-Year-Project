@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { ArrowLeft, BookOpen, Check } from "lucide-react";
 import glossaryApi from "../../api/glossaryApi";
 import Flashcard from "../../components/Glossary/Flashcard";
 
@@ -51,49 +52,65 @@ export default function Flashcards({ onBack, onRefreshProgress }) {
 
   if (loading) {
     return (
-      <div className="container mx-auto px-4 py-8 max-w-2xl text-gray-400">Building deck…</div>
+      <div className="cs-gs-deck">
+        <div className="cs-gs-state">
+          <div className="cs-gs-spinner" />
+          Building your deck…
+        </div>
+      </div>
     );
   }
 
   if (finished) {
     return (
-      <div className="container mx-auto px-4 py-8 max-w-2xl text-center">
-        <div className="bg-white rounded-lg shadow p-8">
-          <h2 className="text-2xl font-bold text-gray-800 mb-3">🎉 Session Complete</h2>
-          <p className="text-gray-600">
-            Known: <span className="text-green-600 font-semibold">{known}</span> ·{" "}
-            Learning: <span className="text-yellow-500 font-semibold">{learning}</span>
-          </p>
-          <button
-            onClick={onBack}
-            className="mt-6 px-5 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-          >
-            Back to Glossary
-          </button>
+      <div className="cs-gs-card cs-gs-complete">
+        <div className="cs-gs-complete__icon">
+          <Check size={36} />
         </div>
+        <h2>Session Complete</h2>
+        <p>Great work — you reviewed {cards.length} terms.</p>
+        <div className="cs-gs-complete__stats">
+          <div className="cs-gs-complete__stat">
+            <b style={{ color: "var(--success, #10b981)" }}>{known}</b>
+            <span>Known</span>
+          </div>
+          <div className="cs-gs-complete__stat">
+            <b style={{ color: "var(--warning, #f59e0b)" }}>{learning}</b>
+            <span>Learning</span>
+          </div>
+        </div>
+        <button className="cs-gs-btn cs-gs-btn--primary" onClick={onBack}>
+          <BookOpen size={17} />
+          Back to Glossary
+        </button>
       </div>
     );
   }
 
   if (cards.length === 0) {
     return (
-      <div className="container mx-auto px-4 py-8 max-w-2xl">
-        <p className="text-gray-400">No flashcards available.</p>
-        <button onClick={onBack} className="mt-4 text-blue-600 hover:underline">
-          ← Back
+      <div className="cs-gs-deck">
+        <div className="cs-gs-state">
+          <BookOpen size={28} />
+          No flashcards available.
+        </div>
+        <button className="cs-gs-btn cs-gs-btn--ghost cs-gs-back" onClick={onBack}>
+          <ArrowLeft size={17} />
+          Back to glossary
         </button>
       </div>
     );
   }
 
   return (
-    <div className="container mx-auto px-4 py-8 max-w-2xl">
-      <div className="flex items-center justify-between mb-4">
-        <button onClick={onBack} className="text-sm text-gray-400 hover:text-gray-600">
-          ← Exit
+    <div className="cs-gs-deck">
+      <div className="cs-gs-deck__top">
+        <button className="cs-gs-btn cs-gs-btn--ghost cs-gs-back" onClick={onBack}>
+          <ArrowLeft size={17} />
+          Exit
         </button>
-        <span className="text-sm text-gray-500">
-          Card {index + 1} / {cards.length}
+        <span className="cs-gs-deck__counter">
+          Card <strong>{index + 1}</strong> / {cards.length}
         </span>
       </div>
       <Flashcard card={cards[index]} onResult={handleResult} />

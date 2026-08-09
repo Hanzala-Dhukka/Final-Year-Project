@@ -82,12 +82,17 @@ async def get_trends(user_id: str, limit: int = 30) -> List[Dict]:
     Falls back to a demo trend when no snapshots exist yet.
     """
     out: List[Dict] = []
-    async for doc in (
-        database[SNAPSHOT_COLLECTION]
+    # Fetch the most recent snapshots (descending), then reverse to oldest-first
+    # so the trend chart reads left-to-right in chronological order. Limiting
+    # AFTER the descending sort guarantees we keep the latest `limit` points.
+    docs = (
+        await database[SNAPSHOT_COLLECTION]
         .find({"user_id": str(user_id)})
-        .sort("created_at", 1)
+        .sort("created_at", -1)
         .limit(limit)
-    ):
+        .to_list(length=limit)
+    )
+    for doc in reversed(docs):
         created = doc.get("created_at")
         out.append({
             "date": created.strftime("%Y-%m-%d") if isinstance(created, datetime) else "2026-01-01",
@@ -108,3 +113,11 @@ async def get_trends(user_id: str, limit: int = 30) -> List[Dict]:
             {"date": "2026-01-22", "security_score": 86, "risk_score": 14, "compliance_score": 91, "critical": 2, "high": 5, "medium": 9, "low": 6},
         ]
     return out
+
+
+async def latest_snapshot(user_id: str, project_id: Optional[str] = None) -> Optional[Dict]:
+    """Return the most recent snapshot for the given user/project (or None)."""
+    query: Dict = {"user_id": str(user_id)}
+    if project_id:
+        query["project_id"] = str(project_id)
+    return await database[SNAPSHOT_COLLECTION].find_one(query, sort=[("created_at", -1)])

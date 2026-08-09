@@ -81,10 +81,10 @@ async def submit_attack(
     difficulty = session.get("difficulty", "Beginner")
 
     patterns = scenario.get("success_patterns", [])
-    success = any(re.search(p, payload, re.IGNORECASE) for p in patterns)
-    if not success and payload.strip():
-        # Heuristic: any non-trivial payload against a known vuln is educational
-        success = True
+    if not payload.strip():
+        success = False
+    else:
+        success = any(re.search(p, payload, re.IGNORECASE) for p in patterns)
 
     # XP calculation
     xp = 0
@@ -123,7 +123,13 @@ async def submit_attack(
                 user_id, "owasp_lab",
                 f"Completed {vulnerability} attack lab ({difficulty})",
                 xp,
-                {"vulnerability": vulnerability, "mode": "attack"},
+                {
+                    "vulnerability": vulnerability,
+                    "mode": "attack",
+                    "difficulty": difficulty,
+                    "no_hint": no_hint,
+                    "success": True,
+                },
             )
         except Exception:
             pass
@@ -201,7 +207,14 @@ async def submit_defense(
                 user_id, "owasp_lab",
                 f"Completed {vulnerability} defense lab ({difficulty})",
                 xp,
-                {"vulnerability": vulnerability, "mode": "defense"},
+                {
+                    "vulnerability": vulnerability,
+                    "mode": "defense",
+                    "difficulty": difficulty,
+                    "no_hint": no_hint,
+                    "success": True,
+                    "status": status,
+                },
             )
         except Exception:
             pass

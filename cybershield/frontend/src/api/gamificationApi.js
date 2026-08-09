@@ -12,6 +12,7 @@ export const gamificationApi = {
   activity: (limit = 30) => API.get(`/gamification/activity?limit=${limit}`),
   goals: () => API.get("/gamification/goals"),
   createGoal: (payload) => API.post("/gamification/goals", payload),
+  deleteGoal: (id) => API.delete(`/gamification/goals/${id}`),
 };
 
 export default gamificationApi;

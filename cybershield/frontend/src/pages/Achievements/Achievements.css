@@ -1,0 +1,763 @@
+/* ============================================================
+   CYBERSHIELD ACHIEVEMENTS — Professional Interface
+   Fully theme-aware: uses design tokens so it adapts to both
+   dark and light modes automatically.
+   ============================================================ */
+
+.cs-ach-wrap {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 8px 0 40px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* ── Page top bar ────────────────────────────────────────── */
+.cs-ach-top {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+  padding: 16px 20px;
+  border: 1px solid var(--border-color, rgba(148, 163, 184, 0.12));
+  border-radius: 18px;
+  background: var(--glass-bg, rgba(17, 24, 39, 0.72));
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  box-shadow: var(--shadow-soft, 0 1px 2px rgba(0, 0, 0, 0.35));
+}
+
+.cs-ach-top h1 {
+  font-size: 1.35rem;
+  font-weight: 800;
+  color: var(--text-primary, #f1f5f9);
+  margin: 0;
+  letter-spacing: -0.01em;
+}
+
+.cs-ach-top .subtitle {
+  font-size: 0.82rem;
+  color: var(--text-secondary, #94a3b8);
+  margin: 2px 0 0;
+}
+
+.cs-ach-top-spacer {
+  flex: 1;
+}
+
+/* ── Hero banner ─────────────────────────────────────────── */
+.cs-ach-hero {
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  flex-wrap: wrap;
+  padding: 26px 28px;
+  border-radius: 22px;
+  background: linear-gradient(
+    135deg,
+    rgba(37, 99, 235, 0.16),
+    rgba(147, 51, 234, 0.14) 55%,
+    rgba(17, 24, 39, 0.2)
+  );
+  border: 1px solid var(--border-color, rgba(148, 163, 184, 0.12));
+  box-shadow: var(--shadow, 0 4px 16px rgba(0, 0, 0, 0.45));
+}
+
+.cs-ach-hero::after {
+  content: "";
+  position: absolute;
+  width: 320px;
+  height: 320px;
+  right: -90px;
+  top: -120px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(37, 99, 235, 0.28), transparent 70%);
+  pointer-events: none;
+}
+
+.cs-ach-ring {
+  position: relative;
+  width: 108px;
+  height: 108px;
+  flex-shrink: 0;
+}
+
+.cs-ach-ring svg {
+  transform: rotate(-90deg);
+}
+
+.cs-ach-ring .track {
+  fill: none;
+  stroke: var(--border-strong, rgba(148, 163, 184, 0.24));
+  stroke-width: 10;
+}
+
+.cs-ach-ring .value {
+  fill: none;
+  stroke: url(#csAchGrad);
+  stroke-width: 10;
+  stroke-linecap: round;
+  transition: stroke-dashoffset 0.6s ease;
+}
+
+.cs-ach-ring-center {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.cs-ach-ring-center b {
+  font-size: 1.7rem;
+  font-weight: 800;
+  color: var(--text-primary, #f1f5f9);
+  line-height: 1;
+}
+
+.cs-ach-ring-center span {
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  color: var(--text-muted, #64748b);
+  text-transform: uppercase;
+  margin-top: 3px;
+}
+
+.cs-ach-hero-info {
+  flex: 1;
+  min-width: 220px;
+}
+
+.cs-ach-hero-info .eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--primary, #2563eb);
+  background: var(--info-soft, rgba(59, 130, 246, 0.12));
+  border: 1px solid var(--border-color, rgba(148, 163, 184, 0.12));
+  padding: 5px 12px;
+  border-radius: 999px;
+}
+
+.cs-ach-hero-info h2 {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: var(--text-primary, #f1f5f9);
+  margin: 10px 0 2px;
+}
+
+.cs-ach-hero-info .xp-line {
+  font-size: 0.9rem;
+  color: var(--text-secondary, #94a3b8);
+  margin: 0;
+}
+
+.cs-ach-hero-info .xp-line b {
+  color: var(--primary, #2563eb);
+  font-weight: 800;
+}
+
+.cs-ach-bar {
+  margin-top: 14px;
+}
+
+.cs-ach-bar-top {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.72rem;
+  color: var(--text-secondary, #94a3b8);
+  margin-bottom: 6px;
+}
+
+.cs-ach-bar-track {
+  height: 10px;
+  border-radius: 999px;
+  background: var(--bg-secondary, #1e293b);
+  border: 1px solid var(--border-color, rgba(148, 163, 184, 0.12));
+  overflow: hidden;
+}
+
+.cs-ach-bar-fill {
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #2563eb, #7c3aed);
+  transition: width 0.6s ease;
+}
+
+.cs-ach-hero-stats {
+  display: flex;
+  gap: 18px;
+  flex-wrap: wrap;
+  padding: 14px 18px;
+  background: var(--card-bg, rgba(17, 24, 39, 0.8));
+  border: 1px solid var(--border-color, rgba(148, 163, 184, 0.12));
+  border-radius: 16px;
+}
+
+.cs-ach-hero-stat {
+  text-align: center;
+  min-width: 62px;
+}
+
+.cs-ach-hero-stat b {
+  display: block;
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: var(--text-primary, #f1f5f9);
+}
+
+.cs-ach-hero-stat span {
+  font-size: 0.68rem;
+  color: var(--text-muted, #64748b);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+/* ── Stat cards ──────────────────────────────────────────── */
+.cs-ach-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: 14px;
+}
+
+.cs-ach-stat-card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 16px 18px;
+  border: 1px solid var(--border-color, rgba(148, 163, 184, 0.12));
+  border-radius: 16px;
+  background: var(--card-bg, rgba(17, 24, 39, 0.8));
+  box-shadow: var(--shadow-soft, 0 1px 2px rgba(0, 0, 0, 0.35));
+  transition: transform 0.15s ease, border-color 0.15s ease;
+}
+
+.cs-ach-stat-card:hover {
+  transform: translateY(-2px);
+  border-color: var(--border-strong, rgba(148, 163, 184, 0.24));
+}
+
+.cs-ach-stat-icon {
+  width: 44px;
+  height: 44px;
+  flex-shrink: 0;
+  border-radius: 13px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+}
+
+.cs-ach-stat-icon--blue {
+  background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+}
+.cs-ach-stat-icon--violet {
+  background: linear-gradient(135deg, #8b5cf6, #6d28d9);
+}
+.cs-ach-stat-icon--amber {
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+}
+.cs-ach-stat-icon--rose {
+  background: linear-gradient(135deg, #f43f5e, #be123c);
+}
+.cs-ach-stat-icon--emerald {
+  background: linear-gradient(135deg, #10b981, #059669);
+}
+.cs-ach-stat-icon--cyan {
+  background: linear-gradient(135deg, #06b6d4, #0891b2);
+}
+
+.cs-ach-stat-body b {
+  display: block;
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: var(--text-primary, #f1f5f9);
+  line-height: 1.1;
+}
+
+.cs-ach-stat-body span {
+  font-size: 0.74rem;
+  color: var(--text-muted, #64748b);
+}
+
+/* ── Section headers ─────────────────────────────────────── */
+.cs-ach-section {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 6px 0 14px;
+}
+
+.cs-ach-section h3 {
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: var(--text-primary, #f1f5f9);
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.cs-ach-section .count {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--text-secondary, #94a3b8);
+  background: var(--bg-secondary, #1e293b);
+  border: 1px solid var(--border-color, rgba(148, 163, 184, 0.12));
+  padding: 3px 10px;
+  border-radius: 999px;
+}
+
+.cs-ach-spacer {
+  flex: 1;
+}
+
+/* ── Filter tabs ─────────────────────────────────────────── */
+.cs-ach-tabs {
+  display: flex;
+  gap: 6px;
+  background: var(--bg-secondary, #1e293b);
+  border: 1px solid var(--border-color, rgba(148, 163, 184, 0.12));
+  border-radius: 12px;
+  padding: 4px;
+}
+
+.cs-ach-tab {
+  border: none;
+  background: transparent;
+  color: var(--text-secondary, #94a3b8);
+  font-size: 0.78rem;
+  font-weight: 700;
+  padding: 7px 14px;
+  border-radius: 9px;
+  transition: all 0.15s ease;
+}
+
+.cs-ach-tab:hover {
+  color: var(--text-primary, #f1f5f9);
+}
+
+.cs-ach-tab--active {
+  background: var(--primary, #2563eb);
+  color: #fff;
+}
+
+/* ── Achievement cards ───────────────────────────────────── */
+.cs-ach-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 14px;
+}
+
+.cs-ach-card {
+  position: relative;
+  overflow: hidden;
+  padding: 18px;
+  border: 1px solid var(--border-color, rgba(148, 163, 184, 0.12));
+  border-radius: 18px;
+  background: var(--card-bg, rgba(17, 24, 39, 0.8));
+  box-shadow: var(--shadow-soft, 0 1px 2px rgba(0, 0, 0, 0.35));
+  transition: transform 0.15s ease, border-color 0.15s ease;
+}
+
+.cs-ach-card:hover {
+  transform: translateY(-3px);
+}
+
+.cs-ach-card--unlocked {
+  border-color: rgba(34, 197, 94, 0.35);
+}
+
+.cs-ach-card--unlocked::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 3px;
+  background: linear-gradient(90deg, #22c55e, #10b981);
+}
+
+.cs-ach-card--locked {
+  opacity: 0.72;
+  filter: grayscale(0.4);
+}
+
+.cs-ach-card-icon {
+  width: 50px;
+  height: 50px;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 12px;
+  color: #fff;
+}
+
+.cs-ach-card--unlocked .cs-ach-card-icon {
+  background: linear-gradient(135deg, #22c55e, #0d9488);
+  box-shadow: 0 6px 16px rgba(34, 197, 94, 0.35);
+}
+
+.cs-ach-card--locked .cs-ach-card-icon {
+  background: var(--bg-secondary, #1e293b);
+  color: var(--text-muted, #64748b);
+  border: 1px dashed var(--border-strong, rgba(148, 163, 184, 0.24));
+}
+
+.cs-ach-card h4 {
+  font-size: 0.98rem;
+  font-weight: 800;
+  color: var(--text-primary, #f1f5f9);
+  margin: 0 0 4px;
+}
+
+.cs-ach-card p {
+  font-size: 0.8rem;
+  color: var(--text-secondary, #94a3b8);
+  margin: 0;
+  line-height: 1.45;
+  min-height: 34px;
+}
+
+.cs-ach-card-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 12px;
+}
+
+.cs-ach-xp {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.72rem;
+  font-weight: 800;
+  color: #16a34a;
+  background: var(--success-soft, rgba(34, 197, 94, 0.12));
+  border: 1px solid rgba(34, 197, 94, 0.25);
+  padding: 4px 10px;
+  border-radius: 999px;
+}
+
+.cs-ach-card--locked .cs-ach-xp {
+  color: var(--text-muted, #64748b);
+  background: var(--bg-secondary, #1e293b);
+  border-color: var(--border-color, rgba(148, 163, 184, 0.12));
+}
+
+.cs-ach-state {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.cs-ach-state--unlocked {
+  color: #22c55e;
+}
+
+.cs-ach-state--locked {
+  color: var(--text-muted, #64748b);
+}
+
+/* ── Badges row ──────────────────────────────────────────── */
+.cs-ach-badge-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.cs-ach-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  padding: 10px 16px;
+  border-radius: 14px;
+  border: 1px solid var(--border-color, rgba(148, 163, 184, 0.12));
+  background: var(--card-bg, rgba(17, 24, 39, 0.8));
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--text-primary, #f1f5f9);
+}
+
+.cs-ach-badge--unlocked {
+  border-color: rgba(34, 197, 94, 0.3);
+  color: #22c55e;
+}
+
+.cs-ach-badge--locked {
+  color: var(--text-muted, #64748b);
+}
+
+/* ── Certificates ────────────────────────────────────────── */
+.cs-ach-cert-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 14px;
+}
+
+.cs-ach-cert {
+  position: relative;
+  overflow: hidden;
+  padding: 20px;
+  border-radius: 18px;
+  border: 1px solid var(--border-color, rgba(148, 163, 184, 0.12));
+  background: linear-gradient(
+    150deg,
+    rgba(59, 130, 246, 0.12),
+    rgba(17, 24, 39, 0.5) 70%
+  );
+  box-shadow: var(--shadow-soft, 0 1px 2px rgba(0, 0, 0, 0.35));
+}
+
+.cs-ach-cert::after {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 3px;
+  background: linear-gradient(90deg, #3b82f6, #7c3aed);
+}
+
+.cs-ach-cert-icon {
+  width: 46px;
+  height: 46px;
+  border-radius: 13px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #3b82f6, #6d28d9);
+  color: #fff;
+  margin-bottom: 12px;
+  box-shadow: 0 6px 16px rgba(59, 130, 246, 0.3);
+}
+
+.cs-ach-cert h4 {
+  font-size: 1rem;
+  font-weight: 800;
+  color: var(--text-primary, #f1f5f9);
+  margin: 0 0 6px;
+}
+
+.cs-ach-cert .cert-meta {
+  font-size: 0.78rem;
+  color: var(--text-secondary, #94a3b8);
+  margin: 0 0 2px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.cs-ach-cert .cert-score {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.72rem;
+  font-weight: 800;
+  color: var(--primary, #2563eb);
+  margin-top: 8px;
+}
+
+.cs-ach-download {
+  margin-top: 14px;
+  width: 100%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 14px;
+  border: none;
+  border-radius: 12px;
+  background: var(--primary, #2563eb);
+  color: #fff;
+  font-size: 0.82rem;
+  font-weight: 700;
+  transition: background 0.15s ease, transform 0.1s ease;
+}
+
+.cs-ach-download:hover {
+  background: var(--primary-hover, #1d4ed8);
+}
+
+.cs-ach-download:active {
+  transform: scale(0.98);
+}
+
+/* ── Activity timeline ───────────────────────────────────── */
+.cs-ach-timeline {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.cs-ach-tl-item {
+  position: relative;
+  display: flex;
+  gap: 14px;
+  padding: 12px 0;
+}
+
+.cs-ach-tl-item:not(:last-child)::after {
+  content: "";
+  position: absolute;
+  left: 17px;
+  top: 40px;
+  bottom: -4px;
+  width: 2px;
+  background: var(--border-color, rgba(148, 163, 184, 0.12));
+}
+
+.cs-ach-tl-dot {
+  width: 36px;
+  height: 36px;
+  flex-shrink: 0;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  background: linear-gradient(135deg, #3b82f6, #2563eb);
+}
+
+.cs-ach-tl-dot--success {
+  background: linear-gradient(135deg, #10b981, #059669);
+}
+.cs-ach-tl-dot--violet {
+  background: linear-gradient(135deg, #8b5cf6, #6d28d9);
+}
+.cs-ach-tl-dot--amber {
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+}
+
+.cs-ach-tl-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.cs-ach-tl-body .desc {
+  font-size: 0.86rem;
+  font-weight: 600;
+  color: var(--text-primary, #f1f5f9);
+}
+
+.cs-ach-tl-body .sub {
+  font-size: 0.72rem;
+  color: var(--text-muted, #64748b);
+  margin-top: 2px;
+}
+
+.cs-ach-tl-xp {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.72rem;
+  font-weight: 800;
+  color: #16a34a;
+  white-space: nowrap;
+}
+
+/* ── Panel / empty / alert ───────────────────────────────── */
+.cs-ach-panel {
+  padding: 18px;
+  border: 1px solid var(--border-color, rgba(148, 163, 184, 0.12));
+  border-radius: 18px;
+  background: var(--card-bg, rgba(17, 24, 39, 0.8));
+  box-shadow: var(--shadow-soft, 0 1px 2px rgba(0, 0, 0, 0.35));
+}
+
+.cs-ach-empty {
+  text-align: center;
+  padding: 42px 20px;
+  color: var(--text-muted, #64748b);
+  font-size: 0.86rem;
+  border: 1px dashed var(--border-strong, rgba(148, 163, 184, 0.24));
+  border-radius: 18px;
+}
+
+.cs-ach-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 60px 0;
+  color: var(--text-secondary, #94a3b8);
+  font-size: 0.9rem;
+}
+
+.cs-ach-spin {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 3px solid var(--border-strong, rgba(148, 163, 184, 0.24));
+  border-top-color: var(--primary, #2563eb);
+  animation: csAchSpin 0.7s linear infinite;
+}
+
+@keyframes csAchSpin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.cs-ach-alert {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 18px;
+  border-radius: 14px;
+  font-size: 0.86rem;
+  font-weight: 600;
+}
+
+.cs-ach-alert--error {
+  color: var(--danger, #ef4444);
+  background: var(--danger-soft, rgba(239, 68, 68, 0.12));
+  border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+.cs-ach-refresh {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 16px;
+  border: 1px solid var(--border-color, rgba(148, 163, 184, 0.12));
+  border-radius: 12px;
+  background: var(--bg-secondary, #1e293b);
+  color: var(--text-primary, #f1f5f9);
+  font-size: 0.8rem;
+  font-weight: 700;
+  transition: background 0.15s ease, transform 0.1s ease;
+}
+
+.cs-ach-refresh:hover {
+  background: var(--surface-hover, #1a2438);
+}
+
+.cs-ach-refresh:active {
+  transform: scale(0.98);
+}
+
+/* ── Responsive ──────────────────────────────────────────── */
+@media (max-width: 640px) {
+  .cs-ach-hero {
+    padding: 20px;
+    gap: 18px;
+  }
+  .cs-ach-ring {
+    width: 88px;
+    height: 88px;
+  }
+  .cs-ach-hero-info h2 {
+    font-size: 1.2rem;
+  }
+}

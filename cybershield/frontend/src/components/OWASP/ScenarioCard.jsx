@@ -1,24 +1,61 @@
+import { Target, Sparkles } from "lucide-react";
+
 /**
  * Scenario card (spec Step 15). Shows the vulnerability scenario description,
  * difficulty, and the input field/example.
  */
-export default function ScenarioCard({ simulation }) {
+export default function ScenarioCard({ simulation, onAskAI }) {
   if (!simulation) return null;
+
   return (
-    <div className="bg-white rounded-lg shadow p-5">
-      <div className="flex items-center justify-between mb-2">
-        <h2 className="text-lg font-semibold text-gray-800">{simulation.title}</h2>
-        <span className="text-xs px-2 py-0.5 rounded bg-gray-100 text-gray-500">
-          {simulation.difficulty}
-        </span>
+    <div className="cs-ow-scenario">
+      <div className="cs-ow-scenario-head">
+        <h2>{simulation.title || simulation.vulnerability}</h2>
+        <div className="cs-ow-scenario-tags">
+          <span className="cs-ow-chip cs-ow-chip--neutral">{simulation.difficulty}</span>
+          <span className="cs-ow-chip cs-ow-chip--purple">
+            <Target size={11} /> {simulation.mode === "defense" ? "Defense" : "Attack"}
+          </span>
+        </div>
       </div>
-      <p className="text-sm text-gray-600 mb-3">{simulation.scenario}</p>
-      <div className="text-xs text-gray-400">
-        Target field: <span className="font-mono text-gray-600">{simulation.field}</span>
-      </div>
+
+      {simulation.scenario && <p>{simulation.scenario}</p>}
+
+      {simulation.field && (
+        <div className="cs-ow-kv">
+          Target field: <code className="cs-ow-code" style={{ display: "inline", padding: "2px 8px" }}>
+            {simulation.field}
+          </code>
+        </div>
+      )}
+
       {simulation.example_payload && (
-        <div className="mt-2 text-xs text-gray-400">
-          Example: <code className="bg-gray-100 px-1 rounded">{simulation.example_payload}</code>
+        <div className="cs-ow-kv">
+          Example:
+          <code className="cs-ow-code" style={{ display: "inline", padding: "2px 8px" }}>
+            {simulation.example_payload}
+          </code>
+        </div>
+      )}
+
+      {simulation.learning_path && simulation.learning_path.length > 0 && (
+        <div className="cs-ow-path">
+          <span className="cs-ow-path-title">Learning path</span>
+          <div className="cs-ow-path-items">
+            {simulation.learning_path.map((step) => (
+              <span key={step} className="cs-ow-chip cs-ow-chip--info">
+                {step}
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {onAskAI && (
+        <div className="cs-ow-editor-actions" style={{ marginTop: 14 }}>
+          <button className="cs-ow-btn cs-ow-btn--ghost cs-ow-btn-sm" onClick={onAskAI}>
+            <Sparkles size={14} /> Ask AI
+          </button>
         </div>
       )}
     </div>

@@ -50,7 +50,14 @@ export const AuthProvider = ({ children }) => {
     try {
       const response = await loginUser(credentials);
 
-      // The auth API returns tokens but no user object, so fetch the profile.
+      // Persist the token FIRST so the /auth/me call below is authenticated
+      // (the axios request interceptor reads the token from localStorage).
+      localStorage.setItem("token", response.access_token);
+      if (response.refresh_token) {
+        localStorage.setItem("refresh_token", response.refresh_token);
+      }
+
+      // The auth API returns tokens but no user profile; fetch it now.
       let user = null;
       try {
         const me = await API.get("/auth/me");
@@ -59,12 +66,7 @@ export const AuthProvider = ({ children }) => {
         user = null;
       }
 
-      // Store in localStorage
-      localStorage.setItem("token", response.access_token);
       localStorage.setItem("user", JSON.stringify(user));
-      if (response.refresh_token) {
-        localStorage.setItem("refresh_token", response.refresh_token);
-      }
 
       // Update state
       setToken(response.access_token);

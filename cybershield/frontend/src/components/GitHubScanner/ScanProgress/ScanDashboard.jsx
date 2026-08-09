@@ -116,9 +116,9 @@ export default function ScanDashboard({ scanId, onScanComplete }) {
           </h2>
           <p>Real-time automated repository security analysis</p>
         </div>
-        <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", color: "#94a3b8", fontSize: "0.85rem" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", color: "var(--textSecondary)", fontSize: "0.85rem" }}>
           <FaGithub />
-          <span style={{ color: "#f8fafc", fontWeight: 600 }}>{scan.stage || "Initializing"}</span>
+          <span style={{ color: "var(--textPrimary)", fontWeight: 600 }}>{scan.stage || "Initializing"}</span>
         </div>
       </div>
 

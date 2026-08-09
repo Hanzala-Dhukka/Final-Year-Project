@@ -1,0 +1,15 @@
+INFO:     Started server process [21008]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://127.0.0.1:8098 (Press CTRL+C to quit)
+MongoDB client connected successfully to mongodb://localhost:27017
+Database 'CyberShieldDB' selected
+DEBUG: GitHub Token detected: github_pat...qqd1
+Security checklist catalogue ready (52 items).
+Scan history indexes created successfully.
+[Indexes] Skipping users: Index already exists with a different name: email_1, full error: {'ok': 0.0, 'errmsg': 'Index already exists with a different name: email_1', 'code': 85, 'codeName': 'IndexOptionsConflict'}
+[Indexes] MongoDB indexes ensured.
+Scheduler started. Monitoring jobs scheduled every 30 minutes.
+INFO:     127.0.0.1:55102 - "GET /api/v1/analytics/dashboard-stats HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55102 - "GET /api/v1/analytics/recent-scans HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55102 - "GET /api/v1/analytics/summary HTTP/1.1" 401 Unauthorized

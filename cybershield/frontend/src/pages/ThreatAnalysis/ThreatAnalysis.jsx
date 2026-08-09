@@ -294,9 +294,9 @@ export default function ThreatAnalysis() {
           </div>
         </form>
         <style>{`
-          .gs-form-input{width:100%;padding:10px 12px;background:var(--bg-primary,#0f172a);border:1px solid var(--border-strong,#334155);border-radius:8px;color:#e2e8f0;font-size:13px;outline:none;transition:border-color .2s}
+          .gs-form-input{width:100%;padding:10px 12px;background:var(--bg-primary,#0f172a);border:1px solid var(--border-strong,#334155);border-radius:8px;color:var(--textPrimary);font-size:13px;outline:none;transition:border-color .2s}
           .gs-form-input::placeholder{color:#64748b}.gs-form-input:focus{border-color:#6366f1}
-          .gs-form-label{display:flex;align-items:center;gap:6px;font-size:12px;font-weight:600;color:#94a3b8;margin-bottom:6px;text-transform:uppercase;letter-spacing:.3px}
+          .gs-form-label{display:flex;align-items:center;gap:6px;font-size:12px;font-weight:600;color:var(--textSecondary);margin-bottom:6px;text-transform:uppercase;letter-spacing:.3px}
           .gs-form-label svg{font-size:11px;color:#6366f1}.gs-form-label span{color:#ef4444}
         `}</style>
       </div>
@@ -306,26 +306,26 @@ export default function ThreatAnalysis() {
   /* ════ SCANNING ════ */
   if (state === "scanning") {
     return (
-      <div className="gs-page" style={{ background: "#0a0f1e", minHeight: "100vh", color: "#f1f5f9" }}>
+      <div className="gs-page" style={{ background: "var(--bgPrimary)", minHeight: "100vh", color: "var(--textPrimary)" }}>
         <div style={{
           display: "flex", alignItems: "center", gap: 10,
           background: "linear-gradient(135deg, rgba(99,102,241,0.13), rgba(139,92,246,0.13))",
           border: "1px solid rgba(99,102,241,0.27)", borderRadius: 12,
-          padding: "14px 20px", marginBottom: 20, fontSize: 14, fontWeight: 600, color: "#c4b5fd",
+          padding: "14px 20px", marginBottom: 20, fontSize: 14, fontWeight: 600, color: "var(--textPrimary)",
         }}>
           <FaSpinner className="gs-spin" /> Analyzing threats for {form.project_name}...
         </div>
         <div style={{
-          background: "#0f172a", border: "1px solid #1e293b", borderRadius: 12,
+          background: "var(--glassBg)", border: "1px solid var(--glassBorder)", borderRadius: 12,
           padding: "60px 24px", textAlign: "center", maxWidth: 700, margin: "0 auto",
         }}>
           <motion.div animate={{ scale: [1, 1.1, 1], opacity: [0.5, 1, 0.5] }} transition={{ duration: 2, repeat: Infinity }}>
             <FaShieldAlt style={{ fontSize: 48, color: "#6366f1", marginBottom: 20 }} />
           </motion.div>
-          <h3 style={{ color: "#f1f5f9", fontSize: 18, fontWeight: 700, marginBottom: 8 }}>
+          <h3 style={{ color: "var(--textPrimary)", fontSize: 18, fontWeight: 700, marginBottom: 8 }}>
             AI Threat Analysis in Progress
           </h3>
-          <p style={{ color: "#94a3b8", fontSize: 14 }}>
+          <p style={{ color: "var(--textSecondary)", fontSize: 14 }}>
             Evaluating project architecture, tech stack, and attack surfaces...
           </p>
         </div>
@@ -336,14 +336,14 @@ export default function ThreatAnalysis() {
   /* ════ ERROR ════ */
   if (state === "error") {
     return (
-      <div className="gs-page" style={{ background: "#0a0f1e", minHeight: "100vh", color: "#f1f5f9" }}>
+      <div className="gs-page" style={{ background: "var(--bgPrimary)", minHeight: "100vh", color: "var(--textPrimary)" }}>
         <div style={{
           display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
           minHeight: "60vh", textAlign: "center",
         }}>
           <FaExclamationTriangle style={{ fontSize: 40, color: "#ef4444", marginBottom: 16 }} />
           <h2 style={{ color: "#f87171" }}>Analysis Failed</h2>
-          <p style={{ color: "#94a3b8", maxWidth: 500, margin: "0 auto 20px", lineHeight: 1.6 }}>{error}</p>
+          <p style={{ color: "var(--textSecondary)", maxWidth: 500, margin: "0 auto 20px", lineHeight: 1.6 }}>{error}</p>
           <button className="gs-btn-primary" onClick={resetToIdle} style={{ marginTop: 12 }}>
             <FaRedo /> Try Again
           </button>
@@ -355,9 +355,9 @@ export default function ThreatAnalysis() {
   /* ════ COMPLETED ════ */
   if (!results) {
     return (
-      <div className="gs-page" style={{ background: "#0a0f1e", minHeight: "100vh", color: "#f1f5f9" }}>
+      <div className="gs-page" style={{ background: "var(--bgPrimary)", minHeight: "100vh", color: "var(--textPrimary)" }}>
         <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", minHeight: "60vh" }}>
-          <p style={{ color: "#94a3b8" }}>No results to display.</p>
+          <p style={{ color: "var(--textSecondary)" }}>No results to display.</p>
           <button className="gs-btn-primary" onClick={resetToIdle} style={{ marginTop: 12 }}>
             <FaRedo /> Try Again
           </button>
@@ -378,7 +378,7 @@ export default function ThreatAnalysis() {
   const usedAI = results.used_ai === true
 
   return (
-    <div className="gs-page" style={{ background: "#0a0f1e", minHeight: "100vh", color: "#f1f5f9" }}>
+    <div className="gs-page" style={{ background: "var(--bgPrimary)", minHeight: "100vh", color: "var(--textPrimary)" }}>
       {/* Header */}
       <div className="gs-repo-header">
         <div className="gs-repo-header-left">
@@ -393,7 +393,7 @@ export default function ThreatAnalysis() {
             <span className={`gs-badge ${riskStyle.badge}`}>{results.risk_level || "Medium"}</span>
           </div>
           {usedAI && (
-            <div className="gs-stat-chip" style={{ background: "linear-gradient(135deg, rgba(99,102,241,0.2), rgba(139,92,246,0.2))", border: "1px solid rgba(99,102,241,0.3)", color: "#c4b5fd" }}>
+            <div className="gs-stat-chip" style={{ background: "linear-gradient(135deg, rgba(99,102,241,0.2), rgba(139,92,246,0.2))", border: "1px solid rgba(99,102,241,0.3)", color: "var(--textPrimary)" }}>
               AI
             </div>
           )}
@@ -444,7 +444,7 @@ export default function ThreatAnalysis() {
               <div style={{ display: "grid", gridTemplateColumns: "auto 1fr", gap: 20, marginBottom: 16 }}>
                 <div className="gs-card" style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "28px 32px", minWidth: 160 }}>
                   <ScoreRing score={avgScore} />
-                  <p style={{ color: "#94a3b8", fontSize: 12, fontWeight: 600, marginTop: 10, textTransform: "uppercase", letterSpacing: 0.5 }}>Security Score</p>
+                  <p style={{ color: "var(--textSecondary)", fontSize: 12, fontWeight: 600, marginTop: 10, textTransform: "uppercase", letterSpacing: 0.5 }}>Security Score</p>
                 </div>
                 <div className="gs-card gs-card-accent" style={{ marginBottom: 0 }}>
                   <div className="gs-card-title"><FaShieldAlt /> Project Overview</div>
@@ -485,7 +485,7 @@ export default function ThreatAnalysis() {
                             }}>
                               <span style={{ width: 8, height: 8, borderRadius: "50%", background: sc.color, flexShrink: 0 }} />
                               <span style={{ color: sc.color, fontWeight: 700, fontSize: 13, textTransform: "capitalize" }}>{s.level}</span>
-                              <span style={{ color: "#f1f5f9", fontWeight: 800, fontSize: 18 }}>{s.count}</span>
+                              <span style={{ color: "var(--textPrimary)", fontWeight: 800, fontSize: 18 }}>{s.count}</span>
                             </div>
                           )
                         })}
@@ -495,7 +495,7 @@ export default function ThreatAnalysis() {
                     {/* Identified Threats - Numbered List */}
                     {parsed.threats.length > 0 && (
                       <div>
-                        <h4 style={{ color: "#f1f5f9", fontSize: 14, fontWeight: 700, marginBottom: 10, display: "flex", alignItems: "center", gap: 6 }}>
+                        <h4 style={{ color: "var(--textPrimary)", fontSize: 14, fontWeight: 700, marginBottom: 10, display: "flex", alignItems: "center", gap: 6 }}>
                           <FaBug size={13} style={{ color: "#6366f1" }} />
                           Identified Threats ({parsed.threats.length})
                         </h4>
@@ -652,8 +652,8 @@ export default function ThreatAnalysis() {
                     {recommendations.map((rec, i) => (
                       <li key={i}>
                         <span className="gs-rec-priority">Priority</span>
-                        <strong style={{ color: "#f1f5f9" }}>{rec.title}</strong><br />
-                        <span style={{ color: "#94a3b8", fontSize: 13 }}>{rec.description}</span>
+                        <strong style={{ color: "var(--textPrimary)" }}>{rec.title}</strong><br />
+                        <span style={{ color: "var(--textSecondary)", fontSize: 13 }}>{rec.description}</span>
                       </li>
                     ))}
                   </ol>

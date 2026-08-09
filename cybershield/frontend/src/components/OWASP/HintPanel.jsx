@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Lightbulb, HelpCircle } from "lucide-react";
 
 /**
  * Hint panel (spec Step 10). Up to 3 progressive hints, one reveal at a time.
@@ -9,30 +10,37 @@ export default function HintPanel({ hints = [], onHint }) {
 
   const reveal = () => {
     if (revealed < hints.length) {
-      setRevealed((r) => r + 1);
-      onHint && onHint(revealed + 1);
+      const next = revealed + 1;
+      setRevealed(next);
+      onHint && onHint(next);
     }
   };
 
+  if (!hints || hints.length === 0) return null;
+
   return (
-    <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-      <div className="flex items-center justify-between">
-        <h3 className="text-sm font-semibold text-yellow-800">💡 Hints ({revealed}/{hints.length})</h3>
+    <div className="cs-ow-hints">
+      <div className="cs-ow-hints-head">
+        <h4>
+          <Lightbulb size={16} /> Hints ({revealed}/{hints.length})
+        </h4>
         <button
+          className="cs-ow-btn cs-ow-btn--ghost cs-ow-btn-sm"
           onClick={reveal}
           disabled={revealed >= hints.length}
-          className="text-xs px-3 py-1 bg-yellow-500 text-white rounded hover:bg-yellow-600 disabled:opacity-40"
         >
-          Reveal Hint
+          <HelpCircle size={14} /> Reveal Hint
         </button>
       </div>
-      <ul className="mt-2 space-y-1 list-decimal list-inside text-sm text-yellow-900">
+      <ul>
         {hints.slice(0, revealed).map((h, i) => (
-          <li key={i}>{h}</li>
+          <li key={i}>
+            <b>Hint {i + 1}.</b> {h}
+          </li>
         ))}
       </ul>
       {revealed === 0 && (
-        <p className="text-xs text-yellow-700 mt-1">Solve without hints for a bonus!</p>
+        <p className="cs-ow-hint-note">Solve it without hints for a bonus!</p>
       )}
     </div>
   );

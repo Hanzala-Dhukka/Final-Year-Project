@@ -98,12 +98,7 @@ async def get_categories() -> List[str]:
 
 async def get_term(term_id: str, user_id: str = None) -> Optional[Dict[str, Any]]:
     """Fetch a single term by id, marking it viewed and flagging favorite."""
-    from bson import ObjectId
-
-    try:
-        doc = await database[TERMS].find_one({"_id": ObjectId(term_id)})
-    except Exception:
-        return None
+    doc = await database[TERMS].find_one({"_id": term_id})
     if not doc:
         return None
 
@@ -134,12 +129,7 @@ async def mini_quiz(term_id: str) -> Optional[Dict[str, Any]]:
     from the term's prevention list (or definition), with distractors from
     other terms' prevention items / names.
     """
-    from bson import ObjectId
-
-    try:
-        doc = await database[TERMS].find_one({"_id": ObjectId(term_id)})
-    except Exception:
-        return None
+    doc = await database[TERMS].find_one({"_id": term_id})
     if not doc:
         return None
 
@@ -150,7 +140,7 @@ async def mini_quiz(term_id: str) -> Optional[Dict[str, Any]]:
 
     # Gather distractors from other terms
     distractors = []
-    cursor = database[TERMS].find({"_id": {"$ne": ObjectId(term_id)}}).limit(60)
+    cursor = database[TERMS].find({"_id": {"$ne": term_id}}).limit(60)
     async for d in cursor:
         for p in d.get("prevention", []):
             if p != correct and p not in distractors:
@@ -206,14 +196,9 @@ async def get_favorites(user_id: str) -> List[Dict[str, Any]]:
     term_ids = []
     async for f in cursor:
         term_ids.append(f["term_id"])
-    from bson import ObjectId
     if not term_ids:
         return []
-    try:
-        oids = [ObjectId(t) for t in term_ids if ObjectId(t)]
-    except Exception:
-        return []
-    cursor = database[TERMS].find({"_id": {"$in": oids}})
+    cursor = database[TERMS].find({"_id": {"$in": term_ids}})
     out = []
     async for d in cursor:
         out.append(_term_out(d, is_favorite=True))
@@ -259,18 +244,13 @@ async def review_suggestion(suggestion_id: str, action: str) -> bool:
     Approve/reject a suggestion. On approve, the term is added to glossary_terms.
     action: 'approve' | 'reject'
     """
-    from bson import ObjectId
-
-    try:
-        s = await database[SUGGESTIONS].find_one({"_id": ObjectId(suggestion_id)})
-    except Exception:
-        return False
+    s = await database[SUGGESTIONS].find_one({"_id": suggestion_id})
     if not s:
         return False
 
     new_status = "approved" if action == "approve" else "rejected"
     await database[SUGGESTIONS].update_one(
-        {"_id": ObjectId(suggestion_id)}, {"$set": {"status": new_status}}
+        {"_id": suggestion_id}, {"$set": {"status": new_status}}
     )
     if action == "approve":
         term_doc = glossary_term_document({

@@ -1,39 +1,46 @@
+import { BookOpen, ChevronRight, Star } from "lucide-react";
+
 /**
  * Glossary term card (spec Step 17). Shows term, category, difficulty and
  * optional favorite star; opens the detail page on click.
  */
 export default function GlossaryCard({ term, onOpen, onToggleFavorite }) {
   return (
-    <div
+    <button
       onClick={() => onOpen && onOpen(term.id)}
-      className="bg-white rounded-lg shadow p-4 cursor-pointer hover:shadow-md transition border border-transparent hover:border-blue-200"
+      className="cs-gs-term"
     >
-      <div className="flex items-start justify-between">
-        <h3 className="font-semibold text-gray-800">{term.term}</h3>
-        <button
+      <div className="cs-gs-term__top">
+        <h3 className="cs-gs-term__name">{term.term}</h3>
+        <span
+          role="button"
+          className={`cs-gs-fav ${term.is_favorite ? "cs-gs-fav--active" : ""}`}
           onClick={(e) => {
             e.stopPropagation();
             onToggleFavorite && onToggleFavorite(term);
           }}
-          className={`text-lg ${term.is_favorite ? "text-yellow-400" : "text-gray-300 hover:text-yellow-400"}`}
           title={term.is_favorite ? "Remove favorite" : "Add favorite"}
         >
-          ★
-        </button>
+          <Star size={18} fill={term.is_favorite ? "currentColor" : "none"} />
+        </span>
       </div>
-      <div className="mt-1 flex gap-2 items-center text-xs">
-        <span className="px-2 py-0.5 rounded bg-blue-50 text-blue-600">
+
+      <div className="cs-gs-term__badges">
+        <span className="cs-gs-badge cs-gs-badge--category">
+          <BookOpen size={11} />
           {term.category}
         </span>
         {term.difficulty && (
-          <span className="px-2 py-0.5 rounded bg-gray-100 text-gray-500">
-            {term.difficulty}
-          </span>
+          <span className="cs-gs-badge cs-gs-badge--neutral">{term.difficulty}</span>
         )}
       </div>
-      <p className="text-sm text-gray-500 mt-2 line-clamp-2">
-        {term.definition}
-      </p>
-    </div>
+
+      <p className="cs-gs-term__desc">{term.definition}</p>
+
+      <div className="cs-gs-term__foot">
+        Learn more
+        <ChevronRight size={14} />
+      </div>
+    </button>
   );
 }

@@ -83,7 +83,7 @@ export default function BeforeScan({ onStartScan }) {
           transition={{ duration: 0.3 }}
         >
           <div className="gs-preview-info">
-            <FaGithub style={{ fontSize: 28, color: "#e2e8f0" }} />
+            <FaGithub style={{ fontSize: 28, color: "var(--textSecondary)" }} />
             <div>
               <p className="gs-preview-name">
                 {validated.repository || repoUrl}

@@ -1,21 +1,21 @@
 from fastapi import APIRouter
 from bson import ObjectId
+from datetime import datetime
 from app.database.db import database
 
 
 def _serialize(doc: dict) -> dict:
-    """Convert bson types (ObjectId) to JSON-serializable strings."""
+    """Convert bson types (ObjectId/datetime) to JSON-serializable values."""
     out = {}
     for k, v in doc.items():
         if isinstance(v, ObjectId):
             out[k] = str(v)
+        elif isinstance(v, datetime):
+            out[k] = v.isoformat()
         elif isinstance(v, dict):
             out[k] = _serialize(v)
         elif isinstance(v, list):
-            out[k] = [
-                _serialize(i) if isinstance(i, dict) else (str(i) if isinstance(i, ObjectId) else i)
-                for i in v
-            ]
+            out[k] = [_serialize(i) if isinstance(i, dict) else (str(i) if isinstance(i, ObjectId) else (i.isoformat() if isinstance(i, datetime) else i)) for i in v]
         else:
             out[k] = v
     return out
@@ -37,6 +37,7 @@ async def get_dashboard_stats():
     critical_count = 0
     high_count = 0
     medium_count = 0
+    low_count = 0
 
     for scan in scans:
 
@@ -49,7 +50,12 @@ async def get_dashboard_stats():
 
         for finding in findings:
 
-            issues = finding.get("issues", [])
+            if not isinstance(finding, dict):
+                continue
+
+            # Scanner findings may nest individual issues under "issues",
+            # otherwise the finding itself carries the severity.
+            issues = finding.get("issues") or [finding]
 
             for issue in issues:
 
@@ -64,12 +70,16 @@ async def get_dashboard_stats():
                 elif severity == "Medium":
                     medium_count += 1
 
+                elif severity == "Low":
+                    low_count += 1
+
     return {
         "total_scans": total_scans,
         "total_vulnerabilities": total_vulnerabilities,
         "critical": critical_count,
         "high": high_count,
-        "medium": medium_count
+        "medium": medium_count,
+        "low": low_count
     }
 
 

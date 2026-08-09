@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { ArrowLeft, Sparkles, Download, FileQuestion, AlertCircle, Bot, Star, BookOpen } from "lucide-react";
 import glossaryApi from "../../api/glossaryApi";
 import MarkdownRenderer from "../../components/AIAssistant/MarkdownRenderer";
 import MiniQuiz from "../../components/Glossary/MiniQuiz";
@@ -77,10 +78,14 @@ export default function GlossaryDetails({ termId, onOpen, onBack, onRefreshProgr
 
   if (error && !term) {
     return (
-      <div className="container mx-auto px-4 py-8 max-w-3xl">
-        <p className="text-red-500">{error}</p>
-        <button onClick={onBack} className="mt-4 text-blue-600 hover:underline">
-          ← Back to glossary
+      <div className="cs-gs-card">
+        <p className="cs-gs-error">
+          <AlertCircle size={15} />
+          {error}
+        </p>
+        <button className="cs-gs-btn cs-gs-btn--ghost cs-gs-back" onClick={onBack}>
+          <ArrowLeft size={17} />
+          Back to glossary
         </button>
       </div>
     );
@@ -88,125 +93,142 @@ export default function GlossaryDetails({ termId, onOpen, onBack, onRefreshProgr
 
   if (!term) {
     return (
-      <div className="container mx-auto px-4 py-8 max-w-3xl text-gray-400">Loading…</div>
+      <div className="cs-gs-state">
+        <div className="cs-gs-spinner" />
+        Loading term…
+      </div>
     );
   }
 
   return (
-    <div className="container mx-auto px-4 py-8 max-w-3xl">
-      <button onClick={onBack} className="text-sm text-gray-400 hover:text-gray-600 mb-4">
-        ← Back to glossary
+    <div className="cs-gs-detail">
+      <button className="cs-gs-btn cs-gs-btn--ghost cs-gs-back" onClick={onBack}>
+        <ArrowLeft size={17} />
+        Back to glossary
       </button>
 
-      <div className="bg-white rounded-lg shadow p-6">
-        <div className="flex items-start justify-between">
+      <div className="cs-gs-card">
+        <div className="cs-gs-detail__head">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">{term.term}</h1>
-            <div className="mt-2 flex gap-2 text-xs">
-              <span className="px-2 py-0.5 rounded bg-blue-50 text-blue-600">
+            <h1 className="cs-gs-detail__name">{term.term}</h1>
+            <div className="cs-gs-detail__badges">
+              <span className="cs-gs-badge cs-gs-badge--category">
+                <BookOpen size={12} />
                 {term.category}
               </span>
               {term.difficulty && (
-                <span className="px-2 py-0.5 rounded bg-gray-100 text-gray-500">
-                  {term.difficulty}
-                </span>
+                <span className="cs-gs-badge cs-gs-badge--neutral">{term.difficulty}</span>
               )}
             </div>
           </div>
           <button
+            className={`cs-gs-fav ${term.is_favorite ? "cs-gs-fav--active" : ""}`}
             onClick={toggleFav}
-            className={`text-3xl ${term.is_favorite ? "text-yellow-400" : "text-gray-300 hover:text-yellow-400"}`}
-            title="Toggle favorite"
+            title={term.is_favorite ? "Remove favorite" : "Add favorite"}
           >
-            ★
+            <Star size={22} fill={term.is_favorite ? "currentColor" : "none"} />
           </button>
         </div>
 
-        <Section title="Definition">{term.definition}</Section>
+        <div className="cs-gs-section" style={{ paddingTop: "18px" }}>
+          <span className="cs-gs-section__label">Definition</span>
+          <div className="cs-gs-section__body">{term.definition}</div>
+        </div>
 
         {term.example && (
-          <Section title="Example">
-            <code className="block bg-gray-100 rounded p-3 text-sm overflow-x-auto">
-              {term.example}
-            </code>
-          </Section>
+          <div className="cs-gs-section">
+            <span className="cs-gs-section__label">Example</span>
+            <code className="cs-gs-code">{term.example}</code>
+          </div>
         )}
 
         {term.prevention?.length > 0 && (
-          <Section title="Prevention">
-            <ul className="list-disc list-inside text-gray-700 space-y-1">
+          <div className="cs-gs-section">
+            <span className="cs-gs-section__label">Prevention</span>
+            <ul className="cs-gs-list">
               {term.prevention.map((p, i) => (
                 <li key={i}>{p}</li>
               ))}
             </ul>
-          </Section>
+          </div>
         )}
 
         {term.owasp_reference && (
-          <Section title="OWASP Reference">
-            <span className="text-red-600 font-semibold">{term.owasp_reference}</span>
-          </Section>
+          <div className="cs-gs-section">
+            <span className="cs-gs-section__label">OWASP Reference</span>
+            <span className="cs-gs-owasp">
+              <AlertCircle size={14} />
+              {term.owasp_reference}
+            </span>
+          </div>
         )}
 
-        <div className="flex flex-wrap gap-3 mt-6">
+        <div className="cs-gs-actions">
           <button
+            className="cs-gs-btn cs-gs-btn--primary"
             onClick={askAI}
             disabled={aiLoading}
-            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
           >
-            {aiLoading ? "Asking AI…" : "🤖 AI Explain"}
+            <Bot size={18} />
+            {aiLoading ? "Asking AI…" : "AI Explain"}
           </button>
           {quiz && (
-            <button
-              onClick={() => setQuiz((q) => ({ ...q }))}
-              className="px-4 py-2 border border-gray-300 rounded-lg text-gray-600 hover:bg-gray-50"
+            <a
+              href="#cs-gs-quiz"
+              className="cs-gs-btn cs-gs-btn--outline"
             >
-              📝 Take Mini Quiz
-            </button>
+              <FileQuestion size={18} />
+              Take Mini Quiz
+            </a>
           )}
-          <button
-            onClick={exportPdf}
-            className="px-4 py-2 border border-gray-300 rounded-lg text-gray-600 hover:bg-gray-50"
-          >
-            ⬇ Export PDF
+          <button className="cs-gs-btn cs-gs-btn--outline" onClick={exportPdf}>
+            <Download size={18} />
+            Export PDF
           </button>
         </div>
 
         {ai && (
-          <div className="mt-5 border-t pt-4">
-            <h3 className="font-semibold text-gray-800 mb-2">AI Explanation</h3>
+          <div className="cs-gs-ai-box">
+            <div className="cs-gs-ai-box__head">
+              <Sparkles size={16} color="var(--info, #3b82f6)" />
+              AI Explanation
+              <span className="cs-gs-ai-box__provider">via {ai.provider}</span>
+            </div>
             <MarkdownRenderer content={ai.explanation} />
-            <p className="text-xs text-gray-400 mt-2">via {ai.provider}</p>
           </div>
         )}
       </div>
 
       {quiz && (
-        <div className="mt-5">
-          <MiniQuiz
-            quiz={quiz}
-            onComplete={(passed) => {
-              if (passed) onRefreshProgress && onRefreshProgress();
-            }}
-          />
+        <div className="cs-gs-card" id="cs-gs-quiz">
+          <h3 className="cs-gs-section-title">
+            <span className="cs-gs-icon-wrap">
+              <FileQuestion size={17} />
+            </span>
+            Mini Quiz
+          </h3>
+          <div className="cs-gs-section-block">
+            <MiniQuiz
+              quiz={quiz}
+              onComplete={(passed) => {
+                if (passed) onRefreshProgress && onRefreshProgress();
+              }}
+            />
+          </div>
         </div>
       )}
 
-      <div className="mt-5 bg-white rounded-lg shadow p-5">
-        <h3 className="font-semibold text-gray-800 mb-3">🔗 Related Terms</h3>
-        <RelatedTerms terms={related} onOpen={onOpen} />
+      <div className="cs-gs-card">
+        <h3 className="cs-gs-section-title">
+          <span className="cs-gs-icon-wrap">
+            <BookOpen size={17} />
+          </span>
+          Related Terms
+        </h3>
+        <div className="cs-gs-section-block">
+          <RelatedTerms terms={related} onOpen={onOpen} />
+        </div>
       </div>
-    </div>
-  );
-}
-
-function Section({ title, children }) {
-  return (
-    <div className="mt-4">
-      <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wide">
-        {title}
-      </h3>
-      <div className="mt-1 text-gray-700">{children}</div>
     </div>
   );
 }

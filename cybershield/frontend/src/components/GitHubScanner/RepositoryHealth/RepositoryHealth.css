@@ -669,3 +669,42 @@
     border-width: 2px;
   }
 }
+
+/* ── Light Mode Support ────────────────────────────────────── */
+/* `.repo-*`, `.timeline-*`, `.tech-*` and `.health-section-title`
+   sit on theme-adaptive (light in light mode) or translucent
+   (white) surfaces while their text was hard-coded white. Map them
+   to the theme text tokens for light mode. The `.health-card`
+   chips are intentionally dark and remain legible in both modes. */
+[data-theme="light"] .repo-name,
+[data-theme="light"] .health-section-title,
+[data-theme="light"] .topics-section h3,
+[data-theme="light"] .tech-stack-section h3 {
+  color: var(--textPrimary);
+}
+
+[data-theme="light"] .repo-description,
+[data-theme="light"] .timeline-label {
+  color: var(--textSecondary);
+}
+
+[data-theme="light"] .repo-meta-item {
+  color: var(--textMuted);
+  background: var(--surfaceHover);
+  border-color: var(--borderColor);
+}
+
+[data-theme="light"] .timeline-item,
+[data-theme="light"] .tech-card {
+  background: var(--surfaceHover);
+  border-color: var(--borderColor);
+}
+
+[data-theme="light"] .timeline-value,
+[data-theme="light"] .tech-card-title {
+  color: var(--textPrimary);
+}
+
+[data-theme="light"] .tech-chip {
+  color: var(--textSecondary);
+}

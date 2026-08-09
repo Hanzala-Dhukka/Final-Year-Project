@@ -3,6 +3,12 @@ import { downloadBlob } from "./complianceApi";
 
 // Executive Security Dashboard (Module 6.4)
 export const analyticsApi = {
+  // Aggregate scan statistics (total scans, vulnerabilities by severity).
+  getDashboardStats: () => API.get("/analytics/dashboard-stats"),
+
+  // Most recent scan activity (repo, vuln count, risk, date).
+  getRecentScans: () => API.get("/analytics/recent-scans"),
+
   // Full dashboard payload (KPIs + trends + comparison + AI summary).
   getSummary: (sortBy = "security_score") =>
     API.get("/analytics/summary", { params: { sort_by: sortBy } }),
