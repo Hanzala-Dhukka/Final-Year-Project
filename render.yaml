@@ -1,0 +1,14 @@
+services:
+  - type: web
+    name: cybershield-backend
+    runtime: python
+    pythonVersion: "3.12.4"
+    region: oregon
+    plan: free
+    buildCommand: "pip install -r cybershield/backend/requirements.txt"
+    startCommand: "uvicorn app.main:app --host 0.0.0.0 --port $PORT"
+    workingDir: cybershield/backend
+    envVars:
+      - key: PYTHONUNBUFFERED
+        value: "1"
+    autoDeploy: true
