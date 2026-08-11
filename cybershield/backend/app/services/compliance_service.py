@@ -414,11 +414,7 @@ async def get_history(project_id: str) -> List[Dict]:
             "frameworks": doc.get("frameworks", {}),
             "project": doc.get("project_name"),
         })
-    # Always provide at least a flat baseline so the trend chart renders.
-    if not out:
-        out = [
-            {"date": "2026-01-01", "overall": 0, "project": "Baseline"},
-        ]
+    # No snapshots yet — return an empty series (no fabricated baseline).
     return out
 
 

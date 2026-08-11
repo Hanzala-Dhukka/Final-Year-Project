@@ -39,11 +39,11 @@ export default function MITRETimeline({ mitre = [] }) {
                 onClick={() => setActive(active?.technique === t.technique ? null : t)}
                 sx={{
                   cursor: "pointer",
-                  border: "1px solid rgba(148,163,184,0.25)",
+                  border: "1px solid var(--borderColor)",
                   borderRadius: 2,
                   p: 1.5,
                   borderLeft: `4px solid ${severityColor(t.severity)}`,
-                  "&:hover": { bgcolor: "rgba(148,163,184,0.06)" },
+                  "&:hover": { bgcolor: "var(--surfaceHover)" },
                 }}
               >
                 <Stack direction="row" justifyContent="space-between" alignItems="center">

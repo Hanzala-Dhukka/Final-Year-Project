@@ -106,6 +106,13 @@ app.include_router(owasp_simulate_router, tags=["OWASP Simulator"])
 app.include_router(owasp_module_router)
 # Module 7.5 Gamification (progress/achievements/badges/certificates/leaderboard/activity/goals)
 app.include_router(gamification_router)
+# ── Dashboard Architecture (Module C1 & C2) ────────────────────────────────
+# Registered BEFORE progress_router so its STATIC paths (/overview, "", /quick-stats)
+# are matched before progress_router's catch-all /dashboard/{user_id} route.
+app.include_router(dashboard_module_router, prefix="", tags=["Dashboard"])
+app.include_router(dashboard_module_router, prefix="/api", tags=["Dashboard"])
+app.include_router(dashboard_module_router, prefix="/api/v1", tags=["Dashboard"])
+app.include_router(dashboard_aggregator_router, prefix="/api/v1", tags=["Dashboard Aggregator"])
 app.include_router(progress_router, prefix="/api/v1", tags=["Progress"])
 app.include_router(threat_dashboard_router, prefix="/api/v1/threat-dashboard", tags=["Threat Dashboard"])
 app.include_router(project_router, prefix="/api/v1/projects", tags=["Projects"])
@@ -144,11 +151,6 @@ app.include_router(compliance_router, tags=["Compliance Center"])
 app.include_router(notification_router, tags=["Notifications"])
 # ── Security Notifications, Automation & Scheduled Monitoring (Module 6.5) ──
 app.include_router(automation_router, tags=["Automation & Scheduler"])
-# ── Dashboard Architecture (Module C1 & C2) ────────────────────────────────
-app.include_router(dashboard_module_router, prefix="", tags=["Dashboard"])
-app.include_router(dashboard_module_router, prefix="/api", tags=["Dashboard"])
-app.include_router(dashboard_module_router, prefix="/api/v1", tags=["Dashboard"])
-app.include_router(dashboard_aggregator_router, prefix="/api/v1", tags=["Dashboard Aggregator"])
 # ── Real-time WebSocket (Module C3) ────────────────────────────────────────
 app.include_router(dashboard_ws_router, tags=["WebSocket"])
 # ── AI Dashboard (Module D1) ────────────────────────────────────────────────

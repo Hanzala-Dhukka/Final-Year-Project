@@ -8,6 +8,7 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import { Card, CardContent, CardHeader, Typography } from "@mui/material";
+import ChartTip from "./ChartTip";
 
 // Risk Trend / Security Improvement line chart (Module 4.4 — Step 11).
 export default function RiskTrendChart({ timeline = [] }) {
@@ -30,10 +31,10 @@ export default function RiskTrendChart({ timeline = [] }) {
         ) : (
           <ResponsiveContainer width="100%" height={280}>
             <LineChart data={data} margin={{ top: 8, right: 16, left: -16, bottom: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="rgba(148,163,184,0.18)" />
-              <XAxis dataKey="date" tick={{ fill: "#94a3b8", fontSize: 12 }} />
-              <YAxis domain={[0, 100]} tick={{ fill: "#64748b", fontSize: 12 }} />
-              <Tooltip />
+              <CartesianGrid strokeDasharray="3 3" stroke="var(--chartGrid)" />
+              <XAxis dataKey="date" tick={{ fill: "var(--chartLabel)", fontSize: 12 }} />
+              <YAxis domain={[0, 100]} tick={{ fill: "var(--textMuted)", fontSize: 12 }} />
+              <Tooltip content={<ChartTip />} />
               <Line
                 type="monotone"
                 dataKey="score"

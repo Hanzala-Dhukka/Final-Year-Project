@@ -36,7 +36,7 @@ export default function RiskGauge({ score = 0, level = "" }) {
           cy="100"
           r={radius}
           fill="none"
-          stroke="rgba(148,163,184,0.18)"
+          stroke="var(--chartGrid)"
           strokeWidth={stroke}
         />
         <motion.circle

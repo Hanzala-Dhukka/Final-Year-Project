@@ -1,17 +1,10 @@
-from fastapi import APIRouter, HTTPException, Depends
-from typing import Dict, Any, List, Optional
+from fastapi import APIRouter, HTTPException
+from typing import Dict, Any, Optional
 from datetime import datetime
-from app.schemas.challenge_schema import (
-    ChallengeSubmitRequest,
-    ChallengeSubmitResponse,
-    StreakInfo,
-    ChallengeStatistics,
-    ChallengeHistoryItem
-)
+from app.schemas.challenge_schema import ChallengeSubmitRequest
 from app.services.challenge_generator import ChallengeGenerator
 from app.services.streak_service import StreakService
 from app.services.challenge_history import ChallengeHistoryService
-from app.services.challenge_scheduler import ChallengeScheduler
 from app.services.gemini_service import generate_daily_explanation
 
 router = APIRouter()
@@ -20,35 +13,24 @@ router = APIRouter()
 challenge_generator = ChallengeGenerator()
 streak_service = StreakService()
 history_service = ChallengeHistoryService()
-scheduler = ChallengeScheduler()
 
 
 @router.get("/today")
 async def get_todays_challenge(user_id: str = "anonymous") -> Dict[str, Any]:
     """
-    Get today's daily challenge
-    
+    Get today's daily challenge.
+
     Returns:
         Today's challenge with time remaining and user status
     """
     try:
-        # Get today's challenge
-        challenge = challenge_generator.get_today_challenge()
-        
-        if not challenge:
-            # Generate if not exists
-            challenge = challenge_generator.generate_daily_challenge()
-        
-        # Get user streak info
-        user_streak = streak_service.get_user_streak(user_id)
-        
-        # Check if user completed today's challenge
         today = datetime.now().strftime("%Y-%m-%d")
-        user_completed = False
-        
-        # Get time remaining
+
+        challenge = await challenge_generator.get_or_create_today()
+        user_streak = await streak_service.get_user_streak(user_id)
+        user_completed = await streak_service.is_completed(user_id, today)
         time_remaining = challenge_generator.get_time_remaining(challenge)
-        
+
         return {
             "success": True,
             "challenge": challenge,
@@ -56,82 +38,91 @@ async def get_todays_challenge(user_id: str = "anonymous") -> Dict[str, Any]:
             "user_completed": user_completed,
             "current_streak": user_streak["current_streak"],
             "longest_streak": user_streak["longest_streak"],
-            "total_xp": user_streak["total_xp"]
+            "total_xp": user_streak["total_xp"],
         }
-        
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.post("/submit")
-async def submit_challenge(request: ChallengeSubmitRequest) -> ChallengeSubmitResponse:
+async def submit_challenge(request: ChallengeSubmitRequest) -> Dict[str, Any]:
     """
-    Submit challenge answer
-    
-    Args:
-        request: Challenge submission with user_id, challenge_id, and payload
-    
-    Returns:
-        Submission result with XP earned and streak info
+    Submit an answer for today's daily challenge.
+
+    Body:
+        {
+            "challenge_id": "DAY-2025-01-01",
+            "user_id": "user123",
+            "payload": "' OR 1=1 --",
+            "time_taken": 45
+        }
     """
     try:
-        # Get the challenge
-        challenge = challenge_generator.get_today_challenge()
-        
-        if not challenge:
-            raise HTTPException(status_code=404, detail="No challenge available for today")
-        
-        # Validate challenge ID matches
-        if challenge["challenge_id"] != request.challenge_id:
+        today = datetime.now().strftime("%Y-%m-%d")
+        challenge = await challenge_generator.get_or_create_today()
+
+        if str(challenge["challenge_id"]) != str(request.challenge_id):
             raise HTTPException(status_code=400, detail="Challenge ID mismatch")
-        
-        # Validate answer
-        validation = challenge_generator.validate_challenge_answer(
-            challenge, 
-            request.payload
-        )
-        
-        if validation["is_correct"]:
-            # Calculate score based on time taken (faster = better)
-            # Max score 100, min score 50 for correct answer
-            time_bonus = max(0, 50 - (request.time_taken // 60))  # Lose 1 point per minute
-            score = min(100, 50 + time_bonus)
-            
-            # Record completion
-            result = streak_service.record_challenge_completion(
+
+        xp_earned = challenge.get("xp_reward", 100)
+        correct_answer = str(challenge.get("answer", "")).strip().lower()
+        is_correct = request.payload.strip().lower() == correct_answer
+
+        already_completed = await streak_service.is_completed(request.user_id, today)
+
+        if is_correct:
+            current_streak = await streak_service.get_user_streak(request.user_id)
+            streak = current_streak["current_streak"] + 1
+            streak_bonus = streak_service.get_streak_bonus(streak)
+
+            # Record completion (idempotent per user+date) and get updated streak
+            updated = await streak_service.record_challenge_completion(
                 user_id=request.user_id,
                 challenge_id=request.challenge_id,
-                score=score,
-                time_taken=request.time_taken
+                date=today,
+                score=100,
+                time_taken=request.time_taken,
+                xp_earned=xp_earned,
+                streak=streak,
+                challenge_name=challenge.get("title", "Daily Challenge"),
+                category=challenge.get("category", ""),
+                difficulty=challenge.get("difficulty", ""),
+                answered_payload=request.payload,
             )
-            
-            # Get AI explanation
+
             explanation = await generate_daily_explanation(
-                category=challenge["category"],
-                title=challenge["title"],
-                user_answer=request.payload
+                category=challenge.get("category", "security"),
+                title=challenge.get("title", "Daily Challenge"),
+                user_answer=request.payload,
             )
-            
-            return ChallengeSubmitResponse(
-                success=True,
-                xp_earned=result["xp_earned"],
-                streak=result["streak"],
-                streak_bonus=result["streak_bonus"],
-                is_correct=True,
-                feedback="🎉 Correct! Well done!",
-                explanation=explanation
-            )
+
+            # Don't double award XP for repeats on the same day
+            if already_completed:
+                xp_earned = 0
+                streak_bonus = 0
+                feedback = "You already completed today's challenge."
+            else:
+                feedback = f"Correct! You earned {xp_earned} XP + {streak_bonus} streak bonus!"
+
+            return {
+                "success": True,
+                "xp_earned": xp_earned,
+                "streak": streak,
+                "streak_bonus": streak_bonus,
+                "is_correct": True,
+                "feedback": feedback,
+                "explanation": explanation,
+            }
         else:
-            return ChallengeSubmitResponse(
-                success=True,
-                xp_earned=0,
-                streak=0,
-                streak_bonus=0,
-                is_correct=False,
-                feedback=f"❌ Incorrect. The correct answer was: {challenge['answer']}",
-                explanation="Try again tomorrow!"
-            )
-            
+            return {
+                "success": True,
+                "xp_earned": 0,
+                "streak": (await streak_service.get_user_streak(request.user_id))["current_streak"],
+                "streak_bonus": 0,
+                "is_correct": False,
+                "feedback": "Not quite. Review the hint and try again.",
+                "explanation": "",
+            }
     except HTTPException:
         raise
     except Exception as e:
@@ -139,140 +130,76 @@ async def submit_challenge(request: ChallengeSubmitRequest) -> ChallengeSubmitRe
 
 
 @router.get("/history")
-async def get_challenge_history(
-    user_id: str,
-    limit: int = 30
-) -> List[ChallengeHistoryItem]:
-    """
-    Get user's challenge history
-    
-    Args:
-        user_id: User identifier
-        limit: Maximum number of records to return
-    
-    Returns:
-        List of challenge history items
-    """
+async def get_challenge_history(user_id: str = "anonymous", limit: int = 30) -> Dict[str, Any]:
+    """Get a user's challenge completion history."""
     try:
-        history = history_service.get_user_challenge_history(user_id, limit)
-        return history
+        history = await history_service.get_history(user_id, limit)
+        return {"success": True, "history": history}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.get("/streak")
-async def get_user_streak(user_id: str) -> StreakInfo:
-    """
-    Get user's streak information
-    
-    Args:
-        user_id: User identifier
-    
-    Returns:
-        Streak information
-    """
+async def get_user_streak(user_id: str = "anonymous") -> Dict[str, Any]:
+    """Get a user's streak information."""
     try:
-        streak = streak_service.get_user_streak(user_id)
-        return StreakInfo(**streak)
+        streak = await streak_service.get_user_streak(user_id)
+        return {"success": True, "streak": streak}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.get("/statistics")
-async def get_challenge_statistics(user_id: str) -> ChallengeStatistics:
-    """
-    Get user's challenge statistics
-    
-    Args:
-        user_id: User identifier
-    
-    Returns:
-        Challenge statistics
-    """
+async def get_challenge_statistics(user_id: str = "anonymous") -> Dict[str, Any]:
+    """Get a user's challenge statistics."""
     try:
-        stats = streak_service.get_streak_statistics(user_id)
-        return ChallengeStatistics(**stats)
+        stats = await history_service.get_statistics(user_id)
+        stats["user_id"] = user_id
+        return {"success": True, "statistics": stats}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.get("/calendar")
 async def get_challenge_calendar(
-    user_id: str,
+    user_id: str = "anonymous",
     year: Optional[int] = None,
-    month: Optional[int] = None
+    month: Optional[int] = None,
 ) -> Dict[str, Any]:
-    """
-    Get challenge calendar view (GitHub-style contribution graph)
-    
-    Args:
-        user_id: User identifier
-        year: Optional year (defaults to current)
-        month: Optional month (defaults to current)
-    
-    Returns:
-        Calendar data with completion status
-    """
+    """Get a GitHub-style contribution calendar of completed days."""
     try:
-        calendar = history_service.get_challenge_calendar(user_id, year, month)
-        return calendar
+        calendar = await history_service.get_calendar(user_id, year, month)
+        return {"success": True, "calendar": calendar}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.get("/leaderboard")
-async def get_leaderboard(limit: int = 10) -> List[Dict[str, Any]]:
-    """
-    Get top users by XP
-    
-    Args:
-        limit: Maximum number of users to return
-    
-    Returns:
-        Leaderboard list
-    """
+async def get_leaderboard(limit: int = 10) -> Dict[str, Any]:
+    """Get the top users by total challenge XP."""
     try:
-        rankings = history_service.get_user_rankings(limit)
-        return rankings
+        leaderboard = await history_service.get_leaderboard(limit)
+        return {"success": True, "leaderboard": leaderboard}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.post("/generate")
-async def generate_challenge(
-    date: Optional[str] = None,
-    user_id: str = "system"
-) -> Dict[str, Any]:
-    """
-    Generate a new daily challenge (admin/testing endpoint)
-    
-    Args:
-        date: Optional date (YYYY-MM-DD) for testing
-        user_id: User making the request
-    
-    Returns:
-        Generated challenge
-    """
+async def generate_challenge(date: Optional[str] = None) -> Dict[str, Any]:
+    """Generate today's daily challenge manually (testing endpoint)."""
     try:
         challenge = challenge_generator.generate_daily_challenge(force_date=date)
-        return {
-            "success": True,
-            "challenge": challenge
-        }
+        await challenge_generator.get_or_create_today()
+        return {"success": True, "challenge": challenge}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.get("/categories")
-async def get_categories() -> List[str]:
-    """
-    Get all available challenge categories
-    
-    Returns:
-        List of categories
-    """
+async def get_categories() -> Dict[str, Any]:
+    """Get all available challenge categories."""
     try:
         from app.data.daily_templates import get_all_categories
-        return get_all_categories()
+        return {"success": True, "categories": get_all_categories()}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

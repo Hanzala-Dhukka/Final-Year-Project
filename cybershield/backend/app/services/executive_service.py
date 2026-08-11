@@ -18,6 +18,8 @@ clashing with the pre-existing learning-analytics app/services/analytics_service
 from datetime import datetime
 from typing import Dict, List, Optional
 
+from bson import ObjectId
+
 from app.database.db import database
 from app.services import trend_service
 from app.services.compliance_service import get_report as get_compliance
@@ -31,6 +33,24 @@ WEIGHTS = {
     "owasp": 0.05,        # OWASP Simulator
     "quiz": 0.05,          # Quiz Progress
 }
+
+
+def _user_filter(user_id: str, field: str = "user_id") -> Dict:
+    """Match ``field`` whether the app stored it as a string or an ObjectId."""
+    value = str(user_id)
+    try:
+        oid = ObjectId(value)
+    except Exception:
+        return {field: value}
+    return {"$or": [{field: value}, {field: oid}]}
+
+
+async def _user_project_ids(user_id: str) -> List[str]:
+    """Distinct project ids the user belongs to (matches the Projects page)."""
+    pids = await database["project_members"].distinct(
+        "project_id", {"user_id": str(user_id)}
+    )
+    return [str(p) for p in pids if ObjectId.is_valid(p)]
 
 
 def risk_level_from_score(score: float) -> str:
@@ -47,13 +67,13 @@ def risk_level_from_score(score: float) -> str:
 async def _github_score(user_id: str, project_id: Optional[str] = None) -> float:
     """Latest GitHub scan security score (100 - risk_score)."""
     try:
-        query = {"user_id": str(user_id)}
+        query = _user_filter(user_id)
         if project_id:
-            query["project_id"] = str(project_id)
+            query = {"$and": [{"project_id": str(project_id)}, query]}
         doc = await database["github_scans"].find_one(query, sort=[("created_at", -1)])
         if not doc:
             doc = await database["github_scans"].find_one(
-                {"user_id": str(user_id)}, sort=[("created_at", -1)]
+                _user_filter(user_id), sort=[("created_at", -1)]
             )
         if not doc:
             return 0.0
@@ -72,7 +92,7 @@ async def _threat_score(user_id: str, project_id: Optional[str] = None) -> float
     """Latest threat report security score (0-100, higher = safer)."""
     try:
         doc = await database["threat_reports"].find_one(
-            {"user_id": str(user_id)}, sort=[("created_at", -1)]
+            _user_filter(user_id), sort=[("created_at", -1)]
         )
         if not doc:
             return 0.0
@@ -85,33 +105,44 @@ async def _threat_score(user_id: str, project_id: Optional[str] = None) -> float
 
 
 async def _compliance_score(user_id: str, project_id: Optional[str] = None) -> float:
-    """Latest compliance overall score."""
+    """Latest compliance overall score.
+
+    Project-scoped: the latest report for that project.
+    Global: the average of every project's latest report (unassessed = 0).
+    """
     try:
-        pid = project_id
-        if not pid:
-            proj = await database["projects"].find_one({"owner_id": str(user_id)})
-            pid = str(proj["_id"]) if proj else None
-        if not pid:
-            return 0.0
-        rep = await get_compliance(pid)
-        if not rep:
-            return 0.0
-        return round(float(rep.get("overall_score", 0.0)), 1)
+        if project_id:
+            rep = await get_compliance(project_id)
+            return round(float(rep.get("overall_score", 0.0)), 1) if rep else 0.0
+
+        scores: List[float] = []
+        for pid in await _user_project_ids(user_id):
+            rep = await get_compliance(pid)
+            scores.append(round(float(rep.get("overall_score", 0.0)), 1) if rep else 0.0)
+        return round(sum(scores) / len(scores), 1) if scores else 0.0
     except Exception:
         return 0.0
 
 
 async def _checklist_score(user_id: str, project_id: Optional[str] = None) -> float:
-    """Checklist completion percentage."""
+    """Checklist completion percentage.
+
+    Project-scoped: that project's score.
+    Global: completed tasks across every project / total tasks.
+    """
     try:
         from app.services import checklist_service
-        if not project_id:
-            proj = await database["projects"].find_one({"owner_id": str(user_id)})
-            project_id = str(proj["_id"]) if proj else None
-        if not project_id:
-            return 0.0
-        score_doc = await checklist_service.get_project_score(str(user_id), project_id)
-        return round(float(score_doc.get("score", 0.0)), 1)
+        if project_id:
+            score_doc = await checklist_service.get_project_score(str(user_id), project_id)
+            return round(float(score_doc.get("score", 0.0)), 1)
+
+        total = 0
+        completed = 0
+        for pid in await _user_project_ids(user_id):
+            score_doc = await checklist_service.get_project_score(str(user_id), pid)
+            total += int(score_doc.get("total_tasks", 0) or 0)
+            completed += int(score_doc.get("completed_tasks", 0) or 0)
+        return round((completed / total) * 100, 1) if total else 0.0
     except Exception:
         return 0.0
 
@@ -120,24 +151,24 @@ async def _owasp_score(user_id: str, project_id: Optional[str] = None) -> float:
     """OWASP simulator completion percentage (from simulation_sessions)."""
     try:
         total = 10
-        query = {"user_id": str(user_id), "status": "completed"}
-        if project_id:
-            # Sessions are not project-scoped, so fall back to overall progress.
-            query = {"user_id": str(user_id), "status": "completed"}
-        completed = await database["simulation_sessions"].count_documents(query)
+        completed = await database["simulation_sessions"].count_documents(
+            {**_user_filter(user_id), "status": "completed"}
+        )
         return round(min(100.0, (completed / total) * 100), 1)
     except Exception:
         return 0.0
 
 
 async def _quiz_score(user_id: str) -> float:
-    """Average quiz score (awareness)."""
+    """Average quiz percentage (0-100, awareness)."""
     try:
         scores = []
-        async for q in database["quiz_attempts"].find({"user_id": str(user_id)}):
-            s = q.get("score")
+        async for q in database["quiz_attempts"].find(_user_filter(user_id)):
+            s = q.get("percentage")
             if isinstance(s, (int, float)):
                 scores.append(float(s))
+            elif isinstance(q.get("score"), (int, float)):
+                scores.append(float(q["score"]) * 10.0)
         if not scores:
             return 0.0
         return round(sum(scores) / len(scores), 1)
@@ -163,9 +194,9 @@ async def aggregate_vulnerabilities(user_id: str, project_id: Optional[str] = No
     """Total open vulnerabilities by severity across the user's scans."""
     counts = {"critical": 0, "high": 0, "medium": 0, "low": 0}
     try:
-        query = {"user_id": str(user_id)}
+        query = _user_filter(user_id)
         if project_id:
-            query["project_id"] = str(project_id)
+            query = {"$and": [{"project_id": str(project_id)}, query]}
         async for scan in database["github_scans"].find(query):
             findings = scan.get("findings") or scan.get("vulnerabilities") or []
             sev = trend_service.count_severities(findings)
@@ -178,9 +209,9 @@ async def aggregate_vulnerabilities(user_id: str, project_id: Optional[str] = No
 
 async def last_scan_date(user_id: str, project_id: Optional[str] = None) -> Optional[str]:
     try:
-        query = {"user_id": str(user_id)}
+        query = _user_filter(user_id)
         if project_id:
-            query["project_id"] = str(project_id)
+            query = {"$and": [{"project_id": str(project_id)}, query]}
         doc = await database["github_scans"].find_one(query, sort=[("created_at", -1)])
         if not doc:
             return None
@@ -192,7 +223,7 @@ async def last_scan_date(user_id: str, project_id: Optional[str] = None) -> Opti
 
 async def count_projects(user_id: str) -> int:
     try:
-        return await database["projects"].count_documents({"owner_id": str(user_id)})
+        return len(await _user_project_ids(user_id))
     except Exception:
         return 0
 
@@ -201,7 +232,9 @@ async def compare_projects(user_id: str, sort_by: str = "security_score") -> Lis
     """Build a per-project comparison table sorted by a metric."""
     rows: List[Dict] = []
     try:
-        async for proj in database["projects"].find({"owner_id": str(user_id)}):
+        async for proj in database["projects"].find(
+            {"_id": {"$in": [ObjectId(pid) for pid in await _user_project_ids(user_id)]}}
+        ):
             pid = str(proj["_id"])
             score, _ = await calculate_global_score(user_id, pid)
             comp = await _compliance_score(user_id, pid)

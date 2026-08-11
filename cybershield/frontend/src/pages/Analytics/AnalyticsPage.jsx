@@ -809,7 +809,7 @@ export default function AnalyticsPage() {
                   icon={<ScheduleIcon />}
                   color="#F472B6"
                   title="Recent Scan Activity"
-                  sub="Latest repository scans across the platform"
+                  sub="Latest scans from your repositories"
                 />
                 <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr", lg: "1fr 1fr 1fr" }, gap: 2 }}>
                   {recentScans.map((s) => {

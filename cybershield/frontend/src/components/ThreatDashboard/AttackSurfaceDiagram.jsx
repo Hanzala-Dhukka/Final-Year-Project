@@ -65,7 +65,7 @@ export default function AttackSurfaceDiagram({ nodes = [] }) {
                       y1={y + NODE_H}
                       x2={centerX + NODE_W / 2}
                       y2={nextY}
-                      stroke="rgba(148,163,184,0.5)"
+                      stroke="var(--borderStrong)"
                       strokeWidth="2"
                     />
                   )}
@@ -84,7 +84,7 @@ export default function AttackSurfaceDiagram({ nodes = [] }) {
                       fill={
                         selected && selected.id === n.id
                           ? severityBg(n.risk)
-                          : "rgba(30,41,59,0.6)"
+                          : "var(--bgSecondary)"
                       }
                       stroke={severityColor(n.risk)}
                       strokeWidth="2"
@@ -93,7 +93,7 @@ export default function AttackSurfaceDiagram({ nodes = [] }) {
                       x={centerX + NODE_W / 2}
                       y={y + 22}
                       textAnchor="middle"
-                      fill="#e2e8f0"
+                      fill="var(--textPrimary)"
                       fontSize="13"
                       fontWeight="600"
                     >

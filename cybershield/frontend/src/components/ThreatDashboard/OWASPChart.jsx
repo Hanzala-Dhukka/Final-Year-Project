@@ -36,7 +36,7 @@ export default function OWASPChart({ owasp = [] }) {
                 onClick={() => setOpen(open === c.id ? null : c.id)}
                 sx={{
                   cursor: "pointer",
-                  border: "1px solid rgba(148,163,184,0.25)",
+                  border: "1px solid var(--borderColor)",
                   borderRadius: 2,
                   p: 1.5,
                   height: "100%",

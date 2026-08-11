@@ -1,7 +1,17 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
 from bson import ObjectId
 from datetime import datetime
 from app.database.db import database
+from app.dependencies.auth import get_current_user
+
+
+def _user_filter(user_id: str) -> dict:
+    """Match user_id whether stored as a string or an ObjectId."""
+    try:
+        oid = ObjectId(str(user_id))
+    except Exception:
+        return {"user_id": str(user_id)}
+    return {"$or": [{"user_id": str(user_id)}, {"user_id": oid}]}
 
 
 def _serialize(doc: dict) -> dict:
@@ -24,11 +34,11 @@ router = APIRouter()
 
 
 @router.get("/dashboard-stats")
-async def get_dashboard_stats():
-
+async def get_dashboard_stats(current_user: dict = Depends(get_current_user)):
+    user_id = str(current_user.get("_id"))
     github_collection = database["github_scans"]
 
-    scans = await github_collection.find().to_list(1000)
+    scans = await github_collection.find(_user_filter(user_id)).to_list(1000)
 
     total_scans = len(scans)
 
@@ -59,18 +69,18 @@ async def get_dashboard_stats():
 
             for issue in issues:
 
-                severity = issue.get("severity")
+                severity = str(issue.get("severity", "")).lower()
 
-                if severity == "Critical":
+                if severity == "critical":
                     critical_count += 1
 
-                elif severity == "High":
+                elif severity == "high":
                     high_count += 1
 
-                elif severity == "Medium":
+                elif severity == "medium":
                     medium_count += 1
 
-                elif severity == "Low":
+                elif severity == "low":
                     low_count += 1
 
     return {
@@ -84,11 +94,14 @@ async def get_dashboard_stats():
 
 
 @router.get("/recent-scans")
-async def recent_scans():
+async def recent_scans(current_user: dict = Depends(get_current_user)):
+    user_id = str(current_user.get("_id"))
 
     github_collection = database["github_scans"]
 
-    scans = await github_collection.find().sort(
+    scans = await github_collection.find(
+        _user_filter(user_id)
+    ).sort(
         "created_at",
         -1
     ).limit(5).to_list(5)

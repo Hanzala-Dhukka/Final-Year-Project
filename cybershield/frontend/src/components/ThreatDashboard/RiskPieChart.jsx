@@ -1,6 +1,7 @@
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from "recharts";
 import { Card, CardContent, CardHeader, Typography } from "@mui/material";
 import { SEVERITY_COLORS } from "./severity";
+import ChartTip from "./ChartTip";
 
 // Risk Distribution Pie Chart (Module 4.4 — Step 5).
 export default function RiskPieChart({ distribution = {} }) {
@@ -37,8 +38,8 @@ export default function RiskPieChart({ distribution = {} }) {
                     <Cell key={d.name} fill={SEVERITY_COLORS[d.name]} />
                   ))}
                 </Pie>
-                <Tooltip />
-                <Legend />
+                <Tooltip content={<ChartTip />} />
+                <Legend wrapperStyle={{ color: "var(--textSecondary)", fontSize: 12 }} />
               </PieChart>
             </ResponsiveContainer>
             <Typography variant="caption" color="text.secondary">

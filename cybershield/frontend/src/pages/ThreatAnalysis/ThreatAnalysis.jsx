@@ -1,4 +1,5 @@
 import { useState, Fragment } from "react"
+import { useLocation } from "react-router-dom"
 import { motion, AnimatePresence } from "framer-motion"
 import {
   FaShieldAlt,
@@ -48,6 +49,96 @@ const EMPTY_FORM = {
   cloud: "",
   third_party: "",
   assets: "",
+}
+
+/* ── Auto-fill from a linked project (Run Analysis) ───── */
+const norm = (s) => (s || "").toLowerCase().trim().replace(/[^a-z0-9]/g, "")
+
+const TECH_CATEGORIES = {
+  frontend: new Set([
+    "react", "vue", "angular", "svelte", "nextjs", "next", "nuxt", "gatsby",
+    "html", "css", "javascript", "js", "typescript", "ts", "tailwind",
+    "bootstrap", "redux", "jquery", "ember", "solidjs", "remix", "sass",
+    "webpack", "vite", "flutter", "reactnative", "electron",
+  ]),
+  backend: new Set([
+    "fastapi", "node", "nodejs", "express", "django", "flask", "spring",
+    "springboot", "laravel", "rails", "rubyonrails", "go", "golang",
+    "python", "java", "csharp", "net", "aspnet", "nestjs", "php", "gin",
+    "ktor", "elixir", "phoenix", "graphql", "kotlin", "rust", "scala",
+    "fastify", "djangorest", "ruby", "perl",
+  ]),
+  database: new Set([
+    "mongodb", "mongo", "postgres", "postgresql", "mysql", "sqlite",
+    "redis", "cassandra", "dynamodb", "mariadb", "oracle", "sqlserver",
+    "mssql", "firebase", "elasticsearch", "neo4j", "supabase", "prisma",
+    "cockroachdb", "clickhouse", "influxdb", "bigquery", "drizzle",
+  ]),
+  authentication: new Set([
+    "jwt", "oauth", "oauth2", "oauth20", "keycloak", "auth0", "saml",
+    "session", "apikey", "firebaseauth", "passport", "ldap", "cas", "mfa", "2fa",
+  ]),
+  cloud: new Set([
+    "aws", "gcp", "azure", "docker", "kubernetes", "k8s", "heroku",
+    "vercel", "netlify", "serverless", "lambda", "ec2", "s3", "terraform",
+    "cloudflare", "onpremise", "onprem", "digitalocean", "gke", "eks",
+  ]),
+  third_party: new Set([
+    "stripe", "twilio", "sendgrid", "paypal", "slack", "googlemaps",
+    "plaid", "square", "mailchimp", "braintree", "recaptcha",
+  ]),
+  assets: new Set([
+    "pii", "payment", "creditcard", "financial", "health", "phi",
+    "personaldata", "credentials", "secret", "banking", "customerdata",
+    "tokens", "password",
+  ]),
+}
+
+// Map a matched tech back to the exact <option> value of the select fields.
+const AUTH_SELECT_MAP = {
+  jwt: "JWT", oauth: "OAuth2", oauth2: "OAuth2", oauth20: "OAuth2",
+  session: "Session", apikey: "API Key", saml: "SAML",
+}
+const CLOUD_SELECT_MAP = {
+  aws: "AWS", gcp: "GCP", azure: "Azure", onpremise: "On-Premise",
+  onprem: "On-Premise", docker: "Docker", serverless: "Serverless", lambda: "Serverless",
+}
+
+function buildFormFromProject(project) {
+  if (!project) return { ...EMPTY_FORM }
+
+  const groups = {
+    frontend: [], backend: [], database: [], authentication: [],
+    cloud: [], third_party: [], assets: [],
+  }
+  const techs = Array.isArray(project.tech_stack) ? project.tech_stack : []
+
+  techs.forEach((t) => {
+    const key = norm(t)
+    if (!key) return
+    for (const [cat, keywords] of Object.entries(TECH_CATEGORIES)) {
+      if (keywords.has(key) && !groups[cat].includes(t)) {
+        groups[cat].push(t)
+        break
+      }
+    }
+  })
+
+  const authKey = norm(groups.authentication[0] || "")
+  const cloudKey = norm(groups.cloud[0] || "")
+  const repoNote = project.repo_url ? `Repository: ${project.repo_url}` : ""
+
+  return {
+    project_name: project.name || "",
+    description: [project.description, repoNote].filter(Boolean).join("\n"),
+    frontend: groups.frontend.join(", "),
+    backend: groups.backend.join(", "),
+    database: groups.database.join(", "),
+    authentication: AUTH_SELECT_MAP[authKey] || "",
+    cloud: CLOUD_SELECT_MAP[cloudKey] || "",
+    third_party: groups.third_party.join(", "),
+    assets: groups.assets.join(", "),
+  }
 }
 
 /* ── Parse executive_summary text into structured data ───── */
@@ -161,8 +252,10 @@ function FormField({ label, required, icon, children }) {
 
 /* ── Main Component ───────────────────────────────────── */
 export default function ThreatAnalysis() {
+  const location = useLocation()
+  const linkedProject = location.state?.project || null
   const [state, setState] = useState("idle")
-  const [form, setForm] = useState(EMPTY_FORM)
+  const [form, setForm] = useState(() => buildFormFromProject(linkedProject))
   const [results, setResults] = useState(null)
   const [error, setError] = useState("")
   const [activeTab, setActiveTab] = useState("overview")
@@ -229,6 +322,20 @@ export default function ThreatAnalysis() {
           <h2>Threat Modeling</h2>
           <p>Enter your project details to generate an AI-powered threat analysis.</p>
         </div>
+        {linkedProject && (
+          <div style={{
+            maxWidth: 700, margin: "20px auto 0",
+            display: "flex", alignItems: "center", gap: 10,
+            background: "linear-gradient(135deg, rgba(99,102,241,0.13), rgba(139,92,246,0.13))",
+            border: "1px solid rgba(99,102,241,0.27)", borderRadius: 12,
+            padding: "12px 16px", fontSize: 13, color: "var(--textSecondary)",
+          }}>
+            <FaRocket style={{ color: "#818cf8", fontSize: 15, flexShrink: 0 }} />
+            <span>
+              Project <strong style={{ color: "var(--textPrimary)" }}>{linkedProject.name}</strong> loaded — review the auto-filled details below, then click <strong style={{ color: "var(--textPrimary)" }}>Analyze</strong>.
+            </span>
+          </div>
+        )}
         <form onSubmit={handleSubmit} style={{ maxWidth: 700, margin: "32px auto 0" }}>
           <div className="gs-url-bar">
             <div className="gs-url-input-wrap">

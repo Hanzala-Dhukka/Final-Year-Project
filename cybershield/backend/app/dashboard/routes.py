@@ -8,6 +8,7 @@ from app.database.db import database
 from app.config.settings import settings
 from app.repositories.user_repository import user_repository
 from app.models.dashboard_preferences import DashboardPreferencesResponse, LayoutItem, DashboardFilters
+from app.dashboard.realtime import build_realtime_dashboard
 
 # Use the shared WebSocket manager and event service
 from app.websocket.manager import manager
@@ -31,69 +32,13 @@ async def get_optional_user(credentials: Optional[HTTPAuthorizationCredentials] 
         )
         user_id = payload.get("user_id") or payload.get("sub")
         if user_id:
-            user = await user_repository.find_by_id(user_id)
+            user = await user_repository.get_user_by_id(str(user_id))
             if user:
                 return user
             return {"_id": str(user_id), "username": payload.get("username", "Hanzala")}
     except Exception:
         pass
     return None
-
-
-def get_default_dashboard_data(user_id: str = "123", username: str = "Hanzala") -> Dict[str, Any]:
-    return {
-        "user_id": user_id,
-        "username": username,
-        "security_score": 82,
-        "projects": 6,
-        "scans": 41,
-        "threats": 7,
-        "critical": 2,
-        "high": 5,
-        "medium": 9,
-        "low": 21,
-        "weekly_scans": [
-            {"day": "Mon", "count": 5},
-            {"day": "Tue", "count": 8},
-            {"day": "Wed", "count": 6},
-            {"day": "Thu", "count": 12},
-            {"day": "Fri", "count": 9},
-            {"day": "Sat", "count": 4},
-            {"day": "Sun", "count": 7}
-        ],
-        "vulnerability_trend": [
-            {"day": "Mon", "critical": 1, "high": 3, "medium": 5, "low": 10},
-            {"day": "Tue", "critical": 2, "high": 4, "medium": 7, "low": 12},
-            {"day": "Wed", "critical": 1, "high": 2, "medium": 6, "low": 15},
-            {"day": "Thu", "critical": 3, "high": 5, "medium": 8, "low": 18},
-            {"day": "Fri", "critical": 2, "high": 4, "medium": 9, "low": 20},
-            {"day": "Sat", "critical": 1, "high": 3, "medium": 7, "low": 16},
-            {"day": "Sun", "critical": 2, "high": 5, "medium": 9, "low": 21}
-        ],
-        "learning_progress": 65,
-        "xp": 1820,
-        "rank": "Silver",
-        "level": 4,
-        "next_level_xp": 2500,
-        "achievements": [
-            {"id": "1", "title": "GitHub Scanner Expert", "description": "Completed 10+ GitHub repository scans", "unlocked": True, "icon": "🔍"},
-            {"id": "2", "title": "OWASP Beginner", "description": "Completed top 3 OWASP Top 10 labs", "unlocked": True, "icon": "🛡️"},
-            {"id": "3", "title": "Quiz Master", "description": "Scored 100% on 5 security quizzes", "unlocked": True, "icon": "🎓"},
-            {"id": "4", "title": "Threat Hunter", "description": "Generated 5 comprehensive threat models", "unlocked": False, "icon": "🎯"}
-        ],
-        "ai_insight": {
-            "title": "Enable MFA & Rotate Access Tokens",
-            "description": "Your GitHub access token expires in 3 days. Enable MFA to safeguard core repositories.",
-            "priority": "Medium"
-        },
-        "recent_activity": [
-            {"title": "GitHub Scan Completed", "time": "10:32 AM", "timestamp": "2 minutes ago", "type": "scan"},
-            {"title": "Quiz Completed - OWASP A01", "time": "09:15 AM", "timestamp": "1 hour ago", "type": "quiz"},
-            {"title": "Threat Model Generated", "time": "Yesterday", "timestamp": "Yesterday", "type": "threat"}
-        ],
-        "last_scan_time": "10:32 AM",
-        "updated_at": datetime.utcnow().strftime("%I:%M %p")
-    }
 
 
 @router.get("/overview")
@@ -106,28 +51,26 @@ async def get_dashboard(current_user: Optional[dict] = Depends(get_optional_user
         user_id = str(current_user.get("_id") or current_user.get("id") or "123")
         username = current_user.get("username") or current_user.get("email", "").split("@")[0] or "Hanzala"
 
-    doc = None
-    try:
-        if database is not None and hasattr(database, "dashboard"):
-            doc = await database["dashboard"].find_one({"user_id": user_id})
-    except Exception as e:
-        print(f"MongoDB dashboard fetch warning: {e}")
-
-    if not doc:
-        doc = get_default_dashboard_data(user_id=user_id, username=username)
+    # Live data only: everything is computed from the user's real activity.
+    dash = await build_realtime_dashboard(user_id)
+    if not username or username == "Hanzala":
         try:
-            if database is not None and hasattr(database, "dashboard"):
-                await database["dashboard"].update_one(
-                    {"user_id": user_id},
-                    {"$set": doc},
-                    upsert=True
-                )
-        except Exception as e:
-            print(f"MongoDB dashboard upsert warning: {e}")
-
-    # Remove mongo _id from dict if present
-    doc.pop("_id", None)
-    return doc
+            if database is not None:
+                from bson import ObjectId
+                oid = ObjectId(user_id)
+                doc = await database.users.find_one({"_id": oid})
+                if doc:
+                    username = (
+                        doc.get("name")
+                        or doc.get("full_name")
+                        or doc.get("username")
+                        or doc.get("email", "").split("@")[0]
+                        or "Hanzala"
+                    )
+        except Exception:
+            pass
+    dash["username"] = username
+    return dash
 
 
 @router.websocket("/ws")

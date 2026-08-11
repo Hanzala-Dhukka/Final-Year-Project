@@ -13,7 +13,7 @@ from app.database.db import database
 SNAPSHOT_COLLECTION = "analytics_snapshots"
 
 
-def _count_severities(findings: List[Dict]) -> Dict[str, int]:
+def count_severities(findings: List[Dict]) -> Dict[str, int]:
     """Count findings by severity (supports both scan + threat shapes)."""
     counts = {"critical": 0, "high": 0, "medium": 0, "low": 0}
     for f in findings or []:
@@ -24,6 +24,10 @@ def _count_severities(findings: List[Dict]) -> Dict[str, int]:
         if sev in counts:
             counts[sev] += 1
     return counts
+
+
+# Backward-compatible alias.
+_count_severities = count_severities
 
 
 async def record_snapshot(
@@ -105,13 +109,9 @@ async def get_trends(user_id: str, limit: int = 30) -> List[Dict]:
             "low": doc.get("low_vulnerabilities"),
         })
     if not out:
-        # Demo trend so charts render before any scan is recorded.
-        out = [
-            {"date": "2026-01-01", "security_score": 52, "risk_score": 48, "compliance_score": 70, "critical": 8, "high": 12, "medium": 18, "low": 9},
-            {"date": "2026-01-08", "security_score": 61, "risk_score": 39, "compliance_score": 78, "critical": 6, "high": 10, "medium": 16, "low": 8},
-            {"date": "2026-01-15", "security_score": 74, "risk_score": 26, "compliance_score": 84, "critical": 4, "high": 8, "medium": 12, "low": 7},
-            {"date": "2026-01-22", "security_score": 86, "risk_score": 14, "compliance_score": 91, "critical": 2, "high": 5, "medium": 9, "low": 6},
-        ]
+        # No snapshots recorded yet — return an empty series so the charts
+        # render honestly (no fabricated/static trend data).
+        return []
     return out
 
 
