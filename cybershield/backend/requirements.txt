@@ -67,7 +67,7 @@ multidict==6.7.1
 multitasking==0.0.13
 mysql-connector-python==9.3.0
 narwhals==2.21.0
-numpy==2.2.6
+numpy>=2.3.3
 oauthlib==3.3.1
 google-genai>=0.1.0
 packaging==26.2
