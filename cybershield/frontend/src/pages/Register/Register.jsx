@@ -8,7 +8,7 @@ import AuthInput from "../../components/Auth/AuthInput";
 import SocialLogin from "../../components/Auth/SocialLogin";
 import { useToast } from "../../components/Animation/ToastProvider";
 import { registerUser } from "../../services/authService";
-import "./Register.css";
+import "./register.css";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const MIN_PASSWORD = 8;
