@@ -120,7 +120,6 @@ six==1.17.0
 soupsieve==2.8.3
 speedtest-cli==2.1.3
 SQLAlchemy==2.0.49
-starlette==0.36.3
 storage3==2.30.0
 StrEnum==0.4.15
 strictyaml==1.7.3
