@@ -27,7 +27,7 @@ dnspython==2.8.0
 ecdsa==0.19.1
 email-validator==2.3.0
 fastapi==0.110.0
-fastapi-mail==1.6.5
+fastapi-mail==1.5.9
 fonttools==4.63.0
 frozendict==2.4.7
 fsspec==2026.4.0
