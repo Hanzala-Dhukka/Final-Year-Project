@@ -70,7 +70,7 @@ async def _send_report(user_id: str, kind: str) -> None:
     )
     email = await notif.get_user_email(user_id)
     if email:
-        email_service.send_report_email(
+        await email_service.send_report_email(
             to_email=email,
             subject=subject,
             message=message,

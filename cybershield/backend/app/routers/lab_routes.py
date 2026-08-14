@@ -1,13 +1,33 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from typing import Optional
 from app.schemas.lab_schema import (
     LabSubmission, DefenseSubmission, LabResult, UserProgress, LabStats
 )
 from app.services.attack_lab_service import attack_lab_service
-from app.services.google_sheets_service import save_attack_lab_to_sheet
-import uuid
-from datetime import datetime
+from app.dependencies.auth import get_current_user
 
 router = APIRouter()
+
+# Optional bearer token so lab activity is attributed to the logged-in user
+# instead of the client-supplied "anonymous" user id.
+optional_bearer = HTTPBearer(auto_error=False)
+
+
+async def get_optional_user(credentials: HTTPAuthorizationCredentials = Depends(optional_bearer)):
+    if credentials is None:
+        return None
+    try:
+        return await get_current_user(credentials)
+    except HTTPException:
+        return None
+
+
+def _resolve_user_id(current_user: Optional[dict], provided: Optional[str] = None) -> str:
+    """Prefer the authenticated user id; fall back to the provided value."""
+    if current_user:
+        return str(current_user["_id"])
+    return provided or "anonymous"
 
 
 @router.get("/labs")
@@ -52,10 +72,15 @@ async def get_lab(lab_id: str):
 
 
 @router.post("/lab/start")
-async def start_lab(lab_id: str, user_id: str = "anonymous"):
+async def start_lab(
+    lab_id: str,
+    user_id: str = "anonymous",
+    current_user: Optional[dict] = Depends(get_optional_user),
+):
     """Start a new lab session"""
     try:
-        result = attack_lab_service.start_lab(lab_id, user_id)
+        uid = _resolve_user_id(current_user, user_id)
+        result = await attack_lab_service.start_lab(lab_id, uid)
         return result
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
@@ -64,17 +89,22 @@ async def start_lab(lab_id: str, user_id: str = "anonymous"):
 
 
 @router.post("/lab/attack", response_model=LabResult)
-async def submit_attack(submission: LabSubmission):
+async def submit_attack(
+    submission: LabSubmission,
+    current_user: Optional[dict] = Depends(get_optional_user),
+):
     """Submit attack payload"""
     try:
+        uid = _resolve_user_id(current_user, submission.user_id)
+
         # For simplicity, create a temporary session
         # In production, you'd manage sessions properly
-        session_result = attack_lab_service.start_lab(submission.lab_id, submission.user_id)
+        session_result = await attack_lab_service.start_lab(submission.lab_id, uid)
         session_id = session_result["session_id"]
-        
+
         # Submit attack
-        result = attack_lab_service.submit_attack(session_id, submission.payload)
-        
+        result = await attack_lab_service.submit_attack(session_id, submission.payload)
+
         return LabResult(
             success=result["success"],
             server_response=result["server_response"],
@@ -92,20 +122,25 @@ async def submit_attack(submission: LabSubmission):
 
 
 @router.post("/lab/defense")
-async def submit_defense(submission: DefenseSubmission):
+async def submit_defense(
+    submission: DefenseSubmission,
+    current_user: Optional[dict] = Depends(get_optional_user),
+):
     """Submit defense code"""
     try:
+        uid = _resolve_user_id(current_user, submission.user_id)
+
         # For simplicity, create a temporary session and mark attack as successful
-        session_result = attack_lab_service.start_lab(submission.lab_id, submission.user_id)
+        session_result = await attack_lab_service.start_lab(submission.lab_id, uid)
         session_id = session_result["session_id"]
-        
+
         # Mark attack as successful (in production, check actual session state)
-        session = attack_lab_service.lab_sessions[session_id]
+        session = session_result["session"]
         session["attack_success"] = True
-        
+
         # Submit defense
-        result = attack_lab_service.submit_defense(session_id, submission.secure_code)
-        
+        result = await attack_lab_service.submit_defense(session_id, submission.secure_code)
+
         return result
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
@@ -117,7 +152,7 @@ async def submit_defense(submission: DefenseSubmission):
 async def get_hint(session_id: str, attempt_number: int = 1):
     """Get progressive hint"""
     try:
-        result = attack_lab_service.get_hint(session_id, attempt_number)
+        result = await attack_lab_service.get_hint(session_id, attempt_number)
         return result
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
@@ -126,20 +161,66 @@ async def get_hint(session_id: str, attempt_number: int = 1):
 
 
 @router.get("/progress/{user_id}", response_model=UserProgress)
-async def get_user_progress(user_id: str):
+async def get_user_progress(
+    user_id: str,
+    current_user: Optional[dict] = Depends(get_optional_user),
+):
     """Get user progress and achievements"""
     try:
-        progress = attack_lab_service.get_user_progress(user_id)
+        uid = _resolve_user_id(current_user, user_id)
+        progress = await attack_lab_service.get_user_progress(uid)
         return UserProgress(**progress)
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to get progress: {str(e)}")
+
+
+@router.get("/labs/history/{user_id}")
+async def get_lab_history(
+    user_id: str,
+    current_user: Optional[dict] = Depends(get_optional_user),
+):
+    """Get stored attack + defense answers for a user."""
+    try:
+        from app.core.database import get_collection
+        uid = _resolve_user_id(current_user, user_id)
+
+        attempts = []
+        async for a in get_collection("lab_attempts").find({"user_id": uid}).sort("timestamp", -1).limit(200):
+            attempts.append({
+                "id": str(a["_id"]),
+                "mode": "attack",
+                "lab_id": a.get("lab_id"),
+                "category": a.get("category"),
+                "answer": a.get("payload"),
+                "success": a.get("success"),
+                "status": a.get("status"),
+                "score": a.get("score"),
+                "timestamp": a.get("timestamp").isoformat() if a.get("timestamp") else None,
+            })
+        async for d in get_collection("lab_defenses").find({"user_id": uid}).sort("timestamp", -1).limit(200):
+            attempts.append({
+                "id": str(d["_id"]),
+                "mode": "defense",
+                "lab_id": d.get("lab_id"),
+                "category": d.get("category"),
+                "answer": d.get("secure_code"),
+                "success": d.get("success"),
+                "status": d.get("status"),
+                "score": d.get("score"),
+                "timestamp": d.get("timestamp").isoformat() if d.get("timestamp") else None,
+            })
+
+        attempts.sort(key=lambda x: x.get("timestamp") or "", reverse=True)
+        return {"attempts": attempts, "total": len(attempts)}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to get lab history: {str(e)}")
 
 
 @router.get("/leaderboard")
 async def get_leaderboard(limit: int = 10):
     """Get leaderboard"""
     try:
-        result = attack_lab_service.get_leaderboard(limit)
+        result = await attack_lab_service.get_leaderboard(limit)
         return result
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to get leaderboard: {str(e)}")

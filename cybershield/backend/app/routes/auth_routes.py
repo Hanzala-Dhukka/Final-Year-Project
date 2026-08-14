@@ -2,9 +2,11 @@
 Authentication routes for login, register, and password reset.
 """
 from fastapi import APIRouter, HTTPException, Depends, status, Request
+from fastapi.responses import RedirectResponse
 from pydantic import BaseModel
 from datetime import datetime, timezone, timedelta
 from typing import Optional
+from urllib.parse import urlencode
 import secrets
 from app.models.user_model import UserCreate, UserLogin, UserResponse, TokenResponse
 from app.models.reset_token_model import PasswordResetRequest, PasswordResetConfirm, PasswordResetResponse
@@ -16,6 +18,11 @@ from app.services.token_service import token_service
 from app.services.refresh_service import refresh_service
 from app.services.session_service import session_service
 from app.services.auth_service import logout_all_devices
+from app.services.oauth_service import (
+    build_authorization_url,
+    process_oauth_login,
+    VALID_PROVIDERS,
+)
 from app.utils.security import create_access_token, create_refresh_token, get_current_user
 from app.core.config import settings
 
@@ -145,6 +152,24 @@ async def login(credentials: UserLogin, request: Request):
             )
         
         print(f"LOGIN: User found, verifying password...")
+
+        # OAuth-only accounts (created via Google/GitHub) have no password.
+        # Don't report a generic "incorrect password" — tell the user how to sign in.
+        if not user.get("password_hash"):
+            provider = user.get("auth_provider") or "social"
+            provider_label = {
+                "google": "Google",
+                "github": "GitHub",
+            }.get(provider, "social sign-in")
+            print(f"LOGIN: OAuth-only account ({provider_label}), password login rejected")
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail=(
+                    f"This account was created with {provider_label}. "
+                    f"Please use \"Continue with {provider_label}\" to sign in."
+                ),
+            )
+
         # Verify password
         if not password_service.verify_password(credentials.password, user["password_hash"]):
             print(f"LOGIN FAILED: Invalid password")
@@ -186,7 +211,7 @@ async def login(credentials: UserLogin, request: Request):
         
         # Create session (with error handling)
         try:
-            session_service.create_session(
+            await session_service.create_session(
                 user_id=user_id,
                 device=credentials.device or "Unknown Device",
                 ip_address=request.client.host if request.client else "Unknown"
@@ -307,7 +332,7 @@ async def logout(current_user: dict = Depends(get_current_user)):
         await refresh_service.revoke_all_user_tokens(user_id)
         
         # Close all sessions
-        session_service.close_all_user_sessions(user_id)
+        await session_service.close_all_user_sessions(user_id)
         
         return {"message": "Logged out successfully"}
         
@@ -536,7 +561,7 @@ async def reset_password(request: PasswordResetConfirm):
         await token_service.use_reset_token(request.token)
         
         # Invalidate all user sessions (security measure)
-        session_service.close_all_user_sessions(user_id)
+        await session_service.close_all_user_sessions(user_id)
         await refresh_service.revoke_all_user_tokens(user_id)
         
         return PasswordResetResponse(message="Password updated successfully")
@@ -576,3 +601,57 @@ async def get_current_user_info(current_user: dict = Depends(get_current_user)):
         bio=current_user.get("bio"),
         created_at=current_user["created_at"]
     )
+
+
+@router.get("/oauth/{provider}")
+async def oauth_authorize(provider: str):
+    """
+    Start an OAuth flow for a provider.
+
+    Args:
+        provider: Either 'google' or 'github'
+
+    Returns:
+        JSON body with the provider's authorization URL.
+    """
+    if provider not in VALID_PROVIDERS:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Unsupported OAuth provider"
+        )
+    authorization_url = build_authorization_url(provider)
+    return {"authorization_url": authorization_url}
+
+
+@router.get("/oauth/{provider}/callback")
+async def oauth_callback(
+    provider: str,
+    code: str,
+    state: Optional[str] = None,
+    request: Request = None,
+):
+    """
+    Handle the OAuth provider callback.
+
+    Exchanges the authorization code for tokens, finds or creates the
+    local user, then redirects back to the frontend with credentials.
+    """
+    if provider not in VALID_PROVIDERS:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Unsupported OAuth provider"
+        )
+
+    base_url = settings.FRONTEND_URL
+    try:
+        result = await process_oauth_login(provider, code, state, request)
+    except HTTPException as exc:
+        params = urlencode({"error": str(exc.detail)})
+        return RedirectResponse(url=f"{base_url}/oauth/callback?{params}")
+
+    params = urlencode({
+        "access_token": result["access_token"],
+        "refresh_token": result["refresh_token"],
+        "first_login": "true" if result["first_login"] else "false",
+    })
+    return RedirectResponse(url=f"{base_url}/oauth/callback?{params}")

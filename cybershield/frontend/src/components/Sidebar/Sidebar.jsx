@@ -9,6 +9,20 @@ import "./Sidebar.css";
 export function SidebarContent({ collapsed, onNavigate }) {
   const { pathname } = useLocation();
 
+  // Resolve the current user's role so role-restricted sections (e.g. Admin)
+  // are only rendered for the right people.
+  let userRole = null;
+  try {
+    const stored = localStorage.getItem("user");
+    if (stored) userRole = JSON.parse(stored)?.role || null;
+  } catch {
+    userRole = null;
+  }
+
+  const sections = navSections.filter(
+    (section) => !section.roles || section.roles.includes(userRole)
+  );
+
   return (
     <div className={`cs-sidebar ${collapsed ? "is-collapsed" : ""}`}>
       <div className="cs-sidebar__brand">
@@ -27,7 +41,7 @@ export function SidebarContent({ collapsed, onNavigate }) {
       </div>
 
       <nav className="cs-sidebar__nav">
-        {navSections.map((section) => (
+        {sections.map((section) => (
           <div className="cs-sidebar__group" key={section.id}>
             {!collapsed && (
               <div className="cs-sidebar__group-label">{section.label}</div>

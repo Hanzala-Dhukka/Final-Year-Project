@@ -94,6 +94,37 @@ async def get_user_progress(user_id: str, project_id: str) -> List[dict]:
             # Module SC4: Risk weight based on severity
             "risk_weight": get_risk_weight(item["severity"]),
         })
+
+    # Merge SC3 scanner-recommendation rows (their rule ids are not part of the
+    # static catalogue) so scanner-flagged tasks also appear in the list and in
+    # the "Scanner-Priority Tasks" panel on the Security Hardening page.
+    rec_rows = await database[USER_CHECK_COLLECTION].find({
+        "user_id": str(user_id),
+        "project_id": str(project_id),
+        "recommended": True,
+    }).to_list(length=1000)
+    seen = {r["checklist_id"] for r in rows}
+    for prog in rec_rows:
+        cid = prog.get("checklist_id")
+        if not cid or cid in seen:
+            continue
+        seen.add(cid)
+        result.append({
+            "id": str(prog["_id"]),
+            "checklist_id": cid,
+            "title": prog.get("title") or prog.get("task") or cid,
+            "category": prog.get("category", "Other"),
+            "severity": prog.get("severity", "Medium"),
+            "description": prog.get("description", ""),
+            "frameworks": [],
+            "status": prog.get("status", "pending"),
+            "completed_at": prog.get("completed_at").isoformat()
+            if prog.get("completed_at") else None,
+            "scan_id": prog.get("scan_id"),
+            "recommended": True,
+            "matched_rule": prog.get("matched_rule"),
+            "risk_weight": get_risk_weight(prog.get("severity", "Medium")),
+        })
     return result
 
 

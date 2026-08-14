@@ -16,6 +16,7 @@ from app.models.workspace_model import (
 )
 from app.models.project_model import can
 from app.schemas.workspace_schema import ReportCreate, CommentCreate
+from app.utils.user_names import display_name
 
 
 def _serialize_report(doc: dict) -> dict:
@@ -57,7 +58,7 @@ async def create_report(user: dict, project_id: str, payload: ReportCreate) -> d
         build_activity_doc(
             project_id=project_id,
             user_id=str(user.get("_id")),
-            user_name=user.get("full_name", "User"),
+            user_name=display_name(user, "User"),
             action="Threat Report Generated",
             detail=f"Version {version} (risk {payload.risk_score})",
         )
@@ -65,7 +66,7 @@ async def create_report(user: dict, project_id: str, payload: ReportCreate) -> d
     await database.audit_logs.insert_one(
         build_audit_doc(
             user_id=str(user.get("_id")),
-            user_name=user.get("full_name", "User"),
+            user_name=display_name(user, "User"),
             action="Generated Threat Report",
             target=project_id,
         )
@@ -80,6 +81,26 @@ async def list_reports(user: dict, project_id: str) -> list:
         {"project_id": project_id}
     ).sort("version", -1):
         reports.append(_serialize_report(doc))
+    if reports:
+        return reports
+    # Fall back to linked scan/threat data so project dashboards have content
+    project_doc = await database.projects.find_one({"_id": ObjectId(project_id)})
+    if not project_doc:
+        return reports
+    from app.services.project_service import _linked_risk_data
+    linked = await _linked_risk_data(project_doc)
+    if not linked:
+        return reports
+    for idx, item in enumerate(linked["linked_reports"], start=1):
+        created = item["created_at"]
+        reports.append({
+            "id": f"linked-{idx}",
+            "project_id": project_id,
+            "version": idx,
+            "risk_score": item["risk_score"],
+            "risk_level": item["risk_level"],
+            "created_at": created.isoformat() if isinstance(created, datetime) else created,
+        })
     return reports
 
 
@@ -104,7 +125,7 @@ async def add_comment(user: dict, report_id: str, content: str) -> dict:
     doc = build_comment_doc(
         report_id=report_id,
         user_id=str(user.get("_id")),
-        user_name=user.get("full_name", "User"),
+        user_name=display_name(user, "User"),
         content=content,
     )
     result = await database.report_comments.insert_one(doc)
@@ -112,7 +133,7 @@ async def add_comment(user: dict, report_id: str, content: str) -> dict:
         build_activity_doc(
             project_id=report["project_id"],
             user_id=str(user.get("_id")),
-            user_name=user.get("full_name", "User"),
+            user_name=display_name(user, "User"),
             action="Comment Added",
             detail=content[:60],
         )
@@ -121,7 +142,7 @@ async def add_comment(user: dict, report_id: str, content: str) -> dict:
         "id": str(result.inserted_id),
         "report_id": report_id,
         "user_id": doc["user_id"],
-        "user_name": doc["user_name"],
+        "user_name": display_name(doc, "User"),
         "content": doc["content"],
         "created_at": doc["created_at"].isoformat(),
     }
@@ -132,16 +153,17 @@ async def list_comments(report_id: str) -> list:
     async for c in database.report_comments.find(
         {"report_id": report_id}
     ).sort("created_at", 1):
-        comments.append({
-            "id": str(c["_id"]),
-            "report_id": c["report_id"],
-            "user_id": c["user_id"],
-            "user_name": c.get("user_name", "User"),
-            "content": c["content"],
-            "created_at": c.get("created_at").isoformat()
-            if isinstance(c.get("created_at"), datetime) else None,
-        })
-    return comments
+        comments.append(c)
+    names = await _resolve_actor_names(comments)
+    return [{
+        "id": str(c["_id"]),
+        "report_id": c["report_id"],
+        "user_id": c["user_id"],
+        "user_name": names.get(c.get("user_id"), c.get("user_name", "User")),
+        "content": c["content"],
+        "created_at": c.get("created_at").isoformat()
+        if isinstance(c.get("created_at"), datetime) else None,
+    } for c in comments]
 
 
 async def delete_comment(user: dict, comment_id: str) -> None:
@@ -162,29 +184,42 @@ async def delete_comment(user: dict, comment_id: str) -> None:
             build_activity_doc(
                 project_id=project_id,
                 user_id=str(user.get("_id")),
-                user_name=user.get("full_name", "User"),
+                user_name=display_name(user, "User"),
                 action="Comment Deleted",
             )
         )
 
 
 # ── Activity & audit ──────────────────────────────────────────────────────────
+async def _resolve_actor_names(records: list) -> dict:
+    """Map user_id -> display name for a list of log/activity records."""
+    ids = {r.get("user_id") for r in records if r.get("user_id")}
+    names = {}
+    for uid in ids:
+        if not ObjectId.is_valid(uid):
+            continue
+        user_doc = await database.users.find_one({"_id": ObjectId(uid)})
+        names[uid] = display_name(user_doc, "User")
+    return names
+
+
 async def get_timeline(user: dict, project_id: str) -> list:
     await require_permission(project_id, str(user.get("_id")), "view_project")
     activities = []
     async for a in database.activity_logs.find(
         {"project_id": project_id}
     ).sort("created_at", -1):
-        activities.append({
-            "id": str(a["_id"]),
-            "project_id": a["project_id"],
-            "user_name": a.get("user_name", "User"),
-            "action": a.get("action"),
-            "detail": a.get("detail"),
-            "created_at": a.get("created_at").isoformat()
-            if isinstance(a.get("created_at"), datetime) else None,
-        })
-    return activities
+        activities.append(a)
+    names = await _resolve_actor_names(activities)
+    return [{
+        "id": str(a["_id"]),
+        "project_id": a["project_id"],
+        "user_name": names.get(a.get("user_id"), a.get("user_name", "User")),
+        "action": a.get("action"),
+        "detail": a.get("detail"),
+        "created_at": a.get("created_at").isoformat()
+        if isinstance(a.get("created_at"), datetime) else None,
+    } for a in activities]
 
 
 async def get_audit(user: dict, project_id: str) -> list:
@@ -194,12 +229,13 @@ async def get_audit(user: dict, project_id: str) -> list:
     async for l in database.audit_logs.find(
         {"$or": [{"target": project_id}, {"target": None}]}
     ).sort("created_at", -1):
-        logs.append({
-            "id": str(l["_id"]),
-            "user_name": l.get("user_name", "User"),
-            "action": l.get("action"),
-            "target": l.get("target"),
-            "created_at": l.get("created_at").isoformat()
-            if isinstance(l.get("created_at"), datetime) else None,
-        })
-    return logs
+        logs.append(l)
+    names = await _resolve_actor_names(logs)
+    return [{
+        "id": str(l["_id"]),
+        "user_name": names.get(l.get("user_id"), l.get("user_name", "User")),
+        "action": l.get("action"),
+        "target": l.get("target"),
+        "created_at": l.get("created_at").isoformat()
+        if isinstance(l.get("created_at"), datetime) else None,
+    } for l in logs]

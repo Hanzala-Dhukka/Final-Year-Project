@@ -1,48 +1,55 @@
 import { createTheme } from "@mui/material/styles";
 import design from "../design";
+import { themes } from "../theme/themes";
 
-const { colors, typography, radius, shadows } = design;
+const { typography, radius, shadows } = design;
 
 /**
- * CyberShield MUI Theme — dark-first, fully driven by the design system tokens.
- * Any component using MUI primitives automatically inherits these values.
- * `mode` ("dark" | "light") keeps MUI in sync with the global ThemeProvider.
+ * CyberShield MUI Theme — fully theme-aware (dark + light).
+ *
+ * The palette is rebuilt from the active `themes[mode]` token set so MUI
+ * primitives (Card, Typography, Paper, Menu, Select, Tooltip, progress, etc.)
+ * always match the global CSS theme. This fixes dark cards / invisible text
+ * appearing when the app is switched to light mode.
  */
 export function createCyberShieldTheme(mode = "dark") {
-  return createTheme({
-    palette: {
-      mode,
+  const t = themes[mode] || themes.dark;
 
-      primary: {
-        main: colors.primary.DEFAULT,
-        hover: colors.primary.hover,
-        active: colors.primary.active,
-        contrastText: colors.white,
-      },
+  const palette = {
+    mode,
 
-      secondary: {
-        main: colors.secondary.DEFAULT,
-      },
-
-      success: { main: colors.status.success },
-      warning: { main: colors.status.warning },
-      error: { main: colors.status.danger },
-      info: { main: colors.status.info },
-
-      background: {
-        default: colors.background.DEFAULT,
-        paper: colors.card.DEFAULT,
-      },
-
-      text: {
-        primary: colors.text.DEFAULT,
-        secondary: colors.text.secondary,
-        disabled: colors.text.disabled,
-      },
-
-      divider: colors.border.DEFAULT,
+    primary: {
+      main: t.primary || "#2563EB",
+      hover: t.primaryHover || "#1D4ED8",
+      active: "#1E40AF",
+      contrastText: "#FFFFFF",
     },
 
+    secondary: {
+      main: t.bgSecondary || "#1E293B",
+    },
+
+    success: { main: t.success || "#10B981" },
+    warning: { main: t.warning || "#F59E0B" },
+    error: { main: t.danger || "#EF4444" },
+    info: { main: t.info || "#3B82F6" },
+
+    background: {
+      default: t.bgPrimary,
+      paper: t.cardBg,
+    },
+
+    text: {
+      primary: t.textPrimary,
+      secondary: t.textSecondary,
+      disabled: t.textMuted,
+    },
+
+    divider: t.borderColor,
+  };
+
+  return createTheme({
+    palette,
     typography: {
       fontFamily: typography.fontFamily,
       fontWeightRegular: typography.weights.regular,
@@ -68,8 +75,8 @@ export function createCyberShieldTheme(mode = "dark") {
         styleOverrides: {
           root: {
             backgroundImage: "none",
-            backgroundColor: colors.card.DEFAULT,
-            border: `1px solid ${colors.card.border}`,
+            backgroundColor: t.cardBg,
+            border: `1px solid ${t.borderColor}`,
           },
         },
       },
@@ -91,12 +98,12 @@ export function createCyberShieldTheme(mode = "dark") {
       MuiCard: {
         styleOverrides: {
           root: {
-            backgroundColor: colors.card.DEFAULT,
-            border: `1px solid ${colors.card.border}`,
+            backgroundColor: t.cardBg,
+            border: `1px solid ${t.borderColor}`,
             borderRadius: radius.lg,
             boxShadow: shadows.card,
             transition: "all 250ms cubic-bezier(0.4, 0, 0.2, 1)",
-            "&:hover": { boxShadow: shadows.cardHover, transform: "translateY(-4px)" },
+            "&:hover": { boxShadow: shadows.cardHover },
           },
         },
       },

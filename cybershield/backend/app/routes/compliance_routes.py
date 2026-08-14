@@ -72,7 +72,20 @@ async def get_report(
     """Return the latest compliance report + history for a project."""
     report = await svc.get_report(project_id)
     if not report:
-        # No report yet -> return an empty shell so the UI can prompt generation.
+        # No persisted report yet — build one on the fly from the latest scan
+        # so the Compliance Dashboard is never empty after a GitHub scan.
+        try:
+            generated = await svc.generate_compliance(
+                str(current_user["_id"]), project_id
+            )
+            await svc.save_report(generated)
+            report = await svc.get_report(project_id)
+        except Exception as e:
+            print(f"[compliance] on-the-fly generation failed: {e}")
+            report = None
+    if not report:
+        # No scan/report data at all -> return an empty shell so the UI can
+        # prompt generation.
         return ComplianceReportOut(
             project_id=project_id,
             frameworks={},

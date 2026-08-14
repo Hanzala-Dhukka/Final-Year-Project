@@ -9,6 +9,8 @@ import hashlib
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
 
+from bson import ObjectId
+
 from app.database.db import database
 from app.ai.gemini_client import generate
 
@@ -249,7 +251,24 @@ Return ONLY the summary text, no JSON, no formatting."""
 async def delete_report(report_id: str) -> bool:
     """Delete a report from MongoDB."""
     try:
+        # Professional security reports (D5) are keyed by a human-readable
+        # report_id (CSR-...) in the "reports" collection.
         result = await database[REPORTS_COLLECTION].delete_one({"report_id": report_id})
+        if result.deleted_count > 0:
+            return True
+
+        # Threat model reports are stored in "threat_reports" and keyed by
+        # their MongoDB _id (also sent by the frontend as the report id).
+        if ObjectId.is_valid(report_id):
+            result = await database["threat_reports"].delete_one({"_id": ObjectId(report_id)})
+            if result.deleted_count > 0:
+                return True
+
+        # Some clients reference threat reports by project_id or report_id.
+        result = await database["threat_reports"].delete_one({"project_id": report_id})
+        if result.deleted_count > 0:
+            return True
+        result = await database["threat_reports"].delete_one({"report_id": report_id})
         return result.deleted_count > 0
     except Exception:
         return False

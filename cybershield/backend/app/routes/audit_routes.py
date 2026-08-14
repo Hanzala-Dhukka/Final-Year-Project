@@ -11,7 +11,7 @@ router = APIRouter()
 
 
 @router.get("/audit/logs")
-def get_audit_logs(
+async def get_audit_logs(
     current_user=Depends(get_current_user),
     limit: int = 100
 ):
@@ -34,7 +34,7 @@ def get_audit_logs(
             detail="Admin access required"
         )
     
-    logs = get_all_audit_logs(limit)
+    logs = await get_all_audit_logs(limit)
     
     return [
         {
@@ -53,7 +53,7 @@ def get_audit_logs(
 
 
 @router.get("/audit/my-history")
-def get_my_audit_history(
+async def get_my_audit_history(
     current_user=Depends(get_current_user),
     limit: int = 50
 ):
@@ -70,7 +70,7 @@ def get_my_audit_history(
     ]
     """
     user_id = str(current_user["_id"])
-    logs = get_user_audit_history(user_id, limit)
+    logs = await get_user_audit_history(user_id, limit)
     
     return [
         {

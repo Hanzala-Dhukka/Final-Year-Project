@@ -22,7 +22,11 @@ from app.services.vulnerability_locator import scan_file_content as locate_findi
 from app.services.security_patterns import SECURITY_PATTERNS
 from app.services.vulnerability_intelligence import get_vulnerability_info
 from app.services.report_generator import generate_security_report
-from app.services.risk_engine import calculate_risk_score, generate_risk_dashboard
+from app.services.risk_engine import (
+    calculate_risk_score,
+    calculate_risk_score_from_severity,
+    generate_risk_dashboard,
+)
 from app.services.threat_analyzer import (
     generate_summary, generate_ai_report, calculate_risk_level,
 )
@@ -205,7 +209,7 @@ async def run_github_scan(repo_url: str, user_id: Optional[str] = None,
     if scan_id:
         update_scan(scan_id, stage="Risk Assessment", progress=75, message="Calculating risk score")
 
-    risk_score = calculate_risk_score(file_results)
+    security_score = calculate_risk_score(file_results)
     findings = []
     for f in file_results:
         file_path = f.get("file", "")
@@ -241,9 +245,19 @@ async def run_github_scan(repo_url: str, user_id: Optional[str] = None,
     if scan_id:
         update_scan(scan_id, stage="AI Remediation", progress=85, message="Generating AI report")
 
-    ai_report = generate_ai_report(findings, len(files_to_scan), risk_score)
+    ai_report = generate_ai_report(findings, len(files_to_scan), security_score)
     risk_level = ai_report["risk_level"]
     summary = ai_report["summary"]
+
+    # Build severity summary from findings
+    severity_summary = {"critical": 0, "high": 0, "medium": 0, "low": 0}
+    for finding in findings:
+        sev = str(finding.get("severity", "")).lower()
+        if sev in severity_summary:
+            severity_summary[sev] += 1
+
+    # Risk score is a 0-100 risk value (higher = worse), NOT the security score.
+    risk_score = calculate_risk_score_from_severity(severity_summary)
 
     dep_rpt = dependency_report
     dep_summary = (
@@ -279,13 +293,6 @@ async def run_github_scan(repo_url: str, user_id: Optional[str] = None,
     # Progress: Save Results
     if scan_id:
         update_scan(scan_id, stage="Saving Results", progress=95, message="Saving scan results")
-
-    # Build severity summary from findings
-    severity_summary = {"critical": 0, "high": 0, "medium": 0, "low": 0}
-    for finding in findings:
-        sev = str(finding.get("severity", "")).lower()
-        if sev in severity_summary:
-            severity_summary[sev] += 1
 
     scan_document = {
         "scan_id": scan_id,

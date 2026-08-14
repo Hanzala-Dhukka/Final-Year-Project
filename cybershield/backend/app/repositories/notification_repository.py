@@ -22,7 +22,7 @@ class NotificationRepository:
             self._collection = get_collection("notifications")
         return self._collection
     
-    def create_notification(self, user_id: str, title: str, message: str, notification_type: str, severity: str = "INFO") -> str:
+    async def create_notification(self, user_id: str, title: str, message: str, notification_type: str, severity: str = "INFO") -> str:
         """
         Create a new notification.
         
@@ -48,10 +48,10 @@ class NotificationRepository:
             "created_at": datetime.now(timezone.utc)
         }
         
-        result = collection.insert_one(notification_data)
+        result = await collection.insert_one(notification_data)
         return str(result.inserted_id)
     
-    def get_notifications(self, user_id: str, limit: int = 50) -> List[Dict[str, Any]]:
+    async def get_notifications(self, user_id: str, limit: int = 50) -> List[Dict[str, Any]]:
         """
         Get all notifications for a user.
         
@@ -63,16 +63,17 @@ class NotificationRepository:
             List of notification documents
         """
         collection = self._get_collection()
-        notifications = list(collection.find(
+        notifications = []
+        cursor = collection.find(
             {"user_id": user_id}
-        ).sort("created_at", -1).limit(limit))
-        
-        for notification in notifications:
+        ).sort("created_at", -1).limit(limit)
+        async for notification in cursor:
             notification["_id"] = str(notification["_id"])
+            notifications.append(notification)
         
         return notifications
     
-    def get_unread_count(self, user_id: str) -> int:
+    async def get_unread_count(self, user_id: str) -> int:
         """
         Get count of unread notifications for a user.
         
@@ -83,9 +84,9 @@ class NotificationRepository:
             int: Number of unread notifications
         """
         collection = self._get_collection()
-        return collection.count_documents({"user_id": user_id, "is_read": False})
+        return await collection.count_documents({"user_id": user_id, "is_read": False})
     
-    def mark_as_read(self, notification_id: str) -> bool:
+    async def mark_as_read(self, notification_id: str) -> bool:
         """
         Mark a notification as read.
         
@@ -98,7 +99,7 @@ class NotificationRepository:
         collection = self._get_collection()
         
         try:
-            result = collection.update_one(
+            result = await collection.update_one(
                 {"_id": ObjectId(notification_id)},
                 {"$set": {"is_read": True}}
             )
@@ -106,7 +107,7 @@ class NotificationRepository:
         except Exception:
             return False
     
-    def mark_all_as_read(self, user_id: str) -> int:
+    async def mark_all_as_read(self, user_id: str) -> int:
         """
         Mark all notifications for a user as read.
         
@@ -118,13 +119,13 @@ class NotificationRepository:
         """
         collection = self._get_collection()
         
-        result = collection.update_many(
+        result = await collection.update_many(
             {"user_id": user_id, "is_read": False},
             {"$set": {"is_read": True}}
         )
         return result.modified_count
     
-    def delete_notification(self, notification_id: str) -> bool:
+    async def delete_notification(self, notification_id: str) -> bool:
         """
         Delete a notification.
         
@@ -137,7 +138,7 @@ class NotificationRepository:
         collection = self._get_collection()
         
         try:
-            result = collection.delete_one({"_id": ObjectId(notification_id)})
+            result = await collection.delete_one({"_id": ObjectId(notification_id)})
             return result.deleted_count > 0
         except Exception:
             return False

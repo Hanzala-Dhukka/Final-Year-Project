@@ -186,11 +186,11 @@ from app.database.db import database
 EMAIL_LOGS = "email_logs"
 
 
-def _log_email(to_email: str, subject: str, ok: bool, error: Optional[str] = None,
-               category: str = "alert") -> None:
+async def _log_email(to_email: str, subject: str, ok: bool, error: Optional[str] = None,
+                     category: str = "alert") -> None:
     """Persist an email send attempt to the email_logs collection."""
     try:
-        database[EMAIL_LOGS].insert_one({
+        await database[EMAIL_LOGS].insert_one({
             "to": to_email,
             "subject": subject,
             "category": category,
@@ -202,8 +202,8 @@ def _log_email(to_email: str, subject: str, ok: bool, error: Optional[str] = Non
         pass
 
 
-def send_security_alert(to_email: str, title: str, message: str,
-                        risk_score: Optional[int] = None) -> bool:
+async def send_security_alert(to_email: str, title: str, message: str,
+                              risk_score: Optional[int] = None) -> bool:
     """Send a branded CyberShield security alert email (SMTP)."""
     if not to_email:
         return False
@@ -224,11 +224,11 @@ def send_security_alert(to_email: str, title: str, message: str,
       <small style="color:#888;">This is an automated message from CyberShield.</small>
     </div>
     """
-    return _send_smtp(to_email, "CyberShield Security Alert", body, category="alert")
+    return await _send_smtp(to_email, "CyberShield Security Alert", body, category="alert")
 
 
-def send_report_email(to_email: str, subject: str, message: str,
-                      report_type: str = "report") -> bool:
+async def send_report_email(to_email: str, subject: str, message: str,
+                            report_type: str = "report") -> bool:
     """Send a scheduled report (weekly / monthly / executive)."""
     if not to_email:
         return False
@@ -244,16 +244,16 @@ def send_report_email(to_email: str, subject: str, message: str,
       </p>
     </div>
     """
-    return _send_smtp(to_email, subject, body, category=report_type)
+    return await _send_smtp(to_email, subject, body, category=report_type)
 
 
-def _send_smtp(to_email: str, subject: str, body: str, category: str = "alert") -> bool:
+async def _send_smtp(to_email: str, subject: str, body: str, category: str = "alert") -> bool:
     """Low-level SMTP send with graceful no-credential fallback."""
     user = settings.EMAIL_USER
     pwd = settings.EMAIL_PASSWORD
     if not user or not pwd:
-        _log_email(to_email, subject, True, error="SMTP not configured; skipped send",
-                   category=category)
+        await _log_email(to_email, subject, True, error="SMTP not configured; skipped send",
+                         category=category)
         return True
     try:
         msg = MIMEMultipart("alternative")
@@ -265,8 +265,8 @@ def _send_smtp(to_email: str, subject: str, body: str, category: str = "alert") 
         with smtplib.SMTP_SSL("smtp.gmail.com", 465, context=context) as server:
             server.login(user, pwd)
             server.sendmail(user, to_email, msg.as_string())
-        _log_email(to_email, subject, True, category=category)
+        await _log_email(to_email, subject, True, category=category)
         return True
     except Exception as e:
-        _log_email(to_email, subject, False, error=str(e), category=category)
+        await _log_email(to_email, subject, False, error=str(e), category=category)
         return False

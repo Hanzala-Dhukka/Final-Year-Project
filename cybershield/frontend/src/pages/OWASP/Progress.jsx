@@ -21,7 +21,20 @@ export default function Progress({ onBack }) {
   const [history, setHistory] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [expandedId, setExpandedId] = useState(null);
+  const [copiedId, setCopiedId] = useState(null);
   const mounted = useRef(true);
+
+  const copyAnswer = async (id, text) => {
+    try {
+      await navigator.clipboard.writeText(text || "");
+      setCopiedId(id);
+      setTimeout(() => setCopiedId((c) => (c === id ? null : c)), 1500);
+    } catch {
+      setCopiedId(id);
+      setTimeout(() => setCopiedId((c) => (c === id ? null : c)), 1500);
+    }
+  };
 
   const load = useCallback(() => {
     Promise.all([owaspApi.progress(), owaspApi.history()])
@@ -153,28 +166,57 @@ export default function Progress({ onBack }) {
               <ul className="cs-ow-history">
                 {history.slice(0, 12).map((h) => (
                   <li key={h.id}>
-                    <div className="cs-ow-history-left">
-                      <span className={`cs-ow-history-icon cs-ow-history-icon--${h.mode === "attack" ? "attack" : "defense"}`}>
-                        {h.mode === "attack" ? <Swords size={15} /> : <Shield size={15} />}
-                      </span>
-                      <div style={{ minWidth: 0 }}>
-                        <div className="cs-ow-history-name">{h.vulnerability}</div>
-                        <div className="cs-ow-history-sub">
-                          {h.mode} · {h.difficulty}
-                          {h.created_at ? ` · ${new Date(h.created_at).toLocaleString()}` : ""}
+                    <button
+                      type="button"
+                      className="cs-ow-history-row"
+                      onClick={() => setExpandedId(expandedId === h.id ? null : h.id)}
+                      aria-expanded={expandedId === h.id}
+                    >
+                      <div className="cs-ow-history-left">
+                        <span className={`cs-ow-history-icon cs-ow-history-icon--${h.mode === "attack" ? "attack" : "defense"}`}>
+                          {h.mode === "attack" ? <Swords size={15} /> : <Shield size={15} />}
+                        </span>
+                        <div style={{ minWidth: 0 }}>
+                          <div className="cs-ow-history-name">{h.vulnerability}</div>
+                          <div className="cs-ow-history-sub">
+                            {h.mode} · {h.difficulty}
+                            {h.created_at ? ` · ${new Date(h.created_at).toLocaleString()}` : ""}
+                          </div>
                         </div>
                       </div>
-                    </div>
-                    <div className="cs-ow-history-right">
-                      {h.success ? (
-                        <CheckCircle2 size={16} style={{ color: "var(--success, #22c55e)" }} />
-                      ) : (
-                        <XCircle size={16} style={{ color: "var(--danger, #ef4444)" }} />
-                      )}
-                      <span className="cs-ow-xp-tag" style={{ padding: "3px 10px", fontSize: "0.74rem" }}>
-                        <Timer size={12} /> +{h.xp_earned ?? 0} XP
-                      </span>
-                    </div>
+                      <div className="cs-ow-history-right">
+                        {h.success ? (
+                          <CheckCircle2 size={16} style={{ color: "var(--success, #22c55e)" }} />
+                        ) : (
+                          <XCircle size={16} style={{ color: "var(--danger, #ef4444)" }} />
+                        )}
+                        <span className="cs-ow-xp-tag" style={{ padding: "3px 10px", fontSize: "0.74rem" }}>
+                          <Timer size={12} /> +{h.xp_earned ?? 0} XP
+                        </span>
+                      </div>
+                    </button>
+
+                    {expandedId === h.id && (
+                      <div className="cs-ow-history-detail">
+                        <div className="cs-ow-history-detail-head">
+                          <span className="cs-ow-chip cs-ow-chip--info">
+                            {h.mode === "attack" ? "Your attack payload" : "Your defense code"}
+                          </span>
+                          {h.payload ? (
+                            <button
+                              type="button"
+                              className="cs-ow-copy-btn"
+                              onClick={() => copyAnswer(h.id, h.payload)}
+                            >
+                              {copiedId === h.id ? "Copied ✓" : "Copy answer"}
+                            </button>
+                          ) : null}
+                        </div>
+                        <pre className="cs-ow-history-answer">
+                          {h.payload || "(no answer recorded)"}
+                        </pre>
+                      </div>
+                    )}
                   </li>
                 ))}
               </ul>

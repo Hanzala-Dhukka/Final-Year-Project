@@ -24,7 +24,8 @@ from app.services.pdf_generator import (
     generate_pdf_report 
 ) 
 from app.services.risk_engine import (
-    calculate_risk_score
+    calculate_risk_score,
+    calculate_risk_score_from_severity,
 )
 from app.services.threat_analyzer import ( 
     generate_summary, 
@@ -490,12 +491,12 @@ async def scan_repository_sync(
                 if result:
                     file_results.append(result)
 
-        risk_score = calculate_risk_score(file_results)
+        security_score = calculate_risk_score(file_results)
         findings = []
         for f in file_results:
             findings.extend(f["issues"])
 
-        ai_report = generate_ai_report(findings, len(files_to_scan), risk_score)
+        ai_report = generate_ai_report(findings, len(files_to_scan), security_score)
         risk_level = ai_report["risk_level"]
         summary = ai_report["summary"]
 
@@ -523,6 +524,13 @@ async def scan_repository_sync(
             "ai_report": ai_report
         }
         report = generate_security_report(report_data)
+
+        severity_summary = {"critical": 0, "high": 0, "medium": 0, "low": 0}
+        for finding in findings:
+            sev = str(finding.get("severity", "")).lower()
+            if sev in severity_summary:
+                severity_summary[sev] += 1
+        risk_score = calculate_risk_score_from_severity(severity_summary)
 
         scan_collection = database["github_scans"]
         scan_document = { 

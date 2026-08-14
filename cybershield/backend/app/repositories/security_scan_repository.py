@@ -22,7 +22,7 @@ class SecurityScanRepository:
             self._collection = get_collection("security_scans")
         return self._collection
     
-    def create_scan(self, scan_data: Dict[str, Any]) -> str:
+    async def create_scan(self, scan_data: Dict[str, Any]) -> str:
         """
         Create a new security scan record.
         
@@ -37,10 +37,10 @@ class SecurityScanRepository:
         # Add timestamp
         scan_data["created_at"] = datetime.now(timezone.utc)
         
-        result = collection.insert_one(scan_data)
+        result = await collection.insert_one(scan_data)
         return str(result.inserted_id)
     
-    def get_scan(self, scan_id: str) -> Optional[Dict[str, Any]]:
+    async def get_scan(self, scan_id: str) -> Optional[Dict[str, Any]]:
         """
         Get a scan by ID.
         
@@ -52,11 +52,11 @@ class SecurityScanRepository:
         """
         collection = self._get_collection()
         try:
-            return collection.find_one({"_id": ObjectId(scan_id)})
+            return await collection.find_one({"_id": ObjectId(scan_id)})
         except Exception:
             return None
     
-    def get_user_scans(self, user_id: str, limit: int = 100) -> List[Dict[str, Any]]:
+    async def get_user_scans(self, user_id: str, limit: int = 100) -> List[Dict[str, Any]]:
         """
         Get all scans for a user.
         
@@ -69,16 +69,17 @@ class SecurityScanRepository:
         """
         collection = self._get_collection()
         
-        scans = list(collection.find({"user_id": user_id}).sort("created_at", -1).limit(limit))
-        
-        for scan in scans:
+        scans = []
+        cursor = collection.find({"user_id": user_id}).sort("created_at", -1).limit(limit)
+        async for scan in cursor:
             scan["_id"] = str(scan["_id"])
             if "user_id" in scan:
                 scan["user_id"] = str(scan["user_id"])
+            scans.append(scan)
         
         return scans
     
-    def delete_scan(self, scan_id: str) -> bool:
+    async def delete_scan(self, scan_id: str) -> bool:
         """
         Delete a scan.
         
@@ -91,7 +92,7 @@ class SecurityScanRepository:
         collection = self._get_collection()
         
         try:
-            result = collection.delete_one({"_id": ObjectId(scan_id)})
+            result = await collection.delete_one({"_id": ObjectId(scan_id)})
             return result.deleted_count > 0
         except Exception:
             return False

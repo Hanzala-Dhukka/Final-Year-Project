@@ -14,7 +14,7 @@ class SessionRepository:
     def __init__(self):
         self.collection_name = "sessions"
     
-    def create_session(self, session_data: SessionInDB) -> Optional[str]:
+    async def create_session(self, session_data: SessionInDB) -> Optional[str]:
         """
         Create a new session in database.
         
@@ -28,13 +28,13 @@ class SessionRepository:
             collection = get_collection(self.collection_name)
             
             session_dict = session_data.model_dump()
-            result = collection.insert_one(session_dict)
+            result = await collection.insert_one(session_dict)
             return str(result.inserted_id)
         except Exception as e:
             print(f"Error creating session: {e}")
             return None
     
-    def get_user_sessions(self, user_id: str) -> List[dict]:
+    async def get_user_sessions(self, user_id: str) -> List[dict]:
         """
         Get all active sessions for a user.
         
@@ -52,12 +52,12 @@ class SessionRepository:
                 "active": True
             }).sort("login_time", -1)
             
-            return list(sessions)
+            return await sessions.to_list(length=None)
         except Exception as e:
             print(f"Error getting user sessions: {e}")
             return []
     
-    def get_session_by_id(self, session_id: str) -> Optional[dict]:
+    async def get_session_by_id(self, session_id: str) -> Optional[dict]:
         """
         Get session by ID.
         
@@ -70,13 +70,13 @@ class SessionRepository:
         try:
             collection = get_collection(self.collection_name)
             
-            session = collection.find_one({"_id": ObjectId(session_id)})
+            session = await collection.find_one({"_id": ObjectId(session_id)})
             return session
         except Exception as e:
             print(f"Error getting session: {e}")
             return None
     
-    def close_session(self, session_id: str) -> bool:
+    async def close_session(self, session_id: str) -> bool:
         """
         Close a session (logout).
         
@@ -89,7 +89,7 @@ class SessionRepository:
         try:
             collection = get_collection(self.collection_name)
             
-            result = collection.update_one(
+            result = await collection.update_one(
                 {"_id": ObjectId(session_id)},
                 {
                     "$set": {
@@ -104,7 +104,7 @@ class SessionRepository:
             print(f"Error closing session: {e}")
             return False
     
-    def close_all_user_sessions(self, user_id: str) -> bool:
+    async def close_all_user_sessions(self, user_id: str) -> bool:
         """
         Close all active sessions for a user.
         
@@ -117,7 +117,7 @@ class SessionRepository:
         try:
             collection = get_collection(self.collection_name)
             
-            result = collection.update_many(
+            result = await collection.update_many(
                 {"user_id": user_id, "active": True},
                 {
                     "$set": {
@@ -132,7 +132,7 @@ class SessionRepository:
             print(f"Error closing all user sessions: {e}")
             return False
     
-    def update_session_activity(self, session_id: str) -> bool:
+    async def update_session_activity(self, session_id: str) -> bool:
         """
         Update last activity timestamp for a session.
         
@@ -145,7 +145,7 @@ class SessionRepository:
         try:
             collection = get_collection(self.collection_name)
             
-            result = collection.update_one(
+            result = await collection.update_one(
                 {"_id": ObjectId(session_id)},
                 {"$set": {"last_activity": datetime.now(timezone.utc)}}
             )
@@ -155,7 +155,7 @@ class SessionRepository:
             print(f"Error updating session activity: {e}")
             return False
     
-    def cleanup_inactive_sessions(self, timeout_minutes: int = 30) -> int:
+    async def cleanup_inactive_sessions(self, timeout_minutes: int = 30) -> int:
         """
         Mark sessions as inactive if last activity exceeds timeout.
         
@@ -170,7 +170,7 @@ class SessionRepository:
             
             cutoff_time = datetime.now(timezone.utc) - timedelta(minutes=timeout_minutes)
             
-            result = collection.update_many(
+            result = await collection.update_many(
                 {
                     "active": True,
                     "last_activity": {"$lt": cutoff_time}
@@ -188,7 +188,7 @@ class SessionRepository:
             print(f"Error cleaning up inactive sessions: {e}")
             return 0
     
-    def get_session_by_token_hash(self, token_hash: str) -> Optional[dict]:
+    async def get_session_by_token_hash(self, token_hash: str) -> Optional[dict]:
         """
         Get session associated with a refresh token hash.
         
@@ -203,13 +203,13 @@ class SessionRepository:
             from app.repositories.refresh_token_repository import refresh_token_repository
             
             # Get token by hash
-            token = refresh_token_repository.get_token_by_hash(token_hash)
+            token = await refresh_token_repository.get_token_by_hash(token_hash)
             if not token:
                 return None
             
             # Get session by user_id and active status
             collection = get_collection(self.collection_name)
-            session = collection.find_one({
+            session = await collection.find_one({
                 "user_id": token.get("user_id"),
                 "active": True
             })

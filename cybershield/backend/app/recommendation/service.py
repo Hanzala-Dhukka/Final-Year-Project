@@ -25,7 +25,29 @@ async def _read_findings_from_github_scans(scan_id: str) -> List[dict]:
     scan = await database[GITHUB_SCANS_COLLECTION].find_one({"scan_id": scan_id})
     if not scan:
         return []
-    return scan.get("findings", [])
+    findings = list(scan.get("findings", []))
+    # Dependency issues live in a separate list — normalise them so the rule
+    # engine can recommend dependency remediation tasks too.
+    for dep in scan.get("dependency_findings") or []:
+        if not isinstance(dep, dict):
+            continue
+        status = str(dep.get("status", "")).lower()
+        sev = dep.get("severity") or "Medium"
+        if "outdated" in status:
+            ftype, desc = "Outdated Package", dep.get("reason") or f"{dep.get('package')} is outdated"
+        elif "risky" in status or "unpinned" in status:
+            ftype, desc = "Vulnerable Dependency", dep.get("reason") or f"{dep.get('package')} is flagged"
+        else:
+            continue
+        findings.append({
+            "type": ftype,
+            "description": desc,
+            "severity": sev,
+            "file": "dependency manifest",
+            "package": dep.get("package", ""),
+            "version": dep.get("version", ""),
+        })
+    return findings
 
 
 async def _read_findings_from_scan_findings(scan_id: str) -> List[dict]:

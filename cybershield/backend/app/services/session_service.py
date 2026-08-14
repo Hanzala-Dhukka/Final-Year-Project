@@ -18,8 +18,8 @@ class SessionService:
         self.session_repo = session_repository
         self.refresh_repo = refresh_token_repository
     
-    def create_session(self, user_id: str, device: Optional[str] = None, 
-                      ip_address: Optional[str] = None) -> Optional[str]:
+    async def create_session(self, user_id: str, device: Optional[str] = None, 
+                            ip_address: Optional[str] = None) -> Optional[str]:
         """
         Create a new session for a user.
         
@@ -42,12 +42,12 @@ class SessionService:
                 last_activity=datetime.now(timezone.utc)
             )
             
-            return self.session_repo.create_session(session_data)
+            return await self.session_repo.create_session(session_data)
         except Exception as e:
             print(f"Error creating session: {e}")
             return None
     
-    def get_user_sessions(self, user_id: str) -> List[SessionResponse]:
+    async def get_user_sessions(self, user_id: str) -> List[SessionResponse]:
         """
         Get all active sessions for a user.
         
@@ -58,7 +58,7 @@ class SessionService:
             List of session response objects
         """
         try:
-            sessions = self.session_repo.get_user_sessions(user_id)
+            sessions = await self.session_repo.get_user_sessions(user_id)
             
             session_responses = []
             for session in sessions:
@@ -77,7 +77,7 @@ class SessionService:
             print(f"Error getting user sessions: {e}")
             return []
     
-    def close_session(self, session_id: str, user_id: str) -> bool:
+    async def close_session(self, session_id: str, user_id: str) -> bool:
         """
         Close a specific session.
         
@@ -90,27 +90,27 @@ class SessionService:
         """
         try:
             # Verify session belongs to user
-            session = self.session_repo.get_session_by_id(session_id)
+            session = await self.session_repo.get_session_by_id(session_id)
             if not session or session.get("user_id") != user_id:
                 return False
             
             # Close session
-            success = self.session_repo.close_session(session_id)
+            success = await self.session_repo.close_session(session_id)
             
             # Revoke associated refresh token
             if success:
                 # Find and revoke the refresh token for this session
-                tokens = self.refresh_repo.get_user_tokens(user_id)
+                tokens = await self.refresh_repo.get_user_tokens(user_id)
                 for token in tokens:
                     if token.get("device") == session.get("device"):
-                        self.refresh_repo.revoke_token(token.get("token_hash"))
+                        await self.refresh_repo.revoke_token(token.get("token_hash"))
             
             return success
         except Exception as e:
             print(f"Error closing session: {e}")
             return False
     
-    def close_all_user_sessions(self, user_id: str) -> bool:
+    async def close_all_user_sessions(self, user_id: str) -> bool:
         """
         Close all sessions for a user.
         
@@ -121,12 +121,12 @@ class SessionService:
             True if successful, False otherwise
         """
         try:
-            return self.session_repo.close_all_user_sessions(user_id)
+            return await self.session_repo.close_all_user_sessions(user_id)
         except Exception as e:
             print(f"Error closing all user sessions: {e}")
             return False
     
-    def logout_user(self, user_id: str, refresh_token: Optional[str] = None) -> bool:
+    async def logout_user(self, user_id: str, refresh_token: Optional[str] = None) -> bool:
         """
         Logout user from all sessions or specific session.
         
@@ -140,20 +140,20 @@ class SessionService:
         try:
             if refresh_token:
                 # Revoke specific refresh token
-                self.refresh_repo.revoke_token(refresh_token)
+                await self.refresh_repo.revoke_token(refresh_token)
             else:
                 # Revoke all user tokens
-                self.refresh_repo.revoke_all_user_tokens(user_id)
+                await self.refresh_repo.revoke_all_user_tokens(user_id)
             
             # Close all active sessions
-            self.session_repo.close_all_user_sessions(user_id)
+            await self.session_repo.close_all_user_sessions(user_id)
             
             return True
         except Exception as e:
             print(f"Error logging out user: {e}")
             return False
     
-    def cleanup_inactive_sessions(self, timeout_minutes: int = 30) -> int:
+    async def cleanup_inactive_sessions(self, timeout_minutes: int = 30) -> int:
         """
         Clean up inactive sessions.
         
@@ -164,12 +164,12 @@ class SessionService:
             Number of sessions cleaned up
         """
         try:
-            return self.session_repo.cleanup_inactive_sessions(timeout_minutes)
+            return await self.session_repo.cleanup_inactive_sessions(timeout_minutes)
         except Exception as e:
             print(f"Error cleaning up inactive sessions: {e}")
             return 0
     
-    def update_user_activity(self, user_id: str) -> bool:
+    async def update_user_activity(self, user_id: str) -> bool:
         """
         Update user's last activity timestamp.
         
@@ -181,7 +181,7 @@ class SessionService:
         """
         try:
             # Update user's last_activity field
-            user_repository.update_user(
+            await user_repository.update_user(
                 user_id,
                 {"last_activity": datetime.now(timezone.utc)}
             )
@@ -190,7 +190,7 @@ class SessionService:
             print(f"Error updating user activity: {e}")
             return False
     
-    def get_session_stats(self, user_id: str) -> Dict[str, Any]:
+    async def get_session_stats(self, user_id: str) -> Dict[str, Any]:
         """
         Get session statistics for a user.
         
@@ -201,7 +201,7 @@ class SessionService:
             Dict with session statistics
         """
         try:
-            sessions = self.session_repo.get_user_sessions(user_id)
+            sessions = await self.session_repo.get_user_sessions(user_id)
             
             active_sessions = sum(1 for s in sessions if s.get("active", False))
             total_sessions = len(sessions)

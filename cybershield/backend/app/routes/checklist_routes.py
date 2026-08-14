@@ -199,4 +199,4 @@ async def get_posture_history(
     from app.services.scoring_service import get_posture_history
 
     docs = await get_posture_history(str(current_user["_id"]), project_id, limit=limit)
-    return [PostureHistoryOut(**doc) for doc in docs]
+    return [PostureHistoryOut(**{**doc, "id": doc.get("_id", "")}) for doc in docs]

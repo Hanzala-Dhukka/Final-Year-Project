@@ -168,11 +168,11 @@ def _build_html_body(report_data: dict) -> str:
     """
 
 
-def _log_email(to_email: str, subject: str, success: bool,
-               error: Optional[str] = None, category: str = "report") -> None:
+async def _log_email(to_email: str, subject: str, success: bool,
+                     error: Optional[str] = None, category: str = "report") -> None:
     """Log email delivery attempt to the email_logs collection."""
     try:
-        database[EMAIL_LOGS].insert_one({
+        await database[EMAIL_LOGS].insert_one({
             "to": to_email,
             "subject": subject,
             "category": category,
@@ -213,7 +213,7 @@ async def send_report_email(
 
     # Graceful no-op when credentials are missing
     if not user or not pwd:
-        _log_email(
+        await _log_email(
             to_email, subject, True,
             error="SMTP credentials not configured; skipped",
             category="report",
@@ -252,8 +252,8 @@ async def send_report_email(
         with smtplib.SMTP_SSL("smtp.gmail.com", 465, context=context) as server:
             server.login(user, pwd)
             server.sendmail(user, to_email, msg.as_string())
-        _log_email(to_email, subject, True, category="report")
+        await _log_email(to_email, subject, True, category="report")
         return True
     except Exception as e:
-        _log_email(to_email, subject, False, error=str(e), category="report")
+        await _log_email(to_email, subject, False, error=str(e), category="report")
         return False

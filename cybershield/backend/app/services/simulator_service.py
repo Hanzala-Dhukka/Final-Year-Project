@@ -116,6 +116,18 @@ async def submit_attack(
         {"_id": session_id}, {"$set": {"status": "completed"}}
     )
 
+    # Mirror into the legacy collections so dashboards/admin/compliance see it too
+    await _mirror_attempt(
+        user_id=user_id,
+        vulnerability=vulnerability,
+        payload=payload,
+        success=success,
+        xp=xp,
+        lab_name=scenario.get("title", vulnerability),
+        mode="attack",
+        difficulty=difficulty,
+    )
+
     if success:
         try:
             from app.services.gamification_service import log_activity
@@ -198,6 +210,18 @@ async def submit_defense(
     )
     await database[SESSIONS].update_one(
         {"_id": session_id}, {"$set": {"status": "completed"}}
+    )
+
+    # Mirror into the legacy collections so dashboards/admin/compliance see it too
+    await _mirror_attempt(
+        user_id=user_id,
+        vulnerability=vulnerability,
+        payload=user_code,
+        success=(status == "Passed"),
+        xp=xp,
+        lab_name=(get_attack_scenario(vulnerability) or {}).get("title", vulnerability),
+        mode="defense",
+        difficulty=difficulty,
     )
 
     if status == "Passed":
@@ -299,6 +323,7 @@ async def get_history(user_id: str, limit: int = 50) -> List[Dict[str, Any]]:
             "mode": h.get("mode"),
             "vulnerability": h.get("vulnerability"),
             "difficulty": h.get("difficulty"),
+            "payload": h.get("payload"),
             "success": h.get("success"),
             "xp_earned": h.get("xp_earned", 0),
             "hints_used": h.get("hints_used", 0),
@@ -326,6 +351,49 @@ async def _mark_completed(user_id: str, field: str, vulnerability: str) -> None:
 def _utc():
     from datetime import datetime, timezone
     return datetime.now(timezone.utc)
+
+
+async def _mirror_attempt(
+    user_id: str,
+    vulnerability: str,
+    payload: str,
+    success: bool,
+    xp: int,
+    lab_name: str,
+    mode: str,
+    difficulty: str = "Beginner",
+) -> None:
+    """Mirror a practice attempt into the legacy collections so the dashboard,
+    admin stats and compliance views reflect modern Learning Center activity."""
+    try:
+        await database["owasp_simulations"].insert_one({
+            "user_id": user_id,
+            "attack_type": vulnerability,
+            "payload": payload,
+            "success": success,
+            "lab_id": vulnerability,
+            "mode": mode,
+            "difficulty": difficulty,
+            "created_at": _utc(),
+        })
+        if success:
+            await database["owasp_sessions"].update_one(
+                {"user_id": user_id, "lab_id": vulnerability},
+                {"$set": {
+                    "user_id": user_id,
+                    "lab_id": vulnerability,
+                    "lab_name": lab_name,
+                    "category": vulnerability,
+                    "mode": mode,
+                    "status": "completed",
+                    "score": 100,
+                    "xp": xp,
+                    "completed_at": _utc(),
+                }},
+                upsert=True,
+            )
+    except Exception as e:
+        print(f"OWASP mirror failed: {e}")
 
 
 # ── AI Coach (standalone) ───────────────────────────────────────────────────

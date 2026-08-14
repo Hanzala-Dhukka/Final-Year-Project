@@ -24,6 +24,21 @@ AI_MODEL = os.getenv("AI_MODEL", "llama-3.3-70b-versatile")
 AI_MODEL_FALLBACK = os.getenv("AI_MODEL_FALLBACK", "llama-3.1-8b-instant")
 AI_TEMPERATURE = float(os.getenv("AI_TEMPERATURE", "0.2"))
 AI_MAX_TOKENS = int(os.getenv("AI_MAX_TOKENS", "2048"))
+FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:5173")
+
+# OAuth — Google
+GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID") or ""
+GOOGLE_CLIENT_SECRET = os.getenv("GOOGLE_CLIENT_SECRET") or ""
+GOOGLE_REDIRECT_URI = os.getenv(
+    "GOOGLE_REDIRECT_URI", "http://localhost:8000/api/v1/auth/oauth/google/callback"
+)
+
+# OAuth — GitHub
+GITHUB_CLIENT_ID = os.getenv("GITHUB_CLIENT_ID") or ""
+GITHUB_CLIENT_SECRET = os.getenv("GITHUB_CLIENT_SECRET") or ""
+GITHUB_REDIRECT_URI = os.getenv(
+    "GITHUB_REDIRECT_URI", "http://localhost:8000/api/v1/auth/oauth/github/callback"
+)
 
 
 # Keep Settings class and settings instance for backward compatibility with existing imports
@@ -56,6 +71,22 @@ class Settings(BaseSettings):
     AI_MODEL_FALLBACK: str = os.getenv("AI_MODEL_FALLBACK", "llama-3.1-8b-instant")
     AI_TEMPERATURE: float = float(os.getenv("AI_TEMPERATURE", "0.2"))
     AI_MAX_TOKENS: int = int(os.getenv("AI_MAX_TOKENS", "2048"))
+
+    # OAuth — Google
+    GOOGLE_CLIENT_ID: str = os.getenv("GOOGLE_CLIENT_ID", "")
+    GOOGLE_CLIENT_SECRET: str = os.getenv("GOOGLE_CLIENT_SECRET", "")
+    GOOGLE_REDIRECT_URI: str = os.getenv(
+        "GOOGLE_REDIRECT_URI",
+        "http://localhost:8000/api/v1/auth/oauth/google/callback",
+    )
+
+    # OAuth — GitHub
+    GITHUB_CLIENT_ID: str = os.getenv("GITHUB_CLIENT_ID", "")
+    GITHUB_CLIENT_SECRET: str = os.getenv("GITHUB_CLIENT_SECRET", "")
+    GITHUB_REDIRECT_URI: str = os.getenv(
+        "GITHUB_REDIRECT_URI",
+        "http://localhost:8000/api/v1/auth/oauth/github/callback",
+    )
 
     model_config = {
         "env_file": str(BACKEND_ROOT / ".env"),

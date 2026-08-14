@@ -81,5 +81,16 @@ def register_scheduler_jobs() -> None:
         coalesce=True,
     )
 
+    # Daily GitHub rescan — every project with a repo_url, daily 02:00
+    scheduler.add_job(
+        scheduled_scan.run_daily_scans,
+        "cron",
+        hour=2,
+        minute=0,
+        id="daily_github_scans",
+        replace_existing=True,
+        coalesce=True,
+    )
+
 
 __all__ = ["register_scheduler_jobs", "scheduler"]

@@ -263,7 +263,7 @@ async def _fire_actions(user_id: str, project_id: Optional[str], rule: Dict[str,
     if "email" in actions:
         email = await notif.get_user_email(user_id)
         if email:
-            email_service.send_security_alert(
+            await email_service.send_security_alert(
                 to_email=email,
                 title=title,
                 message=f"{metric_value} critical issues detected in {repo}.",

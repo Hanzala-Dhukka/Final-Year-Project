@@ -96,8 +96,8 @@ class RefreshService:
             print(f"Error storing refresh token: {e}")
             return False
     
-    def create_refresh_token_for_user(self, user_id: str, device: Optional[str] = None, 
-                                     ip_address: Optional[str] = None) -> Optional[str]:
+    async def create_refresh_token_for_user(self, user_id: str, device: Optional[str] = None, 
+                                            ip_address: Optional[str] = None) -> Optional[str]:
         """
         Create a new refresh token for a user.
         
@@ -130,7 +130,7 @@ class RefreshService:
                 expires_at=expires_at
             )
             
-            self.refresh_repo.create_refresh_token(token_create)
+            await self.refresh_repo.create_refresh_token(token_create)
             
             return plain_token
         except Exception as e:
@@ -259,7 +259,7 @@ class RefreshService:
             print(f"Error updating token last used: {e}")
             return False
     
-    def revoke_refresh_token(self, refresh_token: str) -> bool:
+    async def revoke_refresh_token(self, refresh_token: str) -> bool:
         """
         Revoke a refresh token.
         
@@ -270,12 +270,12 @@ class RefreshService:
             True if successful, False otherwise
         """
         try:
-            return self.refresh_repo.revoke_token(refresh_token)
+            return await self.refresh_repo.revoke_token(refresh_token)
         except Exception as e:
             print(f"Error revoking refresh token: {e}")
             return False
     
-    def revoke_all_user_tokens(self, user_id: str) -> bool:
+    async def revoke_all_user_tokens(self, user_id: str) -> bool:
         """
         Revoke all refresh tokens for a user.
         
@@ -286,7 +286,7 @@ class RefreshService:
             True if successful, False otherwise
         """
         try:
-            return self.refresh_repo.revoke_all_user_tokens(user_id)
+            return await self.refresh_repo.revoke_all_user_tokens(user_id)
         except Exception as e:
             print(f"Error revoking all user tokens: {e}")
             return False

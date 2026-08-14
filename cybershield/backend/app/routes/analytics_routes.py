@@ -51,37 +51,44 @@ async def get_dashboard_stats(current_user: dict = Depends(get_current_user)):
 
     for scan in scans:
 
-        total_vulnerabilities += scan.get(
-            "vulnerabilities_found",
-            0
-        )
+        findings = [f for f in (scan.get("findings") or []) if isinstance(f, dict)]
+        dep_findings = [
+            d for d in (scan.get("dependency_findings") or []) if isinstance(d, dict)
+        ]
 
-        findings = scan.get("findings", [])
+        # True issue count: every finding plus every dependency issue (the scan's
+        # stored "vulnerabilities_found" is a count of affected files, not issues).
+        total_vulnerabilities += len(findings) + len(dep_findings)
 
-        for finding in findings:
+        for issue in findings:
+            severity = str(issue.get("severity", "")).lower()
 
-            if not isinstance(finding, dict):
-                continue
+            if severity == "critical":
+                critical_count += 1
 
-            # Scanner findings may nest individual issues under "issues",
-            # otherwise the finding itself carries the severity.
-            issues = finding.get("issues") or [finding]
+            elif severity == "high":
+                high_count += 1
 
-            for issue in issues:
+            elif severity == "medium":
+                medium_count += 1
 
-                severity = str(issue.get("severity", "")).lower()
+            elif severity == "low":
+                low_count += 1
 
-                if severity == "critical":
-                    critical_count += 1
+        for issue in dep_findings:
+            severity = str(issue.get("severity", "")).lower()
 
-                elif severity == "high":
-                    high_count += 1
+            if severity == "critical":
+                critical_count += 1
 
-                elif severity == "medium":
-                    medium_count += 1
+            elif severity == "high":
+                high_count += 1
 
-                elif severity == "low":
-                    low_count += 1
+            elif severity == "medium":
+                medium_count += 1
+
+            elif severity == "low":
+                low_count += 1
 
     return {
         "total_scans": total_scans,
@@ -106,7 +113,27 @@ async def recent_scans(current_user: dict = Depends(get_current_user)):
         -1
     ).limit(5).to_list(5)
 
-    return [_serialize(scan) for scan in scans]
+    out = []
+    for scan in scans:
+        created = scan.get("created_at")
+        sev = scan.get("severity_summary") or {}
+        findings = [f for f in (scan.get("findings") or []) if isinstance(f, dict)]
+        dep_findings = [
+            d for d in (scan.get("dependency_findings") or []) if isinstance(d, dict)
+        ]
+        out.append({
+            "_id": str(scan.get("_id", "")),
+            "repository": scan.get("repository") or scan.get("repo_url") or "Repository scan",
+            "repo_url": scan.get("repo_url", ""),
+            "risk_level": scan.get("risk_level", "Unknown"),
+            "risk_score": scan.get("risk_score", 0),
+            "scanned_files": scan.get("scanned_files", 0),
+            "vulnerabilities_found": len(findings) + len(dep_findings),
+            "severity_summary": sev,
+            "status": "Completed",
+            "created_at": created.isoformat() if isinstance(created, datetime) else None,
+        })
+    return out
 
 
 #    Executive Security Dashboard (Module 6.4)                                   

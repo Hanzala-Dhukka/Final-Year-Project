@@ -25,6 +25,7 @@ import CyberBackground from "../../components/Auth/CyberBackground";
 import AnimatedShield from "../../components/Auth/AnimatedShield";
 import SecurityStats from "../../components/Auth/SecurityStats";
 import SecureLoader from "../../components/Auth/SecureLoader";
+import SocialLogin from "../../components/Auth/SocialLogin";
 import {
   cardEntrance,
   brandEntrance,
@@ -161,6 +162,8 @@ export default function Login() {
       let message = "Incorrect email or password. Please try again.";
       if (err.code === "ERR_NETWORK" || !err.response)
         message = "Unable to reach the server. Check your connection.";
+      else if (err.response?.data?.detail)
+        message = err.response.data.detail;
       else if (status === 503)
         message = "Service temporarily unavailable. Please try again shortly.";
       else if (status === 403)
@@ -372,6 +375,8 @@ export default function Login() {
                     )}
                   </button>
                 </form>
+
+                <SocialLogin />
 
                 <p className="login-switch">
                   Don&apos;t have an account?{" "}

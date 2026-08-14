@@ -3,6 +3,13 @@ Test script for MongoDB connection.
 Run this script to verify MongoDB is working correctly.
 """
 import asyncio
+import sys
+
+try:
+    sys.stdout.reconfigure(encoding="utf-8")
+except Exception:
+    pass
+
 from app.core.database import get_database, connect_to_mongo, close_mongo_connection
 
 

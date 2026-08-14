@@ -79,7 +79,7 @@ async def generate_report(
         raise HTTPException(status_code=500, detail=f"Report generation failed: {e}")
 
     # Attach user info for ownership
-    database["reports"].update_one(
+    await database["reports"].update_one(
         {"scan_id": scan_id},
         {"$set": {"user_id": current_user["_id"]}},
     )
@@ -303,7 +303,7 @@ async def email_report(
         raise HTTPException(status_code=500, detail="Failed to send report email")
 
     # Record that the report was emailed
-    database["reports"].update_one(
+    await database["reports"].update_one(
         {"report_id": report_id},
         {
             "$set": {
@@ -357,7 +357,7 @@ async def ai_summary(
     summary = await generate_ai_executive_summary(report)
 
     # Persist the summary back to the report
-    database["reports"].update_one(
+    await database["reports"].update_one(
         {"scan_id": scan_id},
         {"$set": {"ai_executive_summary": summary}},
     )

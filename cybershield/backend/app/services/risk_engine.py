@@ -4,6 +4,14 @@ and generates a priority fix queue for the Risk Dashboard.
 """
 
 
+SEVERITY_RISK_WEIGHT = {
+    "Critical": 25,
+    "High": 15,
+    "Medium": 8,
+    "Low": 2,
+}
+
+
 def calculate_risk_score(findings):
     """Legacy overall risk score (100-based) used by AI report generation."""
     score = 100
@@ -17,6 +25,22 @@ def calculate_risk_score(findings):
             elif severity == "Medium":
                 score -= 5
     return max(score, 0)
+
+
+def calculate_risk_score_from_severity(severity_summary: dict) -> int:
+    """Map severity counts to a 0-100 risk score (higher = worse).
+
+    Mirrors the frontend scanner weighting (Critical 25, High 15,
+    Medium 8, Low 2 points per finding) so the project dashboard risk
+    gauge matches what the GitHub scanner UI computes.
+    """
+    if not severity_summary:
+        return 0
+    critical = int(severity_summary.get("critical", severity_summary.get("Critical", 0)) or 0)
+    high = int(severity_summary.get("high", severity_summary.get("High", 0)) or 0)
+    medium = int(severity_summary.get("medium", severity_summary.get("Medium", 0)) or 0)
+    low = int(severity_summary.get("low", severity_summary.get("Low", 0)) or 0)
+    return min(100, critical * 25 + high * 15 + medium * 8 + low * 2)
 
 
 # ── H6.5: Per-finding risk scoring ──────────────────────────────────────

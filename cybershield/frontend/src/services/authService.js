@@ -76,6 +76,18 @@ export const resendVerification = async (email) => {
   return response.data;
 };
 
+/**
+ * Start a social OAuth login/registration for a provider.
+ * Backend returns the provider's authorization URL; the frontend
+ * redirects the browser there to collect the user's consent.
+ * @param {"google" | "github"} provider
+ * @returns {Promise<string>} authorization URL
+ */
+export const getOAuthAuthorizationUrl = async (provider) => {
+  const response = await API.get(`/auth/oauth/${provider}`);
+  return response.data.authorization_url;
+};
+
 export const authService = {
   login,
   registerUser,
@@ -83,6 +95,7 @@ export const authService = {
   forgotPassword,
   resetPassword,
   resendVerification,
+  getOAuthAuthorizationUrl,
   logoutUser,
 };
 

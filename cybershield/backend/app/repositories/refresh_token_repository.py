@@ -19,7 +19,7 @@ class RefreshTokenRepository:
         """Hash a token for secure storage."""
         return hashlib.sha256(token.encode()).hexdigest()
     
-    def create_refresh_token(self, token_data: RefreshTokenCreate) -> Optional[str]:
+    async def create_refresh_token(self, token_data: RefreshTokenCreate) -> Optional[str]:
         """
         Create a new refresh token in database.
         
@@ -36,7 +36,7 @@ class RefreshTokenRepository:
             token_dict = token_data.model_dump()
             token_dict["token_hash"] = self._hash_token(token_data.token_hash)
             
-            result = collection.insert_one(token_dict)
+            result = await collection.insert_one(token_dict)
             return str(result.inserted_id)
         except Exception as e:
             print(f"Error creating refresh token: {e}")
@@ -66,7 +66,7 @@ class RefreshTokenRepository:
             print(f"Error getting refresh token: {e}")
             return None
     
-    def revoke_token(self, token_hash: str) -> bool:
+    async def revoke_token(self, token_hash: str) -> bool:
         """
         Revoke a refresh token.
         
@@ -80,7 +80,7 @@ class RefreshTokenRepository:
             collection = get_collection(self.collection_name)
             hashed_token = self._hash_token(token_hash)
             
-            result = collection.update_one(
+            result = await collection.update_one(
                 {"token_hash": hashed_token},
                 {
                     "$set": {
@@ -95,7 +95,7 @@ class RefreshTokenRepository:
             print(f"Error revoking token: {e}")
             return False
     
-    def revoke_all_user_tokens(self, user_id: str) -> bool:
+    async def revoke_all_user_tokens(self, user_id: str) -> bool:
         """
         Revoke all refresh tokens for a user.
         
@@ -108,7 +108,7 @@ class RefreshTokenRepository:
         try:
             collection = get_collection(self.collection_name)
             
-            result = collection.update_many(
+            result = await collection.update_many(
                 {"user_id": user_id, "is_revoked": False},
                 {
                     "$set": {
@@ -123,7 +123,7 @@ class RefreshTokenRepository:
             print(f"Error revoking all user tokens: {e}")
             return False
     
-    def update_last_used(self, token_id: str) -> bool:
+    async def update_last_used(self, token_id: str) -> bool:
         """
         Update the last_used timestamp for a token.
         
@@ -136,7 +136,7 @@ class RefreshTokenRepository:
         try:
             collection = get_collection(self.collection_name)
             
-            result = collection.update_one(
+            result = await collection.update_one(
                 {"_id": ObjectId(token_id)},
                 {"$set": {"last_used": datetime.now(timezone.utc)}}
             )
@@ -146,7 +146,7 @@ class RefreshTokenRepository:
             print(f"Error updating last_used: {e}")
             return False
     
-    def get_user_tokens(self, user_id: str) -> List[dict]:
+    async def get_user_tokens(self, user_id: str) -> List[dict]:
         """
         Get all active tokens for a user.
         
@@ -165,12 +165,12 @@ class RefreshTokenRepository:
                 "expires_at": {"$gt": datetime.now(timezone.utc)}
             }).sort("created_at", -1)
             
-            return list(tokens)
+            return await tokens.to_list(length=None)
         except Exception as e:
             print(f"Error getting user tokens: {e}")
             return []
     
-    def cleanup_expired_tokens(self) -> int:
+    async def cleanup_expired_tokens(self) -> int:
         """
         Delete expired tokens from database.
         
@@ -180,7 +180,7 @@ class RefreshTokenRepository:
         try:
             collection = get_collection(self.collection_name)
             
-            result = collection.delete_many({
+            result = await collection.delete_many({
                 "expires_at": {"$lt": datetime.now(timezone.utc)}
             })
             

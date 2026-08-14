@@ -52,35 +52,37 @@ class QuizSessionRepository:
             self._collection = get_collection("quiz_sessions")
         return self._collection
     
-    def create_session(self, session_data: Dict[str, Any]) -> str:
+    async def create_session(self, session_data: Dict[str, Any]) -> str:
         """Create a new quiz session."""
         collection = self._get_collection()
         session_data["created_at"] = datetime.now(timezone.utc)
-        result = collection.insert_one(session_data)
+        result = await collection.insert_one(session_data)
         return str(result.inserted_id)
     
-    def get_session(self, session_id: str) -> Optional[Dict[str, Any]]:
+    async def get_session(self, session_id: str) -> Optional[Dict[str, Any]]:
         """Get a session by ID."""
         collection = self._get_collection()
         try:
-            return collection.find_one({"_id": ObjectId(session_id)})
+            return await collection.find_one({"_id": ObjectId(session_id)})
         except Exception:
             return None
     
-    def get_user_sessions(self, user_id: str, limit: int = 100) -> List[Dict[str, Any]]:
+    async def get_user_sessions(self, user_id: str, limit: int = 100) -> List[Dict[str, Any]]:
         """Get all sessions for a user."""
         collection = self._get_collection()
-        sessions = list(collection.find({"user_id": user_id}).sort("created_at", -1).limit(limit))
-        for session in sessions:
+        sessions = []
+        cursor = collection.find({"user_id": user_id}).sort("created_at", -1).limit(limit)
+        async for session in cursor:
             session["_id"] = str(session["_id"])
+            sessions.append(session)
         return sessions
     
-    def update_session(self, session_id: str, update_data: Dict[str, Any]) -> bool:
+    async def update_session(self, session_id: str, update_data: Dict[str, Any]) -> bool:
         """Update a session."""
         collection = self._get_collection()
         update_data["updated_at"] = datetime.now(timezone.utc)
         try:
-            result = collection.update_one(
+            result = await collection.update_one(
                 {"_id": ObjectId(session_id)},
                 {"$set": update_data}
             )
@@ -101,19 +103,21 @@ class QuizResultRepository:
             self._collection = get_collection("quiz_attempts")
         return self._collection
     
-    def create_result(self, result_data: Dict[str, Any]) -> str:
+    async def create_result(self, result_data: Dict[str, Any]) -> str:
         """Create a new quiz result."""
         collection = self._get_collection()
         result_data["created_at"] = datetime.now(timezone.utc)
-        result = collection.insert_one(result_data)
+        result = await collection.insert_one(result_data)
         return str(result.inserted_id)
     
-    def get_user_results(self, user_id: str, limit: int = 100) -> List[Dict[str, Any]]:
+    async def get_user_results(self, user_id: str, limit: int = 100) -> List[Dict[str, Any]]:
         """Get all results for a user."""
         collection = self._get_collection()
-        results = list(collection.find({"user_id": user_id}).sort("created_at", -1).limit(limit))
-        for result in results:
+        results = []
+        cursor = collection.find({"user_id": user_id}).sort("created_at", -1).limit(limit)
+        async for result in cursor:
             result["_id"] = str(result["_id"])
+            results.append(result)
         return results
 
 

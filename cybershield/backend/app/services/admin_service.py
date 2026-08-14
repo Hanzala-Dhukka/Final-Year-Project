@@ -12,7 +12,28 @@ from app.core.database import get_collection
 
 class AdminService:
     """Service class for admin operations."""
-    
+
+    @staticmethod
+    def _count_severities(docs, list_fields):
+        """
+        Count critical/high issues across one or more finding list fields.
+
+        Scans may store their issues under different keys depending on the
+        scanner generation (vulnerabilities/threats vs. findings and
+        dependency_findings), so we aggregate over all of them.
+        """
+        critical = 0
+        high = 0
+        for doc in docs:
+            for field in list_fields:
+                for item in doc.get(field, []) or []:
+                    severity = str(item.get("severity", "")).lower()
+                    if severity == "critical":
+                        critical += 1
+                    elif severity == "high":
+                        high += 1
+        return critical, high
+
     async def get_all_users(self, skip: int = 0, limit: int = 100) -> Dict[str, Any]:
         """
         Get all users with pagination.
@@ -111,7 +132,7 @@ class AdminService:
         
         if success:
             # Log the action
-            log_role_change(
+            await log_role_change(
                 user_id=user_id,
                 username=user.get("name", ""),
                 old_role=old_role,
@@ -165,7 +186,7 @@ class AdminService:
         
         if success:
             # Log the action
-            log_account_status_change(
+            await log_account_status_change(
                 user_id=user_id,
                 username=user.get("name", ""),
                 old_status=old_status,
@@ -204,7 +225,7 @@ class AdminService:
             }
         
         # Create audit log before deletion
-        log_action(
+        await log_action(
             user_id=user_id,
             username=user.get("name", ""),
             action="USER_DELETED",
@@ -286,26 +307,26 @@ class AdminService:
         # Count critical issues
         critical_issues = 0
         high_issues = 0
-        
-        # Count from github scans
-        async for scan in github_collection.find({}, {"vulnerabilities": 1}):
-            vulns = scan.get("vulnerabilities", [])
-            for vuln in vulns:
-                severity = vuln.get("severity", "").lower()
-                if severity == "critical":
-                    critical_issues += 1
-                elif severity == "high":
-                    high_issues += 1
-        
+
+        # Count from github scans (aggregate legacy + current finding formats)
+        github_docs = await github_collection.find(
+            {}, {"vulnerabilities": 1, "findings": 1, "dependency_findings": 1}
+        ).to_list(None)
+        github_critical, github_high = self._count_severities(
+            github_docs, ("vulnerabilities", "findings", "dependency_findings")
+        )
+        critical_issues += github_critical
+        high_issues += github_high
+
         # Count from security scans
-        async for scan in security_collection.find({}, {"threats": 1}):
-            threats = scan.get("threats", [])
-            for threat in threats:
-                severity = threat.get("severity", "").lower()
-                if severity == "critical":
-                    critical_issues += 1
-                elif severity == "high":
-                    high_issues += 1
+        security_docs = await security_collection.find(
+            {}, {"threats": 1, "findings": 1, "dependency_findings": 1}
+        ).to_list(None)
+        security_critical, security_high = self._count_severities(
+            security_docs, ("threats", "findings", "dependency_findings")
+        )
+        critical_issues += security_critical
+        high_issues += security_high
         
         return {
             "total_users": total_users,
@@ -331,29 +352,24 @@ class AdminService:
         # GitHub Scanner stats
         github_collection = get_collection("github_scans")
         total_github_scans = await github_collection.count_documents({})
-        
-        github_critical = 0
-        github_high = 0
-        async for scan in github_collection.find({}, {"vulnerabilities": 1}):
-            vulns = scan.get("vulnerabilities", [])
-            for vuln in vulns:
-                severity = vuln.get("severity", "").lower()
-                if severity == "critical":
-                    github_critical += 1
-                elif severity == "high":
-                    github_high += 1
-        
+
+        github_docs = await github_collection.find(
+            {}, {"vulnerabilities": 1, "findings": 1, "dependency_findings": 1}
+        ).to_list(None)
+        github_critical, github_high = self._count_severities(
+            github_docs, ("vulnerabilities", "findings", "dependency_findings")
+        )
+
         # Security Scanner stats
         security_collection = get_collection("security_scans")
         total_security_scans = await security_collection.count_documents({})
-        
-        security_critical = 0
-        async for scan in security_collection.find({}, {"threats": 1}):
-            threats = scan.get("threats", [])
-            for threat in threats:
-                severity = threat.get("severity", "").lower()
-                if severity == "critical":
-                    security_critical += 1
+
+        security_docs = await security_collection.find(
+            {}, {"threats": 1, "findings": 1, "dependency_findings": 1}
+        ).to_list(None)
+        security_critical, _ = self._count_severities(
+            security_docs, ("threats", "findings", "dependency_findings")
+        )
         
         # OWASP Simulator stats
         owasp_collection = get_collection("owasp_simulations")

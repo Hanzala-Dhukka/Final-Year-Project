@@ -22,7 +22,7 @@ class AuditRepository:
             self._collection = get_collection("audit_logs")
         return self._collection
     
-    def create_log(self, log_data: Dict[str, Any]) -> str:
+    async def create_log(self, log_data: Dict[str, Any]) -> str:
         """
         Create a new audit log entry.
         
@@ -37,10 +37,10 @@ class AuditRepository:
         # Add timestamp
         log_data["created_at"] = datetime.now(timezone.utc)
         
-        result = collection.insert_one(log_data)
+        result = await collection.insert_one(log_data)
         return str(result.inserted_id)
     
-    def get_logs(self, limit: int = 100) -> List[Dict[str, Any]]:
+    async def get_logs(self, limit: int = 100) -> List[Dict[str, Any]]:
         """
         Get all audit logs (admin only).
         
@@ -51,14 +51,14 @@ class AuditRepository:
             List of log documents
         """
         collection = self._get_collection()
-        logs = list(collection.find({}).sort("created_at", -1).limit(limit))
-        
-        for log in logs:
+        logs = []
+        cursor = collection.find({}).sort("created_at", -1).limit(limit)
+        async for log in cursor:
             log["_id"] = str(log["_id"])
-        
+            logs.append(log)
         return logs
     
-    def get_user_logs(self, user_id: str, limit: int = 50) -> List[Dict[str, Any]]:
+    async def get_user_logs(self, user_id: str, limit: int = 50) -> List[Dict[str, Any]]:
         """
         Get audit logs for a specific user.
         
@@ -70,16 +70,16 @@ class AuditRepository:
             List of log documents
         """
         collection = self._get_collection()
-        logs = list(collection.find(
+        logs = []
+        cursor = collection.find(
             {"user_id": user_id}
-        ).sort("created_at", -1).limit(limit))
-        
-        for log in logs:
+        ).sort("created_at", -1).limit(limit)
+        async for log in cursor:
             log["_id"] = str(log["_id"])
-        
+            logs.append(log)
         return logs
     
-    def get_logs_by_module(self, module: str, limit: int = 100) -> List[Dict[str, Any]]:
+    async def get_logs_by_module(self, module: str, limit: int = 100) -> List[Dict[str, Any]]:
         """
         Get audit logs for a specific module.
         
@@ -91,16 +91,16 @@ class AuditRepository:
             List of log documents
         """
         collection = self._get_collection()
-        logs = list(collection.find(
+        logs = []
+        cursor = collection.find(
             {"module": module}
-        ).sort("created_at", -1).limit(limit))
-        
-        for log in logs:
+        ).sort("created_at", -1).limit(limit)
+        async for log in cursor:
             log["_id"] = str(log["_id"])
-        
+            logs.append(log)
         return logs
     
-    def delete_old_logs(self, days: int = 180) -> int:
+    async def delete_old_logs(self, days: int = 180) -> int:
         """
         Delete logs older than specified days.
         
@@ -114,7 +114,7 @@ class AuditRepository:
         
         cutoff_date = datetime.now(timezone.utc) - timedelta(days=days)
         
-        result = collection.delete_many({
+        result = await collection.delete_many({
             "created_at": {"$lt": cutoff_date}
         })
         return result.deleted_count

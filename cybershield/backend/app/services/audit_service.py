@@ -5,7 +5,7 @@ from typing import Optional, Dict, Any
 from app.repositories.audit_repository import audit_repository
 
 
-def log_action(user_id: str, username: str, action: str, module: str, description: str, ip_address: Optional[str] = None, device: Optional[str] = None, status: str = "SUCCESS") -> str:
+async def log_action(user_id: str, username: str, action: str, module: str, description: str, ip_address: Optional[str] = None, device: Optional[str] = None, status: str = "SUCCESS") -> str:
     """
     Log a user action.
     
@@ -33,10 +33,10 @@ def log_action(user_id: str, username: str, action: str, module: str, descriptio
         "status": status
     }
     
-    return audit_repository.create_log(log_data)
+    return await audit_repository.create_log(log_data)
 
 
-def get_user_audit_history(user_id: str, limit: int = 50) -> list:
+async def get_user_audit_history(user_id: str, limit: int = 50) -> list:
     """
     Get audit history for a user.
     
@@ -47,10 +47,10 @@ def get_user_audit_history(user_id: str, limit: int = 50) -> list:
     Returns:
         List of log documents
     """
-    return audit_repository.get_user_logs(user_id, limit)
+    return await audit_repository.get_user_logs(user_id, limit)
 
 
-def get_all_audit_logs(limit: int = 100) -> list:
+async def get_all_audit_logs(limit: int = 100) -> list:
     """
     Get all audit logs (admin only).
     
@@ -60,10 +60,10 @@ def get_all_audit_logs(limit: int = 100) -> list:
     Returns:
         List of log documents
     """
-    return audit_repository.get_logs(limit)
+    return await audit_repository.get_logs(limit)
 
 
-def cleanup_old_logs(days: int = 180) -> int:
+async def cleanup_old_logs(days: int = 180) -> int:
     """
     Delete logs older than specified days.
     
@@ -73,13 +73,13 @@ def cleanup_old_logs(days: int = 180) -> int:
     Returns:
         int: Number of logs deleted
     """
-    return audit_repository.delete_old_logs(days)
+    return await audit_repository.delete_old_logs(days)
 
 
 # Helper functions for specific actions
-def log_login(user_id: str, username: str, ip_address: Optional[str] = None, device: Optional[str] = None) -> str:
+async def log_login(user_id: str, username: str, ip_address: Optional[str] = None, device: Optional[str] = None) -> str:
     """Log successful login."""
-    return log_action(
+    return await log_action(
         user_id=user_id,
         username=username,
         action="LOGIN",
@@ -91,9 +91,9 @@ def log_login(user_id: str, username: str, ip_address: Optional[str] = None, dev
     )
 
 
-def log_login_failed(user_id: str, username: str, ip_address: Optional[str] = None, device: Optional[str] = None) -> str:
+async def log_login_failed(user_id: str, username: str, ip_address: Optional[str] = None, device: Optional[str] = None) -> str:
     """Log failed login attempt."""
-    return log_action(
+    return await log_action(
         user_id=user_id,
         username=username,
         action="LOGIN_FAILED",
@@ -105,9 +105,9 @@ def log_login_failed(user_id: str, username: str, ip_address: Optional[str] = No
     )
 
 
-def log_logout(user_id: str, username: str, ip_address: Optional[str] = None) -> str:
+async def log_logout(user_id: str, username: str, ip_address: Optional[str] = None) -> str:
     """Log logout."""
-    return log_action(
+    return await log_action(
         user_id=user_id,
         username=username,
         action="LOGOUT",
@@ -118,9 +118,9 @@ def log_logout(user_id: str, username: str, ip_address: Optional[str] = None) ->
     )
 
 
-def log_password_change(user_id: str, username: str, ip_address: Optional[str] = None) -> str:
+async def log_password_change(user_id: str, username: str, ip_address: Optional[str] = None) -> str:
     """Log password change."""
-    return log_action(
+    return await log_action(
         user_id=user_id,
         username=username,
         action="PASSWORD_CHANGE",
@@ -131,9 +131,9 @@ def log_password_change(user_id: str, username: str, ip_address: Optional[str] =
     )
 
 
-def log_repository_scan(user_id: str, username: str, repo_name: str, ip_address: Optional[str] = None) -> str:
+async def log_repository_scan(user_id: str, username: str, repo_name: str, ip_address: Optional[str] = None) -> str:
     """Log repository scan."""
-    return log_action(
+    return await log_action(
         user_id=user_id,
         username=username,
         action="REPOSITORY_SCAN",
@@ -144,9 +144,9 @@ def log_repository_scan(user_id: str, username: str, repo_name: str, ip_address:
     )
 
 
-def log_security_scan(user_id: str, username: str, target: str, ip_address: Optional[str] = None) -> str:
+async def log_security_scan(user_id: str, username: str, target: str, ip_address: Optional[str] = None) -> str:
     """Log security scan."""
-    return log_action(
+    return await log_action(
         user_id=user_id,
         username=username,
         action="SECURITY_SCAN",
@@ -157,9 +157,9 @@ def log_security_scan(user_id: str, username: str, target: str, ip_address: Opti
     )
 
 
-def log_quiz_completed(user_id: str, username: str, score: int, ip_address: Optional[str] = None) -> str:
+async def log_quiz_completed(user_id: str, username: str, score: int, ip_address: Optional[str] = None) -> str:
     """Log quiz completion."""
-    return log_action(
+    return await log_action(
         user_id=user_id,
         username=username,
         action="QUIZ_COMPLETED",
@@ -170,9 +170,9 @@ def log_quiz_completed(user_id: str, username: str, score: int, ip_address: Opti
     )
 
 
-def log_owasp_attempt(user_id: str, username: str, attack_type: str, ip_address: Optional[str] = None) -> str:
+async def log_owasp_attempt(user_id: str, username: str, attack_type: str, ip_address: Optional[str] = None) -> str:
     """Log OWASP simulation attempt."""
-    return log_action(
+    return await log_action(
         user_id=user_id,
         username=username,
         action="OWASP_ATTACK_ATTEMPT",
@@ -183,9 +183,9 @@ def log_owasp_attempt(user_id: str, username: str, attack_type: str, ip_address:
     )
 
 
-def log_report_download(user_id: str, username: str, report_type: str, ip_address: Optional[str] = None) -> str:
+async def log_report_download(user_id: str, username: str, report_type: str, ip_address: Optional[str] = None) -> str:
     """Log report download."""
-    return log_action(
+    return await log_action(
         user_id=user_id,
         username=username,
         action="REPORT_DOWNLOADED",
@@ -196,9 +196,9 @@ def log_report_download(user_id: str, username: str, report_type: str, ip_addres
     )
 
 
-def log_profile_update(user_id: str, username: str, field: str, ip_address: Optional[str] = None) -> str:
+async def log_profile_update(user_id: str, username: str, field: str, ip_address: Optional[str] = None) -> str:
     """Log profile update."""
-    return log_action(
+    return await log_action(
         user_id=user_id,
         username=username,
         action="PROFILE_UPDATE",
@@ -209,9 +209,9 @@ def log_profile_update(user_id: str, username: str, field: str, ip_address: Opti
     )
 
 
-def log_role_change(user_id: str, username: str, old_role: str, new_role: str, performed_by: str, ip_address: Optional[str] = None) -> str:
+async def log_role_change(user_id: str, username: str, old_role: str, new_role: str, performed_by: str, ip_address: Optional[str] = None) -> str:
     """Log role change by admin."""
-    return log_action(
+    return await log_action(
         user_id=user_id,
         username=username,
         action="ROLE_CHANGED",
@@ -222,9 +222,9 @@ def log_role_change(user_id: str, username: str, old_role: str, new_role: str, p
     )
 
 
-def log_account_status_change(user_id: str, username: str, old_status: str, new_status: str, performed_by: str, ip_address: Optional[str] = None) -> str:
+async def log_account_status_change(user_id: str, username: str, old_status: str, new_status: str, performed_by: str, ip_address: Optional[str] = None) -> str:
     """Log account status change by admin."""
-    return log_action(
+    return await log_action(
         user_id=user_id,
         username=username,
         action="ACCOUNT_STATUS_CHANGED",

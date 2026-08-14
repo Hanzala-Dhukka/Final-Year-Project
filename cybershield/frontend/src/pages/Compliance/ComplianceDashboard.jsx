@@ -103,7 +103,7 @@ export default function ComplianceDashboard() {
     setToast("");
     try {
       const res = await complianceApi.generate(projectId);
-      setData(res.data.report);
+      setData({ ...(res.data.report || {}), history: res.data.history || [] });
       setToast("Compliance report generated successfully.");
     } catch (e) {
       setError(

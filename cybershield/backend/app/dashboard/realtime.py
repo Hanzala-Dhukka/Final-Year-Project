@@ -141,7 +141,8 @@ async def _user_display_name(user_id: str) -> str:
 def _extract_severities(scan: Dict[str, Any]) -> List[str]:
     """Pull severity values from any known findings field on a scan."""
     severities: List[str] = []
-    for field in ("vulnerabilities", "findings", "analysis_results", "threats", "results"):
+    for field in ("vulnerabilities", "findings", "analysis_results", "threats",
+                  "results", "dependency_findings"):
         for item in scan.get(field, []) or []:
             if isinstance(item, dict):
                 if item.get("severity"):

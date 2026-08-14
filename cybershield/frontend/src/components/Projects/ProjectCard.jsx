@@ -222,7 +222,9 @@ export default function ProjectCard({
               <ShieldAlert size={16} style={{ color: riskColor, flexShrink: 0 }} />
               <Box sx={{ flex: 1 }}>
                 <Typography sx={{ fontSize: 11, fontWeight: 700, color: riskColor }}>
-                  {hasRisk ? `Risk Score · ${project.latest_risk_score}/100` : "Risk Score"}
+                  {hasRisk
+                    ? `Risk Score · ${project.latest_risk_score}/100`
+                    : "Risk Score · Not scanned yet"}
                 </Typography>
                 {project.latest_risk_level && (
                   <Typography sx={{ fontSize: 10.5, color: "var(--textMuted)" }}>

@@ -63,6 +63,18 @@ async def load_scan(user_id: str, project_id: Optional[str] = None) -> List[str]
                     findings.append(str(label))
             elif isinstance(f, str):
                 findings.append(f)
+
+        # Dependency issues from the same scan (status/severity based labels so
+        # they map onto the Outdated Dependency / Vulnerable Component controls).
+        for d in doc.get("dependency_findings") or []:
+            if not isinstance(d, dict):
+                continue
+            status = str(d.get("status", "")).lower()
+            sev = str(d.get("severity", "")).lower()
+            if "outdated" in status:
+                findings.append("Outdated Dependency")
+            if "risky" in status or sev in ("critical", "high", "medium"):
+                findings.append("Vulnerable Component")
     except Exception as e:  # pragma: no cover - defensive
         print(f"Compliance: error loading scan: {e}")
     return findings

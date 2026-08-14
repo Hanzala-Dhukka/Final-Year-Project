@@ -46,34 +46,38 @@ export const AuthProvider = ({ children }) => {
     }
   }, []);
 
+  const loginWithTokens = async ({ access_token, refresh_token = null }) => {
+    // Persist the token FIRST so the /auth/me call below is authenticated
+    // (the axios request interceptor reads the token from localStorage).
+    localStorage.setItem("token", access_token);
+    if (refresh_token) {
+      localStorage.setItem("refresh_token", refresh_token);
+    }
+
+    // The auth API returns tokens but no user profile; fetch it now.
+    let user = null;
+    try {
+      const me = await API.get("/auth/me");
+      user = me.data;
+    } catch (e) {
+      user = null;
+    }
+
+    localStorage.setItem("user", JSON.stringify(user));
+
+    // Update state
+    setToken(access_token);
+    setRefreshToken(refresh_token || null);
+    setUser(user);
+    setIsAuthenticated(true);
+
+    return { access_token, refresh_token, user };
+  };
+
   const login = async (credentials) => {
     try {
       const response = await loginUser(credentials);
-
-      // Persist the token FIRST so the /auth/me call below is authenticated
-      // (the axios request interceptor reads the token from localStorage).
-      localStorage.setItem("token", response.access_token);
-      if (response.refresh_token) {
-        localStorage.setItem("refresh_token", response.refresh_token);
-      }
-
-      // The auth API returns tokens but no user profile; fetch it now.
-      let user = null;
-      try {
-        const me = await API.get("/auth/me");
-        user = me.data;
-      } catch (e) {
-        user = null;
-      }
-
-      localStorage.setItem("user", JSON.stringify(user));
-
-      // Update state
-      setToken(response.access_token);
-      setRefreshToken(response.refresh_token || null);
-      setUser(user);
-      setIsAuthenticated(true);
-
+      await loginWithTokens(response);
       return response;
     } catch (error) {
       throw error;
@@ -125,6 +129,7 @@ export const AuthProvider = ({ children }) => {
         isAuthenticated,
         loading,
         login,
+        loginWithTokens,
         logout,
         logoutAll,
       }}

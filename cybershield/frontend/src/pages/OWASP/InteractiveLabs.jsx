@@ -17,6 +17,15 @@ function InteractiveLabs() {
   const [hint, setHint] = useState("")
   const [labState, setLabState] = useState("start") // start, scenario, attack, success, defense, completed
 
+  const getUserId = () => {
+    try {
+      const user = JSON.parse(localStorage.getItem("user") || "null")
+      return user?.id || "anonymous"
+    } catch {
+      return "anonymous"
+    }
+  }
+
   useEffect(() => {
     loadCategories()
     loadLabs()
@@ -43,7 +52,7 @@ function InteractiveLabs() {
 
   const loadProgress = async () => {
     try {
-      const response = await API.get("/progress/anonymous")
+      const response = await API.get(`/progress/${getUserId()}`)
       setUserProgress(response.data)
     } catch (error) {
       console.error("Error loading progress:", error)
@@ -59,7 +68,7 @@ function InteractiveLabs() {
     setLabState("scenario")
     
     try {
-      const response = await API.post(`/lab/start?lab_id=${lab.lab_id}&user_id=anonymous`)
+      const response = await API.post(`/lab/start?lab_id=${lab.lab_id}&user_id=${getUserId()}`)
       setSessionId(response.data.session_id)
     } catch (error) {
       console.error("Error starting lab:", error)
@@ -77,7 +86,7 @@ function InteractiveLabs() {
       const response = await API.post("/lab/attack", {
         lab_id: currentLab.lab_id,
         payload: payload,
-        user_id: "anonymous"
+        user_id: getUserId()
       })
       
       setResult(response.data)
@@ -104,7 +113,7 @@ function InteractiveLabs() {
       const response = await API.post("/lab/defense", {
         lab_id: currentLab.lab_id,
         secure_code: secureCode,
-        user_id: "anonymous"
+        user_id: getUserId()
       })
       
       setResult(response.data)

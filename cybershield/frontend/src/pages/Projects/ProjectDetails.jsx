@@ -112,7 +112,7 @@ export default function ProjectDetails() {
               placeholder="https://github.com/username/repository"
               value={form.repo_url}
               onChange={(e) => setForm({ ...form, repo_url: e.target.value })}
-              helperText="GitHub repository URL for automated security scanning"
+              helperText="Changing the repository URL triggers a new automatic scan"
               InputProps={{
                 startAdornment: <GitHub sx={{ mr: 1, color: "text.secondary" }} />,
               }}

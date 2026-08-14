@@ -21,6 +21,75 @@ const ADMIN_API = axios.create({
   },
 });
 
+/**
+ * Clear stored credentials and send the user to /login — but never force a
+ * full reload when already on an auth page, otherwise the inline error
+ * messages on the login/register forms get wiped out immediately.
+ */
+function clearSessionAndRedirect() {
+  localStorage.removeItem("token");
+  localStorage.removeItem("refresh_token");
+  localStorage.removeItem("user");
+
+  const authPages = [
+    "/login",
+    "/register",
+    "/forgot-password",
+    "/reset-password",
+    "/verify-email",
+    "/resend-verification",
+  ];
+  if (!authPages.includes(window.location.pathname)) {
+    window.location.href = "/login";
+  }
+}
+
+// Attach the same auth + refresh handling to the admin instance so every
+// /api/admin/* request carries the Bearer token (the backend admin_required
+// dependency rejects requests without one).
+ADMIN_API.interceptors.request.use(
+  (config) => {
+    const token = localStorage.getItem("token");
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    config.metadata = { refreshToken: localStorage.getItem("refresh_token") };
+    return config;
+  },
+  (error) => Promise.reject(error)
+);
+
+ADMIN_API.interceptors.response.use(
+  (response) => response,
+  async (error) => {
+    const originalRequest = error.config;
+
+    if (error.response?.status === 401 && !originalRequest._retry) {
+      originalRequest._retry = true;
+
+      const refreshToken = localStorage.getItem("refresh_token");
+
+      if (refreshToken) {
+        try {
+          const response = await API.post("/auth/refresh", {
+            refresh_token: refreshToken,
+          });
+          const { access_token } = response.data;
+          localStorage.setItem("token", access_token);
+          originalRequest.headers.Authorization = `Bearer ${access_token}`;
+          return ADMIN_API(originalRequest);
+        } catch (refreshError) {
+          clearSessionAndRedirect();
+        }
+      } else {
+        clearSessionAndRedirect();
+      }
+    }
+
+    return Promise.reject(error);
+  }
+);
+
 // Request interceptor to add auth token
 API.interceptors.request.use(
   (config) => {
@@ -49,8 +118,14 @@ API.interceptors.response.use(
   async (error) => {
     const originalRequest = error.config;
 
-    // If error is 401 and we haven't retried yet
     if (error.response?.status === 401 && !originalRequest._retry) {
+      // A 401 from /auth/login simply means bad credentials. Surface the
+      // backend's message to the form instead of treating it as an expired
+      // session (which would redirect/reload and wipe the error message).
+      if ((originalRequest.url || "").includes("/auth/login")) {
+        return Promise.reject(error);
+      }
+
       originalRequest._retry = true;
 
       const refreshToken = localStorage.getItem("refresh_token");
@@ -73,18 +148,12 @@ API.interceptors.response.use(
 
           return API(originalRequest);
         } catch (refreshError) {
-          // Refresh failed, clear tokens and redirect to login
-          localStorage.removeItem("token");
-          localStorage.removeItem("refresh_token");
-          localStorage.removeItem("user");
-          window.location.href = "/login";
-          return Promise.reject(refreshError);
+          // Refresh failed — clear tokens and redirect to login (safe path)
+          clearSessionAndRedirect();
         }
       } else {
-        // No refresh token, clear tokens and redirect to login
-        localStorage.removeItem("token");
-        localStorage.removeItem("user");
-        window.location.href = "/login";
+        // No refresh token — clear tokens and redirect to login (safe path)
+        clearSessionAndRedirect();
       }
     }
 

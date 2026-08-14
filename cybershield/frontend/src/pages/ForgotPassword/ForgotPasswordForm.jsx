@@ -1,6 +1,6 @@
 import { useState, useId } from "react";
 import { motion } from "framer-motion";
-import { Mail, ArrowRight, CheckCircle2, ArrowLeft } from "lucide-react";
+import { Mail, ArrowRight, CheckCircle2, ArrowLeft, RotateCcw } from "lucide-react";
 import Input from "../../components/ui/Input/Input";
 import Button from "../../components/ui/Button";
 import { useToast } from "../../components/Animation/ToastProvider";
@@ -60,20 +60,34 @@ export default function ForgotPasswordForm({ onBack }) {
         animate="animate"
       >
         <div className="cs-success-check">
-          <CheckCircle2 size={32} strokeWidth={2.5} />
+          <CheckCircle2 size={34} strokeWidth={2.5} />
         </div>
-        <h2 className="cs-success-title">Email Sent</h2>
+        <h2 className="cs-success-title">Reset Link Sent</h2>
         <p className="cs-success-sub">
-          Check your inbox for a secure reset link. The link expires in 15 minutes.
+          If an account exists for{" "}
+          <strong style={{ color: "var(--fp-text)", wordBreak: "break-all" }}>{email.trim()}</strong>,
+          a secure reset link is on its way.
+        </p>
+        <p className="cs-success-sub">
+          The link expires in 15 minutes and can only be used once. Be sure to check your
+          spam folder too.
         </p>
         <Button
-          variant="ghost"
+          variant="primary"
           fullWidth
           className="cs-mt"
           onClick={onBack}
           leftIcon={<ArrowLeft size={16} />}
         >
           Back to Login
+        </Button>
+        <Button
+          variant="ghost"
+          fullWidth
+          onClick={() => setSent(false)}
+          leftIcon={<RotateCcw size={15} />}
+        >
+          Send another link
         </Button>
       </motion.div>
     );

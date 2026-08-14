@@ -163,7 +163,11 @@ export default function Projects() {
         repo_url: form.repo_url.trim(),
         status: form.status,
       });
-      toast.success("Project created");
+      toast.success(
+        form.repo_url.trim()
+          ? "Project created — GitHub scan started automatically"
+          : "Project created"
+      );
       setOpen(false);
       setForm({
         name: "",
@@ -704,7 +708,7 @@ export default function Projects() {
               placeholder="https://github.com/username/repository"
               value={form.repo_url}
               onChange={(e) => setForm({ ...form, repo_url: e.target.value })}
-              helperText="GitHub repository URL for automated security scanning"
+              helperText="On creation, this repository is scanned automatically and results update your dashboard, analytics, hardening, version history and timeline."
               sx={inputSx}
               InputProps={{
                 startAdornment: (

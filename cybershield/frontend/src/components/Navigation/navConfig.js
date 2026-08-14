@@ -24,6 +24,7 @@ import {
   Bell,
   Sparkles,
   Settings2,
+  ShieldAlert,
 } from "lucide-react";
 
 /**
@@ -46,6 +47,7 @@ export const navSections = [
     label: "Security",
     items: [
       { path: "/security-scanner", label: "GitHub Scanner", icon: Scan, breadcrumb: "GitHub Scanner" },
+      { path: "/security-header-analyzer", label: "Header Analyzer", icon: ShieldAlert, breadcrumb: "Header Analyzer" },
       { path: "/threat-analysis", label: "Threat Modeling", icon: Target, breadcrumb: "Threat Modeling" },
       { path: "/threat-reports", label: "Threat Reports", icon: FileText, breadcrumb: "Threat Reports" },
       { path: "/security-checklist", label: "Security Checklist", icon: ListChecks, breadcrumb: "Security Checklist" },
@@ -70,6 +72,14 @@ export const navSections = [
     items: [
       { path: "/profile", label: "Profile", icon: User, breadcrumb: "Profile" },
       { path: "/settings", label: "Settings", icon: Settings, breadcrumb: "Settings" },
+    ],
+  },
+  {
+    id: "admin",
+    label: "Admin",
+    roles: ["admin"],
+    items: [
+      { path: "/admin", label: "Admin Center", icon: Shield, breadcrumb: "Admin" },
     ],
   },
 ];

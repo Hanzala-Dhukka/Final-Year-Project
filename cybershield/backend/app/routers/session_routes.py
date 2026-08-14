@@ -22,7 +22,7 @@ async def get_active_sessions(current_user: dict = Depends(get_current_user)):
     """
     try:
         user_id = str(current_user["_id"])
-        sessions = session_repository.get_user_sessions(user_id)
+        sessions = await session_repository.get_user_sessions(user_id)
         
         session_responses = []
         for session in sessions:
@@ -59,7 +59,7 @@ async def logout_session(session_id: str, current_user: dict = Depends(get_curre
         user_id = str(current_user["_id"])
         
         # Verify session belongs to user
-        session = session_repository.get_session_by_id(session_id)
+        session = await session_repository.get_session_by_id(session_id)
         if not session or session.get("user_id") != user_id:
             raise HTTPException(
                 status_code=404,
@@ -67,7 +67,7 @@ async def logout_session(session_id: str, current_user: dict = Depends(get_curre
             )
         
         # Close session
-        success = session_repository.close_session(session_id)
+        success = await session_repository.close_session(session_id)
         if not success:
             raise HTTPException(
                 status_code=500,
@@ -75,10 +75,10 @@ async def logout_session(session_id: str, current_user: dict = Depends(get_curre
             )
         
         # Revoke associated refresh token
-        tokens = refresh_token_repository.get_user_tokens(user_id)
+        tokens = await refresh_token_repository.get_user_tokens(user_id)
         for token in tokens:
             if token.get("device") == session.get("device"):
-                refresh_token_repository.revoke_token(token.get("token_hash"))
+                await refresh_token_repository.revoke_token(token.get("token_hash"))
         
         return {
             "message": "Session closed successfully",
@@ -105,10 +105,10 @@ async def logout_all_sessions(current_user: dict = Depends(get_current_user)):
         user_id = str(current_user["_id"])
         
         # Close all sessions
-        session_repository.close_all_user_sessions(user_id)
+        await session_repository.close_all_user_sessions(user_id)
         
         # Revoke all refresh tokens
-        refresh_token_repository.revoke_all_user_tokens(user_id)
+        await refresh_token_repository.revoke_all_user_tokens(user_id)
         
         return {
             "message": "All sessions closed successfully"
@@ -130,7 +130,7 @@ async def get_session_activity(current_user: dict = Depends(get_current_user)):
     """
     try:
         user_id = str(current_user["_id"])
-        sessions = session_repository.get_user_sessions(user_id)
+        sessions = await session_repository.get_user_sessions(user_id)
         
         # Find the most recent active session
         active_session = None

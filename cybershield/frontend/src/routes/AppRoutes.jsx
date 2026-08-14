@@ -3,11 +3,14 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 
 import DashboardLayout from "../layouts/DashboardLayout";
 import ProtectedRoute from "../components/ProtectedRoute/ProtectedRoute";
+import AdminProtectedRoute from "./AdminProtectedRoute";
 
 // Module E5, Part 6: Lazy-loaded pages for code splitting & faster initial load
 const Dashboard = lazy(() => import("../pages/Dashboard/Dashboard"));
+const AdminDashboard = lazy(() => import("../pages/Dashboard/AdminDashboard"));
 const SecurityScanner = lazy(() => import("../pages/GithubScanner"));
 const ScanHistory = lazy(() => import("../pages/ScanHistory/ScanHistory"));
+const SecurityHeaderAnalyzer = lazy(() => import("../pages/SecurityHeaderAnalyzer/SecurityHeaderAnalyzer"));
 
 const ThreatAnalysis = lazy(() => import("../pages/ThreatAnalysis/ThreatAnalysis"));
 const ThreatReports = lazy(() => import("../pages/ThreatReports/ThreatReports"));
@@ -66,6 +69,7 @@ const VerifyEmail = lazy(() => import("../pages/VerifyEmail/VerifyEmail"));
 const ResendVerification = lazy(() => import("../pages/ResendVerification/ResendVerification"));
 const VerifyMessage = lazy(() => import("../pages/VerifyMessage/VerifyMessage"));
 const Onboarding = lazy(() => import("../pages/Onboarding/Onboarding"));
+const OAuthCallback = lazy(() => import("../pages/OAuthCallback/OAuthCallback"));
 
 const NotFound = lazy(() => import("../pages/NotFound/NotFound"));
 
@@ -98,6 +102,7 @@ export default function AppRoutes() {
         <Route path="/reset-password/:token" element={<ResetPassword />} />
         <Route path="/verify-email" element={<VerifyEmail />} />
         <Route path="/verify-message" element={<VerifyMessage />} />
+        <Route path="/oauth/callback" element={<OAuthCallback />} />
         <Route path="/resend-verification" element={<ResendVerification />} />
         <Route path="/onboarding" element={<Onboarding />} />
         <Route path="/component-library" element={<ComponentLibrary />} />
@@ -107,7 +112,16 @@ export default function AppRoutes() {
           <Route path="/" element={<DashboardLayout />}>
             <Route index element={<Dashboard />} />
             <Route path="dashboard" element={<Dashboard />} />
+            <Route
+              path="admin"
+              element={
+                <AdminProtectedRoute>
+                  <AdminDashboard />
+                </AdminProtectedRoute>
+              }
+            />
             <Route path="security-scanner" element={<SecurityScanner />} />
+            <Route path="security-header-analyzer" element={<SecurityHeaderAnalyzer />} />
             <Route path="scanner/setup" element={<ScannerSetup />} />
             <Route path="scanner/progress/:id" element={<ScannerProgress />} />
             <Route path="scanner/results/:id" element={<ScannerResults />} />

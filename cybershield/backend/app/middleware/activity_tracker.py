@@ -82,7 +82,7 @@ class ActivityTrackerMiddleware(BaseHTTPMiddleware):
             True if session expired, False otherwise
         """
         try:
-            sessions = session_repository.get_user_sessions(user_id)
+            sessions = await session_repository.get_user_sessions(user_id)
             
             for session in sessions:
                 if not session.get("active"):
@@ -100,8 +100,8 @@ class ActivityTrackerMiddleware(BaseHTTPMiddleware):
                 if minutes_inactive >= self.inactivity_timeout:
                     # Auto-logout: close session and revoke tokens
                     session_id = str(session["_id"])
-                    session_repository.close_session(session_id)
-                    refresh_token_repository.revoke_all_user_tokens(user_id)
+                    await session_repository.close_session(session_id)
+                    await refresh_token_repository.revoke_all_user_tokens(user_id)
                     return True
             
             return False
@@ -118,12 +118,12 @@ class ActivityTrackerMiddleware(BaseHTTPMiddleware):
             user_id: User's MongoDB ObjectId as string
         """
         try:
-            sessions = session_repository.get_user_sessions(user_id)
+            sessions = await session_repository.get_user_sessions(user_id)
             
             for session in sessions:
                 if session.get("active"):
                     session_id = str(session["_id"])
-                    session_repository.update_session_activity(session_id)
+                    await session_repository.update_session_activity(session_id)
         except Exception as e:
             print(f"Error updating activity: {e}")
     
@@ -152,14 +152,14 @@ class ActivityTrackerMiddleware(BaseHTTPMiddleware):
         return any(path.startswith(skip_path) for skip_path in skip_paths)
 
 
-def cleanup_inactive_sessions_task():
+async def cleanup_inactive_sessions_task():
     """
     Background task to cleanup inactive sessions.
     This should be run periodically (e.g., every 30 minutes).
     """
     try:
         # Cleanup sessions inactive for more than 30 minutes
-        cleaned_count = session_repository.cleanup_inactive_sessions(timeout_minutes=30)
+        cleaned_count = await session_repository.cleanup_inactive_sessions(timeout_minutes=30)
         print(f"Cleaned up {cleaned_count} inactive sessions")
         return cleaned_count
     except Exception as e:

@@ -220,6 +220,15 @@ def health():
 # ── Scheduler ─────────────────────────────────────────────────────────────────
 @app.on_event("startup")
 async def startup():
+    # MongoDB connection verification — fail fast so data can never be
+    # silently written to an unreachable database.
+    try:
+        from app.database.db import database
+        await database.command("ping")
+        print(f"MongoDB connection verified: {database.name}")
+    except Exception as e:
+        print(f"CRITICAL: MongoDB connection failed at startup: {e}")
+
     # Seed the default security hardening checklist catalogue (Module 6.1)
     try:
         from app.services.checklist_service import seed_checklists
@@ -267,7 +276,10 @@ async def shutdown_scheduler():
 import os
 from fastapi.staticfiles import StaticFiles
 
-_BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-_UPLOADS_DIR = os.path.join(_BASE_DIR, "uploads")
+# Upload writers (e.g. user_service.py) save relative to the backend directory,
+# so serve "/uploads" from cybershield/backend/uploads — NOT the repo-root uploads.
+_BACKEND_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+_UPLOADS_DIR = os.path.join(_BACKEND_DIR, "uploads")
 os.makedirs(os.path.join(_UPLOADS_DIR, "profile"), exist_ok=True)
+os.makedirs(os.path.join(_UPLOADS_DIR, "reports"), exist_ok=True)
 app.mount("/uploads", StaticFiles(directory=_UPLOADS_DIR), name="uploads")
