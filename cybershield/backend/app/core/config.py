@@ -72,12 +72,12 @@ class Settings(BaseSettings):
         "http://localhost:8000/api/v1/auth/oauth/github/callback",
     )
     
-    # Gemini AI
-    GEMINI_API_KEY: str = os.getenv("GEMINI_API_KEY") or os.getenv("OPENROUTER_API_KEY") or os.getenv("GROQ_API_KEY") or ""
-    OPENROUTER_API_KEY: str = os.getenv("OPENROUTER_API_KEY") or ""
+    # Groq AI (primary provider)
     GROQ_API_KEY: str = os.getenv("GROQ_API_KEY") or ""
-    AI_PROVIDER: str = os.getenv("AI_PROVIDER", "gemini")
-    AI_MODEL: str = os.getenv("AI_MODEL", "gemini-2.5-flash")
+    GEMINI_API_KEY: str = os.getenv("GEMINI_API_KEY") or ""   # kept for backward compat
+    OPENROUTER_API_KEY: str = os.getenv("OPENROUTER_API_KEY") or ""
+    AI_PROVIDER: str = os.getenv("AI_PROVIDER", "groq")
+    AI_MODEL: str = os.getenv("AI_MODEL", "llama-3.3-70b-versatile")
     AI_TEMPERATURE: float = float(os.getenv("AI_TEMPERATURE", "0.2"))
     AI_MAX_TOKENS: int = int(os.getenv("AI_MAX_TOKENS", "2048"))
     
