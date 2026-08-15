@@ -35,8 +35,24 @@ STATE_TTL_MINUTES = 10
 
 
 def _get_backend_base_url(request: Optional[Request] = None) -> str:
-    """Derive the backend base URL from the incoming request."""
-    if request and hasattr(request, "base_url"):
+    """Derive the backend base URL from proxy-forwarded headers or request."""
+    if not request:
+        return ""
+    # Prefer X-Forwarded-Host / X-Forwarded-Proto (set by Render, nginx, etc.)
+    forwarded_host = request.headers.get("x-forwarded-host") or ""
+    forwarded_proto = request.headers.get("x-forwarded-proto") or ""
+    if forwarded_host:
+        host = forwarded_host.split(",")[0].strip()
+        scheme = forwarded_proto.split(",")[0].strip() if forwarded_proto else "https"
+        return f"{scheme}://{host}"
+    # Fallback: Host header (works in dev when no proxy is involved)
+    host_header = request.headers.get("host") or ""
+    if host_header:
+        # Determine scheme — default to https when behind a proxy
+        scheme = "https" if forwarded_proto else request.url.scheme
+        return f"{scheme}://{host_header}"
+    # Last resort: request.base_url
+    if hasattr(request, "base_url"):
         return str(request.base_url).rstrip("/")
     return ""
 
@@ -49,7 +65,6 @@ def _get_frontend_url(request: Optional[Request] = None) -> str:
             return origin.rstrip("/")
         referer = request.headers.get("referer") or ""
         if referer:
-            # Strip path components, keep only scheme + host
             from urllib.parse import urlparse
             parsed = urlparse(referer)
             if parsed.scheme and parsed.netloc:
@@ -75,11 +90,10 @@ def _client_config(provider: str, request: Optional[Request] = None) -> Dict[str
             detail=f"{provider.title()} OAuth is not configured yet. Please try another method.",
         )
 
-    # Dynamically construct the redirect URI from the request URL when the
-    # configured value still points to localhost (i.e. production env vars
-    # have not been set).  This allows the OAuth flow to work in both
-    # development and production without manual configuration.
-    if request and "localhost" in redirect_uri:
+    # Always build the redirect URI from the actual request when available.
+    # This ensures it works in both development (localhost) and production
+    # (Render/Vercel) without needing to update env vars.
+    if request:
         base_url = _get_backend_base_url(request)
         if base_url:
             redirect_uri = f"{base_url}/api/v1/auth/oauth/{provider}/callback"
@@ -125,6 +139,11 @@ def build_authorization_url(provider: str, request: Optional[Request] = None) ->
         raise HTTPException(status_code=400, detail="Unsupported OAuth provider")
 
     config = _client_config(provider, request)
+
+    print(f"[OAuth] provider={provider} redirect_uri={config['redirect_uri']}")
+    print(f"[OAuth] headers: x-forwarded-host={request.headers.get('x-forwarded-host') if request else 'N/A'}")
+    print(f"[OAuth] headers: x-forwarded-proto={request.headers.get('x-forwarded-proto') if request else 'N/A'}")
+    print(f"[OAuth] headers: host={request.headers.get('host') if request else 'N/A'}")
 
     if provider == "google":
         params = {
@@ -252,6 +271,7 @@ async def process_oauth_login(
     frontend_url = state_payload.get("frontend_url", cfg_settings.FRONTEND_URL)
 
     config = _client_config(provider, request)
+    print(f"[OAuth callback] provider={provider} redirect_uri={config['redirect_uri']}")
     profile = await _get_profile(provider, config, code)
     email = profile["email"].lower()
 
