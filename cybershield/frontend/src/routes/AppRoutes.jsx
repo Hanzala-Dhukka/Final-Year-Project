@@ -10,6 +10,7 @@ const Dashboard = lazy(() => import("../pages/Dashboard/Dashboard"));
 const AdminDashboard = lazy(() => import("../pages/Dashboard/AdminDashboard"));
 const SecurityScanner = lazy(() => import("../pages/GithubScanner"));
 const ScanHistory = lazy(() => import("../pages/ScanHistory/ScanHistory"));
+const GithubScannerHistory = lazy(() => import("../pages/GithubScannerHistory/GithubScannerHistory"));
 const SecurityHeaderAnalyzer = lazy(() => import("../pages/SecurityHeaderAnalyzer/SecurityHeaderAnalyzer"));
 
 const ThreatAnalysis = lazy(() => import("../pages/ThreatAnalysis/ThreatAnalysis"));
@@ -131,6 +132,7 @@ export default function AppRoutes() {
             <Route path="scanner/report/:id" element={<ScannerResults />} />
             <Route path="ai-remediation/:scanId/:findingId" element={<AIRemediationWorkspace />} />
             <Route path="scan-history" element={<ScanHistory />} />
+            <Route path="github-scan-history" element={<GithubScannerHistory />} />
             <Route path="threat-analysis" element={<ThreatAnalysis />} />
             <Route path="threat-reports" element={<ThreatReports />} />
             <Route path="threat-reports/:id" element={<ReportViewer />} />

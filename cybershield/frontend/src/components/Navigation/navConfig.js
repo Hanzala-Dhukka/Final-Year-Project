@@ -47,6 +47,7 @@ export const navSections = [
     label: "Security",
     items: [
       { path: "/security-scanner", label: "GitHub Scanner", icon: Scan, breadcrumb: "GitHub Scanner" },
+      { path: "/github-scan-history", label: "Scan History", icon: History, breadcrumb: "GitHub Scan History" },
       { path: "/security-header-analyzer", label: "Header Analyzer", icon: ShieldAlert, breadcrumb: "Header Analyzer" },
       { path: "/threat-analysis", label: "Threat Modeling", icon: Target, breadcrumb: "Threat Modeling" },
       { path: "/threat-reports", label: "Threat Reports", icon: FileText, breadcrumb: "Threat Reports" },

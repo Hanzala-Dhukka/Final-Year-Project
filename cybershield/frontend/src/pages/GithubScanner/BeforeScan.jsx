@@ -1,12 +1,14 @@
 import { useState } from "react"
 import { motion } from "framer-motion"
-import { FaGithub, FaSearch, FaSync, FaTimes } from "react-icons/fa"
+import { FaGithub, FaSearch, FaSync, FaTimes, FaHistory } from "react-icons/fa"
+import { useNavigate } from "react-router-dom"
 import API from "../../api/api"
 
 export default function BeforeScan({ onStartScan }) {
   const [repoUrl, setRepoUrl] = useState("")
   const [loading, setLoading] = useState(false)
   const [validated, setValidated] = useState(null)
+  const navigate = useNavigate()
 
   const handleValidate = async () => {
     if (!repoUrl.trim()) return
@@ -32,6 +34,12 @@ export default function BeforeScan({ onStartScan }) {
         <FaGithub className="gs-empty-icon" />
         <h2>GitHub Repository Scanner</h2>
         <p>Paste a GitHub repository URL to start a security scan.</p>
+        <button
+          className="gs-btn-outline gs-history-btn"
+          onClick={() => navigate("/github-scan-history")}
+        >
+          <FaHistory /> View Scan History
+        </button>
       </div>
 
       {/* URL Input */}

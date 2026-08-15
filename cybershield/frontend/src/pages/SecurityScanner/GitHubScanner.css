@@ -838,6 +838,19 @@
   background: #22c55e18;
 }
 
+/* History shortcut button (centered inside the scanner empty state) */
+.gs-history-btn {
+  margin-left: 0;
+  color: var(--text-secondary, #e2e8f0);
+  border-color: var(--border-strong, #334155);
+}
+
+.gs-history-btn:hover {
+  background: var(--bg-secondary, #1e293b);
+  border-color: #6366f1;
+  color: var(--text-primary, #f1f5f9);
+}
+
 /* ── Scanning Banner ──────────────────────────────────────── */
 .gs-scan-active-banner {
   display: flex;

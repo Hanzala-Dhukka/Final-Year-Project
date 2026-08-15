@@ -709,6 +709,33 @@ async def get_repository_history(repository: str, current_user: dict = Depends(g
         raise HTTPException(status_code=500, detail=str(e))
 
 
+@router.delete("/scan/{identifier}")
+async def delete_scan_record(identifier: str, current_user: dict = Depends(get_current_user)):
+    """
+    Delete a GitHub scan from history by its database _id or scan_id.
+
+    Users can only delete their own scans (admins can delete any scan).
+    """
+    scan_collection = database["github_scans"]
+
+    # Accept either the MongoDB _id (stringified) or the scan_id UUID
+    query = {"scan_id": identifier}
+    try:
+        query = {"_id": ObjectId(identifier)}
+    except Exception:
+        pass
+
+    scan_doc = await scan_collection.find_one(query)
+    if not scan_doc:
+        raise HTTPException(status_code=404, detail="Scan not found")
+
+    if str(scan_doc.get("user_id")) != str(current_user["_id"]) and current_user.get("role") != "admin":
+        raise HTTPException(status_code=403, detail="Access denied")
+
+    await scan_collection.delete_one(query)
+    return {"message": "Scan deleted", "deleted_id": identifier}
+
+
 @router.get("/reports")
 async def get_reports(current_user: dict = Depends(get_current_user)):
 
