@@ -25,8 +25,8 @@ class Settings(BaseSettings):
     PORT: int = 8000
     
     # MongoDB
-    MONGODB_URI: str = "mongodb://localhost:27017"
-    DATABASE_NAME: str = "CyberShieldDB"
+    MONGODB_URI: str = os.getenv("MONGO_URI", "mongodb://localhost:27017")
+    DATABASE_NAME: str = os.getenv("DATABASE_NAME", "cybershield786_db_user")
     
     # Security
     SECRET_KEY: str = os.getenv("JWT_SECRET_KEY") or os.getenv("JWT_SECRET") or "your-secret-key-here"

@@ -139,7 +139,29 @@ async def _user_display_name(user_id: str) -> str:
 
 
 def _extract_severities(scan: Dict[str, Any]) -> List[str]:
-    """Pull severity values from any known findings field on a scan."""
+    """Pull severity values from any known findings field on a scan.
+
+    Strategy (in priority order):
+      1. ``severity_summary`` — pre-computed dict {critical, high, medium, low}
+         with integer counts.  This is the authoritative source when present
+         (written by ``scan_runner.py``).
+      2. Individual findings lists — each item may carry a ``severity`` or
+         ``risk_level`` or ``risk`` string field.
+    """
+    # --- 1. Prefer the pre-computed severity_summary dict ----------------
+    severity_summary = scan.get("severity_summary")
+    if isinstance(severity_summary, dict) and any(
+        isinstance(severity_summary.get(k), (int, float)) and severity_summary[k] > 0
+        for k in ("critical", "high", "medium", "low")
+    ):
+        result: List[str] = []
+        for sev_name in ("critical", "high", "medium", "low"):
+            count = int(severity_summary.get(sev_name, 0) or 0)
+            result.extend([sev_name] * count)
+        if result:
+            return result
+
+    # --- 2. Fall back to extracting from individual finding objects ------
     severities: List[str] = []
     for field in ("vulnerabilities", "findings", "analysis_results", "threats",
                   "results", "dependency_findings"):
@@ -147,6 +169,8 @@ def _extract_severities(scan: Dict[str, Any]) -> List[str]:
             if isinstance(item, dict):
                 if item.get("severity"):
                     severities.append(item["severity"])
+                elif item.get("risk_level"):
+                    severities.append(item["risk_level"])
                 elif isinstance(item.get("risk"), str):
                     severities.append(item["risk"])
     return severities
@@ -180,7 +204,7 @@ async def _collect_scans(user_id: str) -> Dict[str, Any]:
         projects.add(_repo_name(scan))
 
         dt = _parse_dt(scan.get("created_at"))
-        if last_scan_dt is None and dt:
+        if dt and (last_scan_dt is None or dt > last_scan_dt):
             last_scan_dt = dt
 
         severities = _extract_severities(scan)
