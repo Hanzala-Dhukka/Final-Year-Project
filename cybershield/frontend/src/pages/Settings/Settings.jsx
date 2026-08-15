@@ -47,7 +47,7 @@ import {
 } from "../../services/profileService";
 
 /* ── Design tokens ─────────────────────────────────────────────────────── */
-const API_ORIGIN = "http://localhost:8000";
+const API_ORIGIN = import.meta.env.VITE_API_URL || "http://localhost:8000";
 
 const GLASS = {
   background: "var(--glassBg)",

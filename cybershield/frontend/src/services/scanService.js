@@ -80,7 +80,8 @@ export const getScanFiles = async (scanId, extension = null) => {
 // ── WebSocket for real-time progress ─────────────────────────────────────────
 
 export const createWebSocketConnection = (scanId, onMessage, onError, onClose) => {
-  const wsUrl = `ws://localhost:8000/api/v1/scan/security-scan/ws/${scanId}`
+  const _wsBase = (import.meta.env.VITE_API_URL || "http://localhost:8000").replace(/^http/, "ws");
+  const wsUrl = `${_wsBase}/api/v1/scan/security-scan/ws/${scanId}`
   const ws = new WebSocket(wsUrl)
 
   ws.onmessage = (event) => {
@@ -102,7 +103,8 @@ export const createWebSocketConnection = (scanId, onMessage, onError, onClose) =
 // ── Scanner WebSocket (Module D3) ───────────────────────────────────────────
 
 export const createScannerWebSocket = (onMessage, onError, onClose) => {
-  const wsUrl = `ws://localhost:8000/ws/scanner`
+  const _wsBase = (import.meta.env.VITE_API_URL || "http://localhost:8000").replace(/^http/, "ws");
+  const wsUrl = `${_wsBase}/ws/scanner`
   const ws = new WebSocket(wsUrl)
 
   ws.onmessage = (event) => {

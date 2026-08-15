@@ -3,7 +3,7 @@ import axios from "axios";
 import useDashboardSocket from "../../hooks/useDashboardSocket";
 import "./NotificationCenter.css";
 
-const API = "http://localhost:8000/api/v1/dashboard/events";
+const API = `${import.meta.env.VITE_API_URL || "http://localhost:8000"}/api/v1/dashboard/events`;
 
 function authHeader() {
   const token = localStorage.getItem("token");

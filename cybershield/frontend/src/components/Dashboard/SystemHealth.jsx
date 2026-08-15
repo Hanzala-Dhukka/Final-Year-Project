@@ -2,7 +2,7 @@ import { useEffect, useState, useCallback } from "react";
 import axios from "axios";
 import "./SystemHealth.css";
 
-const API = "http://localhost:8000/api/v1/dashboard/system-health";
+const API = `${import.meta.env.VITE_API_URL || "http://localhost:8000"}/api/v1/dashboard/system-health`;
 const POLL_MS = 30_000;
 
 function authHeader() {

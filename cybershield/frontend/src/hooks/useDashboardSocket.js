@@ -13,7 +13,8 @@
  */
 import { useEffect, useRef, useState, useCallback } from "react";
 
-const WS_URL = "ws://localhost:8000/ws/dashboard";
+const _wsBase = import.meta.env.VITE_API_URL || "http://localhost:8000";
+const WS_URL = _wsBase.replace(/^http/, "ws") + "/ws/dashboard";
 const MAX_RETRIES = 8;
 const BASE_DELAY_MS = 1_000;
 const MAX_DELAY_MS = 30_000;
