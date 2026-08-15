@@ -89,13 +89,24 @@ def _client_config(provider: str, request: Optional[Request] = None) -> Dict[str
             detail=f"{provider.title()} OAuth is not configured yet. Please try another method.",
         )
 
-    # Always build the redirect URI from the actual request when available.
-    # This ensures it works in both development (localhost) and production
-    # (Render/Vercel) without needing to update env vars.
+    # Build the redirect URI with this priority:
+    # 1. From request headers (X-Forwarded-Host/Proto) — works behind proxies
+    # 2. From BACKEND_URL env var — reliable fallback for production
+    # 3. From provider-specific env var (GOOGLE_REDIRECT_URI / GITHUB_REDIRECT_URI)
     if request:
         base_url = _get_backend_base_url(request)
         if base_url:
             redirect_uri = f"{base_url}/api/v1/auth/oauth/{provider}/callback"
+            return {
+                "client_id": client_id,
+                "client_secret": client_secret,
+                "redirect_uri": redirect_uri,
+            }
+
+    # Fallback: use BACKEND_URL to construct the redirect URI
+    backend_url = cfg_settings.BACKEND_URL.rstrip("/")
+    if backend_url:
+        redirect_uri = f"{backend_url}/api/v1/auth/oauth/{provider}/callback"
 
     return {
         "client_id": client_id,

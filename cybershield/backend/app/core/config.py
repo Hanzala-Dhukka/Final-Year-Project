@@ -50,6 +50,9 @@ class Settings(BaseSettings):
     # Frontend
     FRONTEND_URL: str = os.getenv("FRONTEND_URL", "http://localhost:5173")
 
+    # Backend base URL (used to build OAuth redirect URIs in production)
+    BACKEND_URL: str = os.getenv("BACKEND_URL", "http://localhost:8000")
+
     # Refresh tokens
     REFRESH_TOKEN_EXPIRE_DAYS: int = int(os.getenv("REFRESH_TOKEN_EXPIRE_DAYS", "7"))
 

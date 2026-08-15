@@ -11,4 +11,12 @@ services:
     envVars:
       - key: PYTHONUNBUFFERED
         value: "1"
+      - key: BACKEND_URL
+        value: "https://final-year-project-id8d.onrender.com"
+      - key: FRONTEND_URL
+        value: "https://final-year-project-fjgf.vercel.app"
+      - key: GOOGLE_REDIRECT_URI
+        value: "https://final-year-project-id8d.onrender.com/api/v1/auth/oauth/google/callback"
+      - key: GITHUB_REDIRECT_URI
+        value: "https://final-year-project-id8d.onrender.com/api/v1/auth/oauth/github/callback"
     autoDeploy: true
