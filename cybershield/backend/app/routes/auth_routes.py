@@ -653,9 +653,21 @@ async def oauth_callback(
     Exchanges the authorization code for tokens, finds or creates the
     local user, then redirects back to the frontend with credentials.
     """
+    # Determine the frontend URL from the state parameter first.
+    # The state JWT (created by oauth_service._create_state) embeds the
+    # correct frontend URL at authorization time.  Using request headers
+    # (Referer/Origin) here is WRONG because the callback request comes
+    # from the OAuth provider (e.g. accounts.google.com), so its
+    # Referer header points to the provider — not our frontend.
     frontend_url = settings.FRONTEND_URL
-    if request:
-        frontend_url = _get_frontend_url_from_request(request) or frontend_url
+    if state:
+        try:
+            from app.services.oauth_service import _verify_state
+            state_payload = _verify_state(state, provider)
+            frontend_url = state_payload.get("frontend_url", frontend_url)
+        except Exception:
+            # State couldn't be decoded — fall back to settings.
+            pass
 
     if provider not in VALID_PROVIDERS:
         params = urlencode({"error": "Unsupported OAuth provider"})
