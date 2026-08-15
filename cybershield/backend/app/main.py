@@ -1,7 +1,6 @@
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
-from uvicorn.middleware.proxy_headers import ProxyHeadersMiddleware
 
 from app.config.settings import settings
 from app.routes.auth_routes import router as auth_router
@@ -73,11 +72,6 @@ app = FastAPI(
     docs_url="/docs",
     redoc_url="/redoc",
 )
-
-# ── Proxy headers (needed behind Render / any reverse proxy) ────────────────
-# Trust X-Forwarded-Proto / X-Forwarded-Host so request.base_url returns the
-# correct external URL (e.g. https://final-year-project-id8d.onrender.com).
-app.add_middleware(ProxyHeadersMiddleware, trusted_hosts=["*"])
 
 # ── CORS ─────────────────────────────────────────────────────────────────────
 app.add_middleware(

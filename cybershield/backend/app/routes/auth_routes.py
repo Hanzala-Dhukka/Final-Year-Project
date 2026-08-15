@@ -641,8 +641,10 @@ async def oauth_authorize(provider: str, request: Request):
 @router.get("/oauth/{provider}/callback")
 async def oauth_callback(
     provider: str,
-    code: str,
+    code: Optional[str] = None,
     state: Optional[str] = None,
+    error: Optional[str] = None,
+    error_description: Optional[str] = None,
     request: Request = None,
 ):
     """
@@ -651,22 +653,36 @@ async def oauth_callback(
     Exchanges the authorization code for tokens, finds or creates the
     local user, then redirects back to the frontend with credentials.
     """
+    frontend_url = settings.FRONTEND_URL
+    if request:
+        frontend_url = _get_frontend_url_from_request(request) or frontend_url
+
     if provider not in VALID_PROVIDERS:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Unsupported OAuth provider"
-        )
+        params = urlencode({"error": "Unsupported OAuth provider"})
+        return RedirectResponse(url=f"{frontend_url}/oauth/callback?{params}")
+
+    if error:
+        detail = error_description or error
+        params = urlencode({"error": detail})
+        return RedirectResponse(url=f"{frontend_url}/oauth/callback?{params}")
+
+    if not code:
+        params = urlencode({"error": "Authorization code not received from provider"})
+        return RedirectResponse(url=f"{frontend_url}/oauth/callback?{params}")
 
     try:
         result = await process_oauth_login(provider, code, state, request)
     except HTTPException as exc:
-        frontend_url = settings.FRONTEND_URL
-        if request:
-            frontend_url = _get_frontend_url_from_request(request) or frontend_url
         params = urlencode({"error": str(exc.detail)})
         return RedirectResponse(url=f"{frontend_url}/oauth/callback?{params}")
+    except Exception as exc:
+        print(f"[OAuth callback] Unexpected error: {exc}")
+        import traceback
+        traceback.print_exc()
+        params = urlencode({"error": "An unexpected error occurred during sign-in"})
+        return RedirectResponse(url=f"{frontend_url}/oauth/callback?{params}")
 
-    frontend_url = result.get("frontend_url") or settings.FRONTEND_URL
+    frontend_url = result.get("frontend_url") or frontend_url
     params = urlencode({
         "access_token": result["access_token"],
         "refresh_token": result["refresh_token"],

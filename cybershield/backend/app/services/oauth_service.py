@@ -48,8 +48,7 @@ def _get_backend_base_url(request: Optional[Request] = None) -> str:
     # Fallback: Host header (works in dev when no proxy is involved)
     host_header = request.headers.get("host") or ""
     if host_header:
-        # Determine scheme — default to https when behind a proxy
-        scheme = "https" if forwarded_proto else request.url.scheme
+        scheme = forwarded_proto.split(",")[0].strip() if forwarded_proto else "https"
         return f"{scheme}://{host_header}"
     # Last resort: request.base_url
     if hasattr(request, "base_url"):
