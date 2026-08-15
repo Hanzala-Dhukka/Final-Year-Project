@@ -72,6 +72,10 @@ class Settings(BaseSettings):
     AI_TEMPERATURE: float = float(os.getenv("AI_TEMPERATURE", "0.2"))
     AI_MAX_TOKENS: int = int(os.getenv("AI_MAX_TOKENS", "2048"))
 
+    # Frontend / Backend URLs
+    FRONTEND_URL: str = os.getenv("FRONTEND_URL", "http://localhost:5173")
+    BACKEND_URL: str = os.getenv("BACKEND_URL", "http://localhost:8000")
+
     # OAuth — Google
     GOOGLE_CLIENT_ID: str = os.getenv("GOOGLE_CLIENT_ID", "")
     GOOGLE_CLIENT_SECRET: str = os.getenv("GOOGLE_CLIENT_SECRET", "")
