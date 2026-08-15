@@ -29,6 +29,21 @@ from app.core.config import settings
 router = APIRouter()
 
 
+def _get_frontend_url_from_request(request) -> str:
+    """Best-effort derivation of the frontend URL from request headers."""
+    if request:
+        origin = request.headers.get("origin") or ""
+        if origin:
+            return origin.rstrip("/")
+        referer = request.headers.get("referer") or ""
+        if referer:
+            from urllib.parse import urlparse
+            parsed = urlparse(referer)
+            if parsed.scheme and parsed.netloc:
+                return f"{parsed.scheme}://{parsed.netloc}"
+    return settings.FRONTEND_URL
+
+
 @router.post("/register", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
 async def register(user_data: UserCreate):
     """
@@ -604,7 +619,7 @@ async def get_current_user_info(current_user: dict = Depends(get_current_user)):
 
 
 @router.get("/oauth/{provider}")
-async def oauth_authorize(provider: str):
+async def oauth_authorize(provider: str, request: Request):
     """
     Start an OAuth flow for a provider.
 
@@ -619,7 +634,7 @@ async def oauth_authorize(provider: str):
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Unsupported OAuth provider"
         )
-    authorization_url = build_authorization_url(provider)
+    authorization_url = build_authorization_url(provider, request)
     return {"authorization_url": authorization_url}
 
 
@@ -642,16 +657,19 @@ async def oauth_callback(
             detail="Unsupported OAuth provider"
         )
 
-    base_url = settings.FRONTEND_URL
     try:
         result = await process_oauth_login(provider, code, state, request)
     except HTTPException as exc:
+        frontend_url = settings.FRONTEND_URL
+        if request:
+            frontend_url = _get_frontend_url_from_request(request) or frontend_url
         params = urlencode({"error": str(exc.detail)})
-        return RedirectResponse(url=f"{base_url}/oauth/callback?{params}")
+        return RedirectResponse(url=f"{frontend_url}/oauth/callback?{params}")
 
+    frontend_url = result.get("frontend_url") or settings.FRONTEND_URL
     params = urlencode({
         "access_token": result["access_token"],
         "refresh_token": result["refresh_token"],
         "first_login": "true" if result["first_login"] else "false",
     })
-    return RedirectResponse(url=f"{base_url}/oauth/callback?{params}")
+    return RedirectResponse(url=f"{frontend_url}/oauth/callback?{params}")

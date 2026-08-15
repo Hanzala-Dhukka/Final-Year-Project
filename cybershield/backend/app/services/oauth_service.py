@@ -34,7 +34,30 @@ GITHUB_EMAILS_URL = "https://api.github.com/user/emails"
 STATE_TTL_MINUTES = 10
 
 
-def _client_config(provider: str) -> Dict[str, str]:
+def _get_backend_base_url(request: Optional[Request] = None) -> str:
+    """Derive the backend base URL from the incoming request."""
+    if request and hasattr(request, "base_url"):
+        return str(request.base_url).rstrip("/")
+    return ""
+
+
+def _get_frontend_url(request: Optional[Request] = None) -> str:
+    """Derive the frontend URL from the request's Origin or Referer header."""
+    if request:
+        origin = request.headers.get("origin") or ""
+        if origin:
+            return origin.rstrip("/")
+        referer = request.headers.get("referer") or ""
+        if referer:
+            # Strip path components, keep only scheme + host
+            from urllib.parse import urlparse
+            parsed = urlparse(referer)
+            if parsed.scheme and parsed.netloc:
+                return f"{parsed.scheme}://{parsed.netloc}"
+    return cfg_settings.FRONTEND_URL
+
+
+def _client_config(provider: str, request: Optional[Request] = None) -> Dict[str, str]:
     if provider == "google":
         client_id = cfg_settings.GOOGLE_CLIENT_ID
         client_secret = cfg_settings.GOOGLE_CLIENT_SECRET
@@ -52,6 +75,15 @@ def _client_config(provider: str) -> Dict[str, str]:
             detail=f"{provider.title()} OAuth is not configured yet. Please try another method.",
         )
 
+    # Dynamically construct the redirect URI from the request URL when the
+    # configured value still points to localhost (i.e. production env vars
+    # have not been set).  This allows the OAuth flow to work in both
+    # development and production without manual configuration.
+    if request and "localhost" in redirect_uri:
+        base_url = _get_backend_base_url(request)
+        if base_url:
+            redirect_uri = f"{base_url}/api/v1/auth/oauth/{provider}/callback"
+
     return {
         "client_id": client_id,
         "client_secret": client_secret,
@@ -59,10 +91,12 @@ def _client_config(provider: str) -> Dict[str, str]:
     }
 
 
-def _create_state(provider: str) -> str:
+def _create_state(provider: str, request: Optional[Request] = None) -> str:
+    frontend_url = _get_frontend_url(request)
     payload = {
         "type": "oauth_state",
         "provider": provider,
+        "frontend_url": frontend_url,
         "nonce": secrets.token_urlsafe(16),
         "iat": datetime.now(timezone.utc),
         "exp": datetime.now(timezone.utc) + timedelta(minutes=STATE_TTL_MINUTES),
@@ -70,7 +104,7 @@ def _create_state(provider: str) -> str:
     return _jwt.encode(payload, cfg_settings.SECRET_KEY, algorithm=cfg_settings.ALGORITHM)
 
 
-def _verify_state(state: Optional[str], provider: str) -> None:
+def _verify_state(state: Optional[str], provider: str) -> Dict:
     if not state:
         raise HTTPException(status_code=400, detail="Missing OAuth state")
     try:
@@ -83,13 +117,14 @@ def _verify_state(state: Optional[str], provider: str) -> None:
         raise HTTPException(status_code=400, detail="Invalid OAuth state")
     if payload.get("type") != "oauth_state" or payload.get("provider") != provider:
         raise HTTPException(status_code=400, detail="Invalid OAuth state")
+    return payload
 
 
-def build_authorization_url(provider: str) -> str:
+def build_authorization_url(provider: str, request: Optional[Request] = None) -> str:
     if provider not in VALID_PROVIDERS:
         raise HTTPException(status_code=400, detail="Unsupported OAuth provider")
 
-    config = _client_config(provider)
+    config = _client_config(provider, request)
 
     if provider == "google":
         params = {
@@ -97,7 +132,7 @@ def build_authorization_url(provider: str) -> str:
             "redirect_uri": config["redirect_uri"],
             "response_type": "code",
             "scope": "openid email profile",
-            "state": _create_state(provider),
+            "state": _create_state(provider, request),
             "prompt": "select_account",
         }
         return f"{GOOGLE_AUTH_URL}?{urlencode(params)}"
@@ -106,7 +141,7 @@ def build_authorization_url(provider: str) -> str:
         "client_id": config["client_id"],
         "redirect_uri": config["redirect_uri"],
         "scope": "read:user user:email",
-        "state": _create_state(provider),
+        "state": _create_state(provider, request),
     }
     return f"{GITHUB_AUTH_URL}?{urlencode(params)}"
 
@@ -213,9 +248,10 @@ async def process_oauth_login(
     Exchange the OAuth code for a profile, find-or-create the user, and
     return a token payload identical to the normal login flow.
     """
-    _verify_state(state, provider)
+    state_payload = _verify_state(state, provider)
+    frontend_url = state_payload.get("frontend_url", cfg_settings.FRONTEND_URL)
 
-    config = _client_config(provider)
+    config = _client_config(provider, request)
     profile = await _get_profile(provider, config, code)
     email = profile["email"].lower()
 
@@ -294,4 +330,5 @@ async def process_oauth_login(
         "refresh_token": refresh_token,
         "token_type": "bearer",
         "first_login": bool(user.get("first_login", False) or is_new_user),
+        "frontend_url": frontend_url,
     }
