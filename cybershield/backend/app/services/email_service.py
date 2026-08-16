@@ -3,6 +3,7 @@ Email service for sending password reset emails.
 """
 from fastapi_mail import FastMail, MessageSchema, ConnectionConfig
 from pydantic import EmailStr
+import httpx
 from app.core.config import settings as core_settings
 
 
@@ -12,6 +13,10 @@ from app.core.config import settings as core_settings
 # pasted/space-separated value never breaks SMTP authentication.
 _mail_username = core_settings.MAIL_USERNAME.strip() if core_settings.MAIL_USERNAME else ""
 _mail_password = "".join(str(core_settings.MAIL_PASSWORD or "").split())
+
+# Resend API credentials (HTTPS delivery — works on Render, where Gmail SMTP is blocked).
+_resend_key = (core_settings.RESEND_API_KEY or "").strip()
+_resend_from = core_settings.RESEND_FROM or "CyberShield <onboarding@resend.dev>"
 
 mail_config = ConnectionConfig(
     MAIL_USERNAME=_mail_username,
@@ -27,8 +32,41 @@ mail_config = ConnectionConfig(
 
 
 def is_smtp_configured() -> bool:
-    """True when usable SMTP credentials are available (both username and password)."""
-    return bool(_mail_username and _mail_password)
+    """True when usable email credentials are available (Resend API key or SMTP creds)."""
+    return bool(_resend_key or (_mail_username and _mail_password))
+
+
+async def _send_via_resend(to_email: str, subject: str, body: str,
+                           category: str, html: bool = False) -> bool:
+    """Deliver via Resend's HTTPS API (port 443), logging to email_logs."""
+    if not _resend_key:
+        return False
+    try:
+        payload = {
+            "from": _resend_from,
+            "to": [to_email],
+            "subject": subject,
+            "html" if html else "text": body,
+        }
+        async with httpx.AsyncClient(timeout=30) as client:
+            resp = await client.post(
+                "https://api.resend.com/emails",
+                headers={"Authorization": f"Bearer {_resend_key}"},
+                json=payload,
+            )
+        if resp.status_code == 200:
+            await _log_email(to_email, subject, True, category=category)
+            print(f"[Resend] {category} email sent to {to_email}")
+            return True
+        await _log_email(to_email, subject, False,
+                         error=f"Resend HTTP {resp.status_code}: {resp.text[:300]}",
+                         category=category)
+        print(f"[Resend] {category} email FAILED ({resp.status_code}): {resp.text[:200]}")
+        return False
+    except Exception as e:
+        await _log_email(to_email, subject, False, error=f"Resend: {e}", category=category)
+        print(f"[Resend] {category} email error: {e}")
+        return False
 
 
 class EmailService:
@@ -83,6 +121,10 @@ class EmailService:
                 body=body,
                 subtype="plain"
             )
+
+            # Send email — prefer Resend API (works on Render), fall back to SMTP.
+            if _resend_key:
+                return await _send_via_resend(str(email), subject, body, "verification")
 
             # Send email
             fm = FastMail(mail_config)
@@ -147,6 +189,10 @@ class EmailService:
                 subtype="plain"
             )
 
+            # Send email — prefer Resend API (works on Render), fall back to SMTP.
+            if _resend_key:
+                return await _send_via_resend(str(email), subject, body, "reset")
+
             # Send email
             fm = FastMail(mail_config)
             await fm.send_message(message)
@@ -191,6 +237,10 @@ class EmailService:
             Best regards,
             CyberShield Team
             """
+
+            # Send email — prefer Resend API (works on Render), fall back to SMTP.
+            if _resend_key:
+                return await _send_via_resend(str(email), subject, body, "welcome")
 
             message = MessageSchema(
                 subject=subject,
@@ -295,7 +345,9 @@ async def send_report_email(to_email: str, subject: str, message: str,
 
 
 async def _send_smtp(to_email: str, subject: str, body: str, category: str = "alert") -> bool:
-    """Low-level SMTP send with graceful no-credential fallback."""
+    """Low-level send with graceful no-credential fallback (Resend API first, SMTP second)."""
+    if _resend_key:
+        return await _send_via_resend(to_email, subject, body, category, html=True)
     user = (settings.EMAIL_USER or "").strip()
     pwd = "".join(str(settings.EMAIL_PASSWORD or "").split())
     if not user or not pwd:

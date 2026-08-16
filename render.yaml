@@ -44,4 +44,9 @@ services:
         value: "cybershield786@gmail.com"
       - key: EMAIL_PASSWORD
         value: "vjkdjrftairxjljt"
+      # Resend API email delivery (HTTPS) — works on Render where Gmail SMTP is blocked.
+      - key: RESEND_API_KEY
+        value: "re_EHu3pbz7_BH4oTZRqHSJE9P8Ae9zCAFuX"
+      - key: RESEND_FROM
+        value: "CyberShield <onboarding@resend.dev>"
     autoDeploy: true
