@@ -1,4 +1,4 @@
-"""
+﻿"""
 Authentication routes for login, register, and password reset.
 """
 from fastapi import APIRouter, HTTPException, Depends, status, Request, BackgroundTasks
@@ -13,7 +13,7 @@ from app.models.reset_token_model import PasswordResetRequest, PasswordResetConf
 from app.repositories.user_repository import user_repository
 from app.repositories.reset_token_repository import reset_token_repository
 from app.services.password_service import password_service
-from app.services.email_service import email_service
+from app.services.email_service import email_service, is_smtp_configured
 from app.services.token_service import token_service
 from app.services.refresh_service import refresh_service
 from app.services.session_service import session_service
@@ -81,7 +81,7 @@ async def register(user_data: UserCreate, background_tasks: BackgroundTasks):
             "verification_token": verification_token,
             "token_expiry": token_expiry,
             "account_status": "active",
-            # Onboarding defaults — new users start the onboarding flow
+            # Onboarding defaults â€” new users start the onboarding flow
             "first_login": True,
             "profile_completed": False,
             "skill_level": "",
@@ -110,7 +110,7 @@ async def register(user_data: UserCreate, background_tasks: BackgroundTasks):
         # still recorded in the email_logs collection by the email service.
         email_sent = True
         warning = None
-        if not email_service.is_smtp_configured():
+        if not is_smtp_configured():
             email_sent = False
             warning = (
                 "Account created, but the verification email could not be sent. "
@@ -179,7 +179,7 @@ async def login(credentials: UserLogin, request: Request):
         print(f"LOGIN: User found, verifying password...")
 
         # OAuth-only accounts (created via Google/GitHub) have no password.
-        # Don't report a generic "incorrect password" — tell the user how to sign in.
+        # Don't report a generic "incorrect password" â€” tell the user how to sign in.
         if not user.get("password_hash"):
             provider = user.get("auth_provider") or "social"
             provider_label = {
@@ -398,7 +398,7 @@ async def verify_email_endpoint(token: str):
                 detail="Verification token has expired. Please request a new one."
             )
 
-        # Already verified — treat as success to avoid confusing the user
+        # Already verified â€” treat as success to avoid confusing the user
         if user.get("is_verified", False):
             return {"success": True, "message": "Email already verified"}
 
@@ -464,7 +464,7 @@ async def resend_verification(request: ResendVerificationRequest, background_tas
             )
 
         email_sent = True
-        if not email_service.is_smtp_configured():
+        if not is_smtp_configured():
             email_sent = False
         else:
             background_tasks.add_task(
@@ -516,7 +516,7 @@ async def forgot_password(request: PasswordResetRequest, background_tasks: Backg
         )
         
         if reset_token:
-            if not email_service.is_smtp_configured():
+            if not is_smtp_configured():
                 return PasswordResetResponse(
                     message="If an account exists, a reset link has been sent",
                     warning="The reset email could not be sent right now. Please try again shortly."
@@ -672,7 +672,7 @@ async def oauth_callback(
     # correct frontend URL at authorization time.  Using request headers
     # (Referer/Origin) here is WRONG because the callback request comes
     # from the OAuth provider (e.g. accounts.google.com), so its
-    # Referer header points to the provider — not our frontend.
+    # Referer header points to the provider â€” not our frontend.
     frontend_url = settings.FRONTEND_URL
     if state:
         try:
@@ -680,7 +680,7 @@ async def oauth_callback(
             state_payload = _verify_state(state, provider)
             frontend_url = state_payload.get("frontend_url", frontend_url)
         except Exception:
-            # State couldn't be decoded — fall back to settings.
+            # State couldn't be decoded â€” fall back to settings.
             pass
 
     if provider not in VALID_PROVIDERS:
