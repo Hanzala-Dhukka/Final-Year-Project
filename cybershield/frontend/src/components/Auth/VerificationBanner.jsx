@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Mail, Send, CheckCircle2 } from "lucide-react";
 import { useAuth } from "../../contexts/AuthContext";
 import { resendVerification } from "../../services/authService";
@@ -7,11 +8,12 @@ import "./VerificationBanner.css";
 
 /**
  * Reusable banner shown when the logged-in account has not verified its email.
- * Renders nothing for verified users. Includes a button to resend the
- * verification email.
+ * Renders nothing for verified users. The button resends the verification code
+ * and redirects to the OTP entry page so the user can activate their account.
  */
 export default function VerificationBanner({ message, className = "" }) {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const toast = useToast();
   const [sending, setSending] = useState(false);
   const [sent, setSent] = useState(false);
@@ -30,6 +32,7 @@ export default function VerificationBanner({ message, className = "" }) {
         setSent(true);
         toast.success("Verification code sent — check your inbox.");
       }
+      navigate("/verify-email", { state: { email: user.email } });
     } catch (error) {
       toast.error("Could not send the verification email. Please try again.");
     } finally {

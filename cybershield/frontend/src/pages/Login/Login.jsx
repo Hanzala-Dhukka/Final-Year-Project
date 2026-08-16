@@ -108,6 +108,7 @@ export default function Login() {
   const [errors, setErrors] = useState({});
   const [touched, setTouched] = useState({});
   const [serverError, setServerError] = useState("");
+  const [verifyNeeded, setVerifyNeeded] = useState(false);
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const [tipIndex, setTipIndex] = useState(0);
@@ -144,6 +145,7 @@ export default function Login() {
     if (loading) return;
 
     setServerError("");
+    setVerifyNeeded(false);
     setLoading(true);
     try {
       const response = await login({ email: email.trim(), password, remember_me: rememberMe });
@@ -165,8 +167,10 @@ export default function Login() {
         message = err.response.data.detail;
       else if (status === 503)
         message = "Service temporarily unavailable. Please try again shortly.";
-      else if (status === 403)
+      else if (status === 403) {
         message = "Account not verified. Please check your email.";
+        setVerifyNeeded(true);
+      }
       setServerError(message);
       setLoading(false);
     }
@@ -317,7 +321,22 @@ export default function Login() {
                       exit={{ opacity: 0, y: -8 }}
                     >
                       <AlertCircle size={18} />
-                      <span>{serverError}</span>
+                      <span>
+                        {serverError}
+                        {verifyNeeded && (
+                          <button
+                            type="button"
+                            className="login-alert-link"
+                            onClick={() =>
+                              navigate("/verify-email", {
+                                state: { email: email.trim() },
+                              })
+                            }
+                          >
+                            Enter verification code
+                          </button>
+                        )}
+                      </span>
                     </motion.div>
                   )}
                 </AnimatePresence>

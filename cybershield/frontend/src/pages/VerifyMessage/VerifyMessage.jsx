@@ -25,7 +25,7 @@ export default function VerifyMessage() {
     setResending(true);
     try {
       await resendVerification(email.trim());
-      toast.success("If that account exists, a verification link is on its way.");
+      toast.success("A fresh verification code is on its way to your inbox.");
     } catch (err) {
       const detail = err.response?.data?.detail || err.response?.data?.message;
       if (err.code === "ERR_NETWORK" || !err.response) {
@@ -36,6 +36,7 @@ export default function VerifyMessage() {
     } finally {
       setResending(false);
     }
+    navigate("/verify-email", { state: { email: email.trim() } });
   };
 
   return (
@@ -57,9 +58,9 @@ export default function VerifyMessage() {
 
         <h1>Check your email</h1>
         <p className="verify-message-sub">
-          We've sent a verification link to{" "}
-          {email ? <strong>{email}</strong> : "your inbox"}. Click the link to
-          activate your CyberShield account. The link expires in 24 hours.
+          We've sent a 6-digit verification code to{" "}
+          {email ? <strong>{email}</strong> : "your inbox"}. Enter the code to
+          activate your CyberShield account. The code expires in 10 minutes.
         </p>
 
         <motion.div
@@ -75,9 +76,9 @@ export default function VerifyMessage() {
         <div className="verify-message-actions">
           <button
             className="verify-message-primary"
-            onClick={() => navigate("/login")}
+            onClick={() => navigate("/verify-email", { state: { email } })}
           >
-            Go to Login
+            Enter Verification Code
           </button>
           <button
             className="verify-message-secondary"
@@ -85,11 +86,13 @@ export default function VerifyMessage() {
             disabled={resending}
           >
             <Send size={14} />
-            {resending ? "Sending…" : "Resend Email"}
+            {resending ? "Sending…" : "Resend Code"}
           </button>
         </div>
 
         <p className="verify-message-foot">
+          <Link to="/login">Go to Login</Link>
+          {" · "}
           Wrong email? <Link to="/register">Register again</Link>
         </p>
       </motion.div>
