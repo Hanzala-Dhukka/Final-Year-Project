@@ -390,13 +390,17 @@ async def verify_email_endpoint(token: str):
                 detail="Invalid or expired verification token"
             )
 
-        # Token expiry handling
+        # Token expiry handling. MongoDB returns BSON datetimes as NAIVE UTC, so
+        # attach tzinfo=UTC before comparing against the aware current time.
         token_expiry = user.get("token_expiry")
-        if token_expiry and token_expiry < datetime.now(timezone.utc):
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Verification token has expired. Please request a new one."
-            )
+        if token_expiry:
+            if token_expiry.tzinfo is None:
+                token_expiry = token_expiry.replace(tzinfo=timezone.utc)
+            if token_expiry < datetime.now(timezone.utc):
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Verification token has expired. Please request a new one."
+                )
 
         # Already verified â€” treat as success to avoid confusing the user
         if user.get("is_verified", False):
