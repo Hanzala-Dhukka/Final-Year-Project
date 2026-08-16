@@ -228,6 +228,28 @@ form {
   margin-top: 8px;
   color: #94a3b8;
 }
+.register-success-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 20px;
+  padding: 12px 24px;
+  border: none;
+  border-radius: 10px;
+  background: #2563eb;
+  color: #fff;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s ease, transform 0.1s ease;
+}
+.register-success-btn:hover {
+  background: #1d4ed8;
+}
+[data-theme="light"] .register-success-btn {
+  background: #2563eb;
+  color: #fff;
+}
 
 /* ---- Responsive ---- */
 @media (max-width: 768px) {

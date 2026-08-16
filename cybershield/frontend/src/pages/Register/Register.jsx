@@ -1,4 +1,4 @@
-import { useState, useId } from "react";
+import { useState, useId, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { User, Mail, Lock, Eye, EyeOff, Check } from "lucide-react";
@@ -28,6 +28,29 @@ export default function Register() {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [signedUpEmail, setSignedUpEmail] = useState("");
+  const [verifyNeeded, setVerifyNeeded] = useState(true);
+
+  // Auto-redirect to the login page after a successful registration. Running
+  // from an effect (instead of a raw setTimeout in the submit handler) makes
+  // the redirect reliable even if a toast or render hiccup happens in between.
+  useEffect(() => {
+    if (!success) return;
+    const t = setTimeout(() => {
+      navigate("/login", {
+        state: { registered: true, email: signedUpEmail, verify: verifyNeeded },
+        replace: true,
+      });
+    }, 900);
+    return () => clearTimeout(t);
+  }, [success, signedUpEmail, verifyNeeded, navigate]);
+
+  const goToLogin = () => {
+    navigate("/login", {
+      state: { registered: true, email: signedUpEmail, verify: verifyNeeded },
+      replace: true,
+    });
+  };
 
   const setField = (key) => (e) => {
     const value = e.target.value;
@@ -67,31 +90,17 @@ export default function Register() {
         email: form.email.trim(),
         password: form.password,
       });
-      setSuccess(true);
+      setSignedUpEmail(form.email.trim());
+      setVerifyNeeded(!(data?.email_sent === false || data?.warning));
       if (data?.email_sent === false || data?.warning) {
         toast.error(
           data.warning ||
             "Account created, but the verification email could not be sent."
         );
-        setTimeout(
-          () =>
-            navigate("/login", {
-              state: { registered: true, email: form.email.trim(), verify: false },
-              replace: true,
-            }),
-          1600
-        );
       } else {
         toast.success("Account created — sign in to continue.");
-        setTimeout(
-          () =>
-            navigate("/login", {
-              state: { registered: true, email: form.email.trim(), verify: true },
-              replace: true,
-            }),
-          1600
-        );
       }
+      setSuccess(true);
     } catch (err) {
       const code = err.response?.status;
       const detail = err.response?.data?.detail || err.response?.data?.message;
@@ -130,6 +139,9 @@ export default function Register() {
               </div>
               <h2>Account Created</h2>
               <p>Check your inbox to verify your email and activate your account.</p>
+              <button type="button" className="register-success-btn" onClick={goToLogin}>
+                Continue to Login
+              </button>
             </motion.div>
           ) : (
             <motion.div key="form" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>

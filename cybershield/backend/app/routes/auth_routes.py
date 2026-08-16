@@ -1,7 +1,7 @@
 """
 Authentication routes for login, register, and password reset.
 """
-from fastapi import APIRouter, HTTPException, Depends, status, Request
+from fastapi import APIRouter, HTTPException, Depends, status, Request, BackgroundTasks
 from fastapi.responses import RedirectResponse
 from pydantic import BaseModel
 from datetime import datetime, timezone, timedelta
@@ -45,7 +45,7 @@ def _get_frontend_url_from_request(request) -> str:
 
 
 @router.post("/register", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
-async def register(user_data: UserCreate):
+async def register(user_data: UserCreate, background_tasks: BackgroundTasks):
     """
     Register a new user.
     
@@ -104,29 +104,27 @@ async def register(user_data: UserCreate):
         # Get created user
         user = await user_repository.get_user_by_id(user_id)
 
-        # Send verification email (required for activation). The service returns
-        # False on failure (and logs the reason to email_logs) instead of
-        # silently pretending the email went out.
+        # Send verification + welcome emails. Dispatching these through
+        # BackgroundTasks lets the register response return immediately instead
+        # of waiting for SMTP round-trips (which can take seconds). Failures are
+        # still recorded in the email_logs collection by the email service.
         email_sent = True
         warning = None
-        try:
-            email_sent = await email_service.send_verification_email(
-                user_data.email, verification_token, user_data.name
-            )
-        except Exception as e:
+        if not email_service.is_smtp_configured():
             email_sent = False
-            print(f"Failed to send verification email: {e}")
-        if not email_sent:
             warning = (
                 "Account created, but the verification email could not be sent. "
                 "Please use the resend option to try again."
             )
-
-        # Send welcome email (optional)
-        try:
-            await email_service.send_welcome_email(user_data.email, user_data.name)
-        except Exception as e:
-            print(f"Failed to send welcome email: {e}")
+        else:
+            background_tasks.add_task(
+                email_service.send_verification_email,
+                user_data.email, verification_token, user_data.name
+            )
+            background_tasks.add_task(
+                email_service.send_welcome_email,
+                user_data.email, user_data.name
+            )
         
         return UserResponse(
             id=user_id,
@@ -432,7 +430,7 @@ class ResendVerificationRequest(BaseModel):
 
 
 @router.post("/resend-verification", response_model=PasswordResetResponse)
-async def resend_verification(request: ResendVerificationRequest):
+async def resend_verification(request: ResendVerificationRequest, background_tasks: BackgroundTasks):
     """
     Resend a verification email with a fresh token + expiry.
     """
@@ -466,15 +464,15 @@ async def resend_verification(request: ResendVerificationRequest):
             )
 
         email_sent = True
-        try:
-            email_sent = await email_service.send_verification_email(
+        if not email_service.is_smtp_configured():
+            email_sent = False
+        else:
+            background_tasks.add_task(
+                email_service.send_verification_email,
                 email=user["email"],
                 verification_token=verification_token,
                 user_name=user["name"]
             )
-        except Exception as e:
-            email_sent = False
-            print(f"Failed to send verification email: {e}")
 
         if not email_sent:
             return PasswordResetResponse(
@@ -493,7 +491,7 @@ async def resend_verification(request: ResendVerificationRequest):
 
 
 @router.post("/forgot-password", response_model=PasswordResetResponse)
-async def forgot_password(request: PasswordResetRequest):
+async def forgot_password(request: PasswordResetRequest, background_tasks: BackgroundTasks):
     """
     Request password reset email.
     
@@ -518,22 +516,18 @@ async def forgot_password(request: PasswordResetRequest):
         )
         
         if reset_token:
-            # Send reset email
-            email_sent = True
-            try:
-                email_sent = await email_service.send_password_reset_email(
-                    email=user["email"],
-                    reset_token=reset_token,
-                    user_name=user["name"]
-                )
-            except Exception as e:
-                email_sent = False
-                print(f"Failed to send password reset email: {e}")
-            if not email_sent:
+            if not email_service.is_smtp_configured():
                 return PasswordResetResponse(
                     message="If an account exists, a reset link has been sent",
                     warning="The reset email could not be sent right now. Please try again shortly."
                 )
+            # Send in the background so the response returns immediately.
+            background_tasks.add_task(
+                email_service.send_password_reset_email,
+                email=user["email"],
+                reset_token=reset_token,
+                user_name=user["name"]
+            )
         
         return PasswordResetResponse(message="If an account exists, a reset link has been sent")
         
