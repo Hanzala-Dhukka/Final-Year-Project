@@ -19,4 +19,29 @@ services:
         value: "https://final-year-project-id8d.onrender.com/api/v1/auth/oauth/google/callback"
       - key: GITHUB_REDIRECT_URI
         value: "https://final-year-project-id8d.onrender.com/api/v1/auth/oauth/github/callback"
+      # Email (SMTP) — Gmail app password (16 chars, no spaces).
+      # Used by app/services/email_service.py (verification / reset / alerts).
+      - key: MAIL_USERNAME
+        value: "cybershield786@gmail.com"
+      - key: MAIL_PASSWORD
+        value: "ynjhuituwupdzuzr"
+      - key: MAIL_FROM
+        value: "cybershield786@gmail.com"
+      - key: MAIL_PORT
+        value: "587"
+      - key: MAIL_SERVER
+        value: "smtp.gmail.com"
+      - key: MAIL_STARTTLS
+        value: "True"
+      - key: MAIL_SSL_TLS
+        value: "False"
+      - key: USE_CREDENTIALS
+        value: "True"
+      - key: VALIDATE_CERTS
+        value: "True"
+      # Fallback credentials used by the smtplib sender (send_security_alert etc.)
+      - key: EMAIL_USER
+        value: "cybershield786@gmail.com"
+      - key: EMAIL_PASSWORD
+        value: "ynjhuituwupdzuzr"
     autoDeploy: true

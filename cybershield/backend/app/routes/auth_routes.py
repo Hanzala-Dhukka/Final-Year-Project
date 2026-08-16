@@ -104,13 +104,23 @@ async def register(user_data: UserCreate):
         # Get created user
         user = await user_repository.get_user_by_id(user_id)
 
-        # Send verification email (required for activation)
+        # Send verification email (required for activation). The service returns
+        # False on failure (and logs the reason to email_logs) instead of
+        # silently pretending the email went out.
+        email_sent = True
+        warning = None
         try:
-            await email_service.send_verification_email(
+            email_sent = await email_service.send_verification_email(
                 user_data.email, verification_token, user_data.name
             )
         except Exception as e:
+            email_sent = False
             print(f"Failed to send verification email: {e}")
+        if not email_sent:
+            warning = (
+                "Account created, but the verification email could not be sent. "
+                "Please use the resend option to try again."
+            )
 
         # Send welcome email (optional)
         try:
@@ -131,7 +141,9 @@ async def register(user_data: UserCreate):
             dashboard_tour_completed=user.get("dashboard_tour_completed", False),
             avatar=user.get("avatar"),
             bio=user.get("bio"),
-            created_at=user["created_at"]
+            created_at=user["created_at"],
+            email_sent=email_sent,
+            warning=warning
         )
         
     except HTTPException:
@@ -460,14 +472,22 @@ async def resend_verification(request: ResendVerificationRequest):
                 message="If an account exists, a verification email has been sent"
             )
 
+        email_sent = True
         try:
-            await email_service.send_verification_email(
+            email_sent = await email_service.send_verification_email(
                 email=user["email"],
                 verification_token=verification_token,
                 user_name=user["name"]
             )
         except Exception as e:
+            email_sent = False
             print(f"Failed to send verification email: {e}")
+
+        if not email_sent:
+            return PasswordResetResponse(
+                message="If an account exists, a verification email has been sent",
+                warning="The verification email could not be sent right now. Please try again shortly."
+            )
 
         return PasswordResetResponse(
             message="If an account exists, a verification email has been sent"
@@ -506,14 +526,21 @@ async def forgot_password(request: PasswordResetRequest):
         
         if reset_token:
             # Send reset email
+            email_sent = True
             try:
-                await email_service.send_password_reset_email(
+                email_sent = await email_service.send_password_reset_email(
                     email=user["email"],
                     reset_token=reset_token,
                     user_name=user["name"]
                 )
             except Exception as e:
+                email_sent = False
                 print(f"Failed to send password reset email: {e}")
+            if not email_sent:
+                return PasswordResetResponse(
+                    message="If an account exists, a reset link has been sent",
+                    warning="The reset email could not be sent right now. Please try again shortly."
+                )
         
         return PasswordResetResponse(message="If an account exists, a reset link has been sent")
         

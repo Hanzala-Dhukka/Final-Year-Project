@@ -29,10 +29,14 @@ export default function ResendVerification() {
 
     setLoading(true);
     try {
-      await resendVerification(email.trim());
-      // Backend deliberately returns a generic message (anti-enumeration)
-      setSent(true);
-      toast.success("If that account exists, a verification link is on its way.");
+      const data = await resendVerification(email.trim());
+      if (data?.warning) {
+        toast.error(data.warning);
+      } else {
+        // Backend deliberately returns a generic message (anti-enumeration)
+        setSent(true);
+        toast.success("If that account exists, a verification link is on its way.");
+      }
     } catch (err) {
       const detail = err.response?.data?.detail || err.response?.data?.message;
       if (err.code === "ERR_NETWORK" || !err.response) {

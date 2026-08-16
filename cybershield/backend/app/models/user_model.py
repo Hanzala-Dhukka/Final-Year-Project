@@ -63,6 +63,9 @@ class UserResponse(BaseModel):
     avatar: Optional[str] = None
     bio: Optional[str] = None
     created_at: datetime
+    # Email delivery status so the client can tell the user the truth
+    email_sent: bool = True
+    warning: Optional[str] = None
 
 
 class UserUpdate(BaseModel):

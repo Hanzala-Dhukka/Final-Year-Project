@@ -33,3 +33,4 @@ class PasswordResetConfirm(BaseModel):
 class PasswordResetResponse(BaseModel):
     """Schema for password reset response."""
     message: str
+    warning: Optional[str] = None

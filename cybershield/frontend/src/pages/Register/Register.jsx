@@ -62,17 +62,36 @@ export default function Register() {
 
     setLoading(true);
     try {
-      await registerUser({
+      const data = await registerUser({
         name: form.name.trim(),
         email: form.email.trim(),
         password: form.password,
       });
       setSuccess(true);
-      toast.success("Account created — verify your email to continue.");
-      setTimeout(
-        () => navigate("/verify-message", { state: { email: form.email.trim() }, replace: true }),
-        1600
-      );
+      if (data?.email_sent === false || data?.warning) {
+        toast.error(
+          data.warning ||
+            "Account created, but the verification email could not be sent."
+        );
+        setTimeout(
+          () =>
+            navigate("/resend-verification", {
+              state: { email: form.email.trim() },
+              replace: true,
+            }),
+          1600
+        );
+      } else {
+        toast.success("Account created — verify your email to continue.");
+        setTimeout(
+          () =>
+            navigate("/verify-message", {
+              state: { email: form.email.trim() },
+              replace: true,
+            }),
+          1600
+        );
+      }
     } catch (err) {
       const code = err.response?.status;
       const detail = err.response?.data?.detail || err.response?.data?.message;

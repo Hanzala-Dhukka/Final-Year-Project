@@ -6,10 +6,16 @@ from pydantic import EmailStr
 from app.core.config import settings as core_settings
 
 
-# Email configuration
+# Email configuration.
+# MAIL_PASSWORD is a Gmail App Password — displayed as groups of 4 with spaces,
+# but the actual secret is 16 characters with NO spaces. Normalize it so a
+# pasted/space-separated value never breaks SMTP authentication.
+_mail_username = core_settings.MAIL_USERNAME.strip() if core_settings.MAIL_USERNAME else ""
+_mail_password = "".join(str(core_settings.MAIL_PASSWORD or "").split())
+
 mail_config = ConnectionConfig(
-    MAIL_USERNAME=core_settings.MAIL_USERNAME,
-    MAIL_PASSWORD=core_settings.MAIL_PASSWORD,
+    MAIL_USERNAME=_mail_username,
+    MAIL_PASSWORD=_mail_password,
     MAIL_FROM=core_settings.MAIL_FROM,
     MAIL_PORT=core_settings.MAIL_PORT,
     MAIL_SERVER=core_settings.MAIL_SERVER,
@@ -20,41 +26,56 @@ mail_config = ConnectionConfig(
 )
 
 
+def is_smtp_configured() -> bool:
+    """True when usable SMTP credentials are available (both username and password)."""
+    return bool(_mail_username and _mail_password)
+
+
 class EmailService:
     """Service for sending emails."""
-    
+
     @staticmethod
     async def send_verification_email(email: EmailStr, verification_token: str, user_name: str):
         """
         Send email verification email.
-        
+
         Args:
             email: User's email address
             verification_token: Email verification token
             user_name: User's name
+
+        Returns:
+            bool: True if the email was accepted by the SMTP server, False otherwise.
         """
+        subject = "CyberShield - Verify Your Email"
         try:
+            if not is_smtp_configured():
+                await _log_email(str(email), subject, False,
+                                 error="SMTP credentials not configured; skipped",
+                                 category="verification")
+                print("Skipped verification email: SMTP credentials not configured")
+                return False
+
             # Create verification link
             verification_link = f"{core_settings.FRONTEND_URL}/verify-email?token={verification_token}"
-            
+
             # Email content
-            subject = "CyberShield - Verify Your Email"
             body = f"""
             Hello {user_name},
-            
+
             Thank you for registering with CyberShield!
-            
+
             Please verify your email address by clicking the link below:
             {verification_link}
-            
+
             This link will expire in 24 hours for security reasons.
-            
+
             If you did not create this account, please ignore this email.
-            
+
             Best regards,
             CyberShield Team
             """
-            
+
             # Create message
             message = MessageSchema(
                 subject=subject,
@@ -62,15 +83,17 @@ class EmailService:
                 body=body,
                 subtype="plain"
             )
-            
+
             # Send email
             fm = FastMail(mail_config)
             await fm.send_message(message)
-            
+
+            await _log_email(str(email), subject, True, category="verification")
             print(f"Verification email sent to {email}")
             return True
-            
+
         except Exception as e:
+            await _log_email(str(email), subject, False, error=str(e), category="verification")
             print(f"Error sending verification email: {e}")
             return False
 
@@ -78,34 +101,44 @@ class EmailService:
     async def send_password_reset_email(email: EmailStr, reset_token: str, user_name: str):
         """
         Send password reset email.
-        
+
         Args:
             email: User's email address
             reset_token: Password reset token
             user_name: User's name
+
+        Returns:
+            bool: True if the email was accepted by the SMTP server, False otherwise.
         """
+        subject = "CyberShield - Password Reset Request"
         try:
+            if not is_smtp_configured():
+                await _log_email(str(email), subject, False,
+                                 error="SMTP credentials not configured; skipped",
+                                 category="reset")
+                print("Skipped password reset email: SMTP credentials not configured")
+                return False
+
             # Create reset link
             reset_link = f"{core_settings.FRONTEND_URL}/reset-password/{reset_token}"
-            
+
             # Email content
-            subject = "CyberShield - Password Reset Request"
             body = f"""
             Hello {user_name},
-            
+
             You have requested to reset your password for your CyberShield account.
-            
+
             Click the link below to reset your password:
             {reset_link}
-            
+
             This link will expire in 15 minutes for security reasons.
-            
+
             If you did not request this password reset, please ignore this email.
-            
+
             Best regards,
             CyberShield Team
             """
-            
+
             # Create message
             message = MessageSchema(
                 subject=subject,
@@ -113,54 +146,68 @@ class EmailService:
                 body=body,
                 subtype="plain"
             )
-            
+
             # Send email
             fm = FastMail(mail_config)
             await fm.send_message(message)
-            
+
+            await _log_email(str(email), subject, True, category="reset")
             print(f"Password reset email sent to {email}")
             return True
-            
+
         except Exception as e:
+            await _log_email(str(email), subject, False, error=str(e), category="reset")
             print(f"Error sending password reset email: {e}")
             return False
-    
+
     @staticmethod
     async def send_welcome_email(email: EmailStr, user_name: str):
         """
         Send welcome email to new user.
-        
+
         Args:
             email: User's email address
             user_name: User's name
+
+        Returns:
+            bool: True if the email was accepted by the SMTP server, False otherwise.
         """
+        subject = "Welcome to CyberShield!"
         try:
-            subject = "Welcome to CyberShield!"
+            if not is_smtp_configured():
+                await _log_email(str(email), subject, False,
+                                 error="SMTP credentials not configured; skipped",
+                                 category="welcome")
+                print("Skipped welcome email: SMTP credentials not configured")
+                return False
+
             body = f"""
             Hello {user_name},
-            
+
             Welcome to CyberShield - Your Cybersecurity Learning Platform!
-            
+
             We're excited to have you on board. Start your journey to becoming a cybersecurity expert today.
-            
+
             Best regards,
             CyberShield Team
             """
-            
+
             message = MessageSchema(
                 subject=subject,
                 recipients=[email],
                 body=body,
                 subtype="plain"
             )
-            
+
             fm = FastMail(mail_config)
             await fm.send_message(message)
-            
+
+            await _log_email(str(email), subject, True, category="welcome")
             print(f"Welcome email sent to {email}")
             return True
-            
+
         except Exception as e:
+            await _log_email(str(email), subject, False, error=str(e), category="welcome")
             print(f"Error sending welcome email: {e}")
             return False
 
@@ -249,8 +296,8 @@ async def send_report_email(to_email: str, subject: str, message: str,
 
 async def _send_smtp(to_email: str, subject: str, body: str, category: str = "alert") -> bool:
     """Low-level SMTP send with graceful no-credential fallback."""
-    user = settings.EMAIL_USER
-    pwd = settings.EMAIL_PASSWORD
+    user = (settings.EMAIL_USER or "").strip()
+    pwd = "".join(str(settings.EMAIL_PASSWORD or "").split())
     if not user or not pwd:
         await _log_email(to_email, subject, True, error="SMTP not configured; skipped send",
                          category=category)
