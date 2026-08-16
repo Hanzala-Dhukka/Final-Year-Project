@@ -24,7 +24,7 @@ services:
       - key: MAIL_USERNAME
         value: "cybershield786@gmail.com"
       - key: MAIL_PASSWORD
-        value: "ynjhuituwupdzuzr"
+        value: "vjkdjrftairxjljt"
       - key: MAIL_FROM
         value: "cybershield786@gmail.com"
       - key: MAIL_PORT
@@ -43,5 +43,5 @@ services:
       - key: EMAIL_USER
         value: "cybershield786@gmail.com"
       - key: EMAIL_PASSWORD
-        value: "ynjhuituwupdzuzr"
+        value: "vjkdjrftairxjljt"
     autoDeploy: true
