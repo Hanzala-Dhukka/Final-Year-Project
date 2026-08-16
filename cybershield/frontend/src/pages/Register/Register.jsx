@@ -31,23 +31,23 @@ export default function Register() {
   const [signedUpEmail, setSignedUpEmail] = useState("");
   const [verifyNeeded, setVerifyNeeded] = useState(true);
 
-  // Auto-redirect to the login page after a successful registration. Running
-  // from an effect (instead of a raw setTimeout in the submit handler) makes
-  // the redirect reliable even if a toast or render hiccup happens in between.
+  // Auto-redirect to the verification page after a successful registration.
+  // Running from an effect (instead of a raw setTimeout in the submit handler)
+  // makes the redirect reliable even if a toast or render hiccup happens in between.
   useEffect(() => {
     if (!success) return;
     const t = setTimeout(() => {
-      navigate("/login", {
-        state: { registered: true, email: signedUpEmail, verify: verifyNeeded },
+      navigate("/verify-email", {
+        state: { email: signedUpEmail },
         replace: true,
       });
     }, 900);
     return () => clearTimeout(t);
-  }, [success, signedUpEmail, verifyNeeded, navigate]);
+  }, [success, signedUpEmail, navigate]);
 
   const goToLogin = () => {
-    navigate("/login", {
-      state: { registered: true, email: signedUpEmail, verify: verifyNeeded },
+    navigate("/verify-email", {
+      state: { email: signedUpEmail },
       replace: true,
     });
   };
@@ -138,9 +138,9 @@ export default function Register() {
                 <Check size={34} strokeWidth={3} />
               </div>
               <h2>Account Created</h2>
-              <p>Check your inbox to verify your email and activate your account.</p>
+              <p>Check your inbox for your 6-digit verification code, then enter it below to activate your account.</p>
               <button type="button" className="register-success-btn" onClick={goToLogin}>
-                Continue to Login
+                Enter Verification Code
               </button>
             </motion.div>
           ) : (

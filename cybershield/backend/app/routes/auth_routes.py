@@ -29,6 +29,29 @@ from app.core.config import settings
 router = APIRouter()
 
 
+class VerifyOtpRequest(BaseModel):
+    """Request body for OTP-based email verification."""
+    email: str
+    otp: str
+
+
+def _generate_otp() -> str:
+    """Generate a 6-digit one-time verification code."""
+    return f"{secrets.randbelow(1000000):06d}"
+
+
+OTP_TTL_MINUTES = 10
+
+
+def _coerce_utc(dt) -> Optional[datetime]:
+    """MongoDB returns BSON datetimes as NAIVE UTC; attach tzinfo for safe comparison."""
+    if dt is None:
+        return None
+    if isinstance(dt, datetime) and dt.tzinfo is None:
+        return dt.replace(tzinfo=timezone.utc)
+    return dt
+
+
 def _get_frontend_url_from_request(request) -> str:
     """Best-effort derivation of the frontend URL from request headers."""
     if request:
@@ -67,7 +90,9 @@ async def register(user_data: UserCreate, background_tasks: BackgroundTasks):
         # Hash password
         password_hash = password_service.hash_password(user_data.password)
 
-        # Generate verification token + 24h expiry
+        # Generate verification OTP (10 min expiry) + legacy link token (24h)
+        verification_otp = _generate_otp()
+        otp_expiry = datetime.now(timezone.utc) + timedelta(minutes=OTP_TTL_MINUTES)
         verification_token = secrets.token_urlsafe(32)
         token_expiry = datetime.now(timezone.utc) + timedelta(hours=24)
 
@@ -78,6 +103,8 @@ async def register(user_data: UserCreate, background_tasks: BackgroundTasks):
             "password_hash": password_hash,
             "role": "student",
             "is_verified": False,
+            "verification_otp": verification_otp,
+            "otp_expiry": otp_expiry,
             "verification_token": verification_token,
             "token_expiry": token_expiry,
             "account_status": "active",
@@ -119,7 +146,7 @@ async def register(user_data: UserCreate, background_tasks: BackgroundTasks):
         else:
             background_tasks.add_task(
                 email_service.send_verification_email,
-                user_data.email, verification_token, user_data.name
+                user_data.email, verification_otp, user_data.name
             )
             background_tasks.add_task(
                 email_service.send_welcome_email,
@@ -429,6 +456,60 @@ async def verify_email_endpoint(token: str):
         )
 
 
+@router.post("/verify-otp")
+async def verify_otp(request: VerifyOtpRequest):
+    """
+    Verify a user's email using the 6-digit OTP sent by email.
+    """
+    otp = request.otp.strip()
+    if not otp or not otp.isdigit() or len(otp) != 6:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid verification code"
+        )
+
+    user = await user_repository.get_user_by_email(request.email.strip().lower())
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid verification code"
+        )
+
+    stored_otp = user.get("verification_otp")
+    otp_expiry = _coerce_utc(user.get("otp_expiry"))
+    if not stored_otp or stored_otp != otp:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid verification code"
+        )
+
+    if otp_expiry and otp_expiry < datetime.now(timezone.utc):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Verification code has expired. Please request a new one."
+        )
+
+    # Already verified — treat as success
+    if user.get("is_verified", False):
+        return {"success": True, "message": "Email already verified"}
+
+    update_success = await user_repository.update_user(str(user["_id"]), {
+        "is_verified": True,
+        "verification_otp": None,
+        "otp_expiry": None,
+        "verification_token": None,
+        "token_expiry": None,
+        "updated_at": datetime.now(timezone.utc)
+    })
+    if not update_success:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to verify email"
+        )
+
+    return {"success": True, "message": "Email verified successfully"}
+
+
 class ResendVerificationRequest(BaseModel):
     email: str
 
@@ -453,11 +534,15 @@ async def resend_verification(request: ResendVerificationRequest, background_tas
                 message="This email is already verified. You can log in."
             )
 
-        # Generate a new verification token + 24h expiry
+        # Generate a new verification OTP (10 min) + legacy link token (24h)
+        verification_otp = _generate_otp()
+        otp_expiry = datetime.now(timezone.utc) + timedelta(minutes=OTP_TTL_MINUTES)
         verification_token = secrets.token_urlsafe(32)
         token_expiry = datetime.now(timezone.utc) + timedelta(hours=24)
 
         update_success = await user_repository.update_user(str(user["_id"]), {
+            "verification_otp": verification_otp,
+            "otp_expiry": otp_expiry,
             "verification_token": verification_token,
             "token_expiry": token_expiry,
             "updated_at": datetime.now(timezone.utc)
@@ -474,7 +559,7 @@ async def resend_verification(request: ResendVerificationRequest, background_tas
             background_tasks.add_task(
                 email_service.send_verification_email,
                 email=user["email"],
-                verification_token=verification_token,
+                otp=verification_otp,
                 user_name=user["name"]
             )
 

@@ -4,7 +4,7 @@ from app.utils.password import hash_password, verify_password
 from app.schemas.auth_schema import RegisterRequest, LoginRequest
 from app.core.security import create_access_token, create_refresh_token
 from app.services.email_service import EmailService
-from datetime import datetime
+from datetime import datetime, timedelta
 import secrets
 
 
@@ -17,8 +17,8 @@ async def register_user(request: RegisterRequest):
     # Hash password
     hashed_password = hash_password(request.password)
 
-    # Generate verification token
-    verification_token = secrets.token_urlsafe(32)
+    # Generate verification OTP
+    verification_otp = f"{secrets.randbelow(1000000):06d}"
 
     # Build user document
     user_document = {
@@ -29,7 +29,8 @@ async def register_user(request: RegisterRequest):
         "is_verified": False,
         "is_active": True,
         "profile_image": None,
-        "verification_token": verification_token,
+        "verification_otp": verification_otp,
+        "otp_expiry": datetime.utcnow() + timedelta(minutes=10),
         "reset_token": None,
         "refresh_token": None,
         "last_login": None,
@@ -45,7 +46,7 @@ async def register_user(request: RegisterRequest):
     # Send verification email
     await EmailService.send_verification_email(
         email=request.email,
-        verification_token=verification_token,
+        otp=verification_otp,
         user_name=request.full_name
     )
 
@@ -132,19 +133,21 @@ async def send_verification_email(email: str):
     if user.get("is_verified", False):
         raise HTTPException(status_code=400, detail="Email already verified")
     
-    # Generate new verification token
-    verification_token = secrets.token_urlsafe(32)
+    # Generate new verification OTP
+    verification_otp = f"{secrets.randbelow(1000000):06d}"
     
-    # Update user with new token
+    # Update user with new OTP
     await database.users.update_one(
         {"_id": user["_id"]},
-        {"$set": {"verification_token": verification_token, "updated_at": datetime.utcnow()}}
+        {"$set": {"verification_otp": verification_otp,
+                  "otp_expiry": datetime.utcnow() + timedelta(minutes=10),
+                  "updated_at": datetime.utcnow()}}
     )
     
     # Send email
     await EmailService.send_verification_email(
         email=email,
-        verification_token=verification_token,
+        otp=verification_otp,
         user_name=user["full_name"]
     )
     

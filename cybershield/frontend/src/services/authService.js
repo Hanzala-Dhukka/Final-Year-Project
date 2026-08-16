@@ -65,7 +65,7 @@ export const registerUser = async ({ name, email, password }) => {
 };
 
 /**
- * Resend the email verification link to an unverified account.
+ * Resend the email verification code (OTP) to an unverified account.
  * Matches POST /api/v1/auth/resend-verification { email }.
  * The backend always returns a generic success message to avoid
  * leaking whether an email is registered.
@@ -73,6 +73,16 @@ export const registerUser = async ({ name, email, password }) => {
  */
 export const resendVerification = async (email) => {
   const response = await API.post("/auth/resend-verification", { email });
+  return response.data;
+};
+
+/**
+ * Verify an email address with the 6-digit OTP from the email.
+ * Matches POST /api/v1/auth/verify-otp { email, otp }.
+ * @param {{ email: string, otp: string }} payload
+ */
+export const verifyOtp = async ({ email, otp }) => {
+  const response = await API.post("/auth/verify-otp", { email, otp });
   return response.data;
 };
 
@@ -95,6 +105,7 @@ export const authService = {
   forgotPassword,
   resetPassword,
   resendVerification,
+  verifyOtp,
   getOAuthAuthorizationUrl,
   logoutUser,
 };

@@ -35,7 +35,7 @@ export default function ResendVerification() {
       } else {
         // Backend deliberately returns a generic message (anti-enumeration)
         setSent(true);
-        toast.success("If that account exists, a verification link is on its way.");
+        toast.success("If that account exists, a verification code is on its way.");
       }
     } catch (err) {
       const detail = err.response?.data?.detail || err.response?.data?.message;
@@ -60,10 +60,10 @@ export default function ResendVerification() {
         <div className="resend-icon">
           <Mail size={30} />
         </div>
-        <h1>Resend Verification Email</h1>
+        <h1>Resend Verification Code</h1>
         <p className="resend-subtitle">
           Enter the email address you registered with and we'll send a fresh
-          verification link.
+          6-digit verification code.
         </p>
 
         {sent ? (
@@ -76,14 +76,14 @@ export default function ResendVerification() {
             <CheckCircle size={42} className="resend-success-check" />
             <h2>Check your inbox</h2>
             <p>
-              We've sent a new verification link to{" "}
-              <strong>{email.trim()}</strong>. The link expires in 24 hours.
+              We've sent a new verification code to{" "}
+              <strong>{email.trim()}</strong>. The code expires in 10 minutes.
             </p>
             <button
               className="resend-secondary"
-              onClick={() => navigate("/login")}
+              onClick={() => navigate("/verify-email", { state: { email: email.trim() } })}
             >
-              Back to Login
+              Enter Verification Code
             </button>
           </motion.div>
         ) : (

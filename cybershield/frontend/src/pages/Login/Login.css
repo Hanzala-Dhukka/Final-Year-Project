@@ -285,6 +285,19 @@
   color: #86efac;
 }
 
+.login-alert-link {
+  display: inline-block;
+  margin-top: 4px;
+  padding: 0;
+  border: none;
+  background: none;
+  color: #22d3ee;
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
 /* ── Switch link ────────────────────────────────────────────────────── */
 .login-switch {
   margin-top: 24px;

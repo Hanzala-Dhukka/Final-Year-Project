@@ -287,8 +287,21 @@ export default function Login() {
                       <span>
                         Account created successfully
                         {registeredVerify
-                          ? ` for ${registeredEmail}. Check your email to verify your account, then sign in.`
+                          ? ` for ${registeredEmail}. Enter your verification code to activate your account.`
                           : ` for ${registeredEmail}. Sign in to continue.`}
+                        {registeredVerify && (
+                          <button
+                            type="button"
+                            className="login-alert-link"
+                            onClick={() =>
+                              navigate("/verify-email", {
+                                state: { email: registeredEmail },
+                              })
+                            }
+                          >
+                            Enter verification code
+                          </button>
+                        )}
                       </span>
                     </motion.div>
                   )}

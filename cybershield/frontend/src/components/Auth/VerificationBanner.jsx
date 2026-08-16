@@ -28,7 +28,7 @@ export default function VerificationBanner({ message, className = "" }) {
         setSent(false);
       } else {
         setSent(true);
-        toast.success("Verification email sent — check your inbox.");
+        toast.success("Verification code sent — check your inbox.");
       }
     } catch (error) {
       toast.error("Could not send the verification email. Please try again.");

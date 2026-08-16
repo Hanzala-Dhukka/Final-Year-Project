@@ -110,29 +110,28 @@ class EmailService:
     """Service for sending emails."""
 
     @staticmethod
-    async def send_verification_email(email: EmailStr, verification_token: str, user_name: str):
+    async def send_verification_email(email: EmailStr, otp: str, user_name: str):
         """
-        Send email verification email.
+        Send email verification email containing a 6-digit OTP.
 
         Args:
             email: User's email address
-            verification_token: Email verification token
+            otp: 6-digit one-time verification code
             user_name: User's name
 
         Returns:
-            bool: True if the email was accepted by the SMTP server, False otherwise.
+            bool: True if the email was accepted by the email provider, False otherwise.
         """
         subject = "CyberShield - Verify Your Email"
         try:
             if not is_smtp_configured():
                 await _log_email(str(email), subject, False,
-                                 error="SMTP credentials not configured; skipped",
+                                 error="Email credentials not configured; skipped",
                                  category="verification")
-                print("Skipped verification email: SMTP credentials not configured")
+                print("Skipped verification email: email credentials not configured")
                 return False
 
-            # Create verification link
-            verification_link = f"{core_settings.FRONTEND_URL}/verify-email?token={verification_token}"
+            verify_page = f"{core_settings.FRONTEND_URL}/verify-email"
 
             # Email content
             body = f"""
@@ -140,10 +139,14 @@ class EmailService:
 
             Thank you for registering with CyberShield!
 
-            Please verify your email address by clicking the link below:
-            {verification_link}
+            Your email verification code is:
 
-            This link will expire in 24 hours for security reasons.
+            {otp}
+
+            Enter this code on the verification page to activate your account:
+            {verify_page}
+
+            The code expires in 10 minutes for security reasons.
 
             If you did not create this account, please ignore this email.
 
