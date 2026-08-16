@@ -29,6 +29,7 @@ import ShieldIcon from "@mui/icons-material/Shield";
 import CastIcon from "@mui/icons-material/Cast";
 import { useTheme } from "../../theme/useTheme";
 import { useAuth } from "../../contexts/AuthContext";
+import VerificationBanner from "../../components/Auth/VerificationBanner";
 import {
   getProfile,
   updateProfile,
@@ -754,6 +755,9 @@ export default function Profile() {
 
   return (
     <Container maxWidth="lg" sx={{ py: 3 }}>
+      {/* ── Email verification notice ───────────────────────────────── */}
+      <VerificationBanner message="Please verify your email to keep your account secure." />
+
       {/* ── Header ─────────────────────────────────────────────────────── */}
       <Section>
         <Stack direction={{ xs: "column", sm: "row" }} alignItems={{ xs: "stretch", sm: "center" }} justifyContent="space-between" spacing={2} sx={{ mb: 3 }}>

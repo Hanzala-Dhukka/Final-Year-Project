@@ -6,7 +6,7 @@ from bson import ObjectId
 
 from app.models.scan_model import ScanModel, VulnerabilityModel
 from app.repositories.scan_repository import scan_repository
-from app.dependencies.auth import get_current_user
+from app.dependencies.auth import get_current_user, require_verified_user
 from app.services.gemini_service import generate_ai_response
 
 router = APIRouter(prefix="/security-scan")
@@ -37,7 +37,7 @@ manager = ConnectionManager()
 async def start_scan(
     request: Dict[str, Any],
     background_tasks: BackgroundTasks,
-    current_user: Dict[str, Any] = Depends(get_current_user)
+    current_user: Dict[str, Any] = Depends(require_verified_user)
 ):
     """Start a new security scan"""
     try:

@@ -212,13 +212,6 @@ async def login(credentials: UserLogin, request: Request):
                 detail="Account is disabled"
             )
         
-        # Block login until the email address is verified
-        if not user.get("is_verified", False):
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="Please verify your email before logging in"
-            )
-        
         print(f"LOGIN: Password verified, creating tokens...")
         # Create tokens
         user_id = str(user["_id"])

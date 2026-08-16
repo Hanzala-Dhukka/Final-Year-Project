@@ -33,7 +33,7 @@ from app.services.threat_analyzer import (
     risk_level_from_score,
     generate_ai_report
 )
-from app.dependencies.auth import get_current_user
+from app.dependencies.auth import get_current_user, require_verified_user
 from app.services.repository_info import get_repository_info
 from app.services.technology_detector import detect_technologies
 from app.services.dependency_scanner import scan_dependencies
@@ -102,7 +102,7 @@ async def generate_threat_report(
 async def scan_repository(
     data: dict,
     background_tasks: BackgroundTasks,
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(require_verified_user)
 ): 
     """
     Start a background scan. Returns immediately with scan_id.
@@ -404,7 +404,7 @@ Respond in this exact JSON format (no markdown, no code fences):
 @router.post("/scan-repository-sync") 
 async def scan_repository_sync(
     data: dict,
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(require_verified_user)
 ): 
     """Synchronous scan endpoint (legacy). Prefer /scan-repository with progress tracking."""
     global github_client

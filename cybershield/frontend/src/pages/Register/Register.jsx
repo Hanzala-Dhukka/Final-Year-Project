@@ -75,18 +75,18 @@ export default function Register() {
         );
         setTimeout(
           () =>
-            navigate("/resend-verification", {
-              state: { email: form.email.trim() },
+            navigate("/login", {
+              state: { registered: true, email: form.email.trim(), verify: false },
               replace: true,
             }),
           1600
         );
       } else {
-        toast.success("Account created — verify your email to continue.");
+        toast.success("Account created — sign in to continue.");
         setTimeout(
           () =>
-            navigate("/verify-message", {
-              state: { email: form.email.trim() },
+            navigate("/login", {
+              state: { registered: true, email: form.email.trim(), verify: true },
               replace: true,
             }),
           1600

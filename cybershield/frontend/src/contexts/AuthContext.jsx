@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect } from "react";
+import { createContext, useContext, useState, useEffect, useCallback } from "react";
 import { loginUser, logoutUser } from "../api/authApi";
 import API from "../api/api";
 
@@ -84,6 +84,19 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  // Re-fetch the current user profile (e.g. after email verification) and
+  // sync both state and localStorage so verification banners disappear.
+  const refreshUser = useCallback(async () => {
+    try {
+      const me = await API.get("/auth/me");
+      setUser(me.data);
+      localStorage.setItem("user", JSON.stringify(me.data));
+      return me.data;
+    } catch (error) {
+      return null;
+    }
+  }, []);
+
   const logout = async () => {
     try {
       // Call backend logout endpoint
@@ -132,6 +145,8 @@ export const AuthProvider = ({ children }) => {
         loginWithTokens,
         logout,
         logoutAll,
+        setUser,
+        refreshUser,
       }}
     >
       {children}

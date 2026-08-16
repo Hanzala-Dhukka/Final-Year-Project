@@ -112,6 +112,11 @@ export default function Login() {
   const [success, setSuccess] = useState(false);
   const [tipIndex, setTipIndex] = useState(0);
 
+  // Info surfaced after a successful registration ("register → login" flow).
+  const registered = location.state?.registered;
+  const registeredEmail = location.state?.email;
+  const registeredVerify = location.state?.verify;
+
   const typing = useTypingEffect(TYPING_PHRASES);
 
   // Rotate the security tip every 5s.
@@ -149,13 +154,7 @@ export default function Login() {
       setSuccess(true);
       toast.success("Identity verified — welcome back!");
       setTimeout(() => {
-        // First-time users go through onboarding; everyone else to dashboard.
-        if (response.first_login) {
-          navigate("/onboarding", { replace: true });
-        } else {
-          const from = location.state?.from?.pathname || "/dashboard";
-          navigate(from, { replace: true });
-        }
+        navigate("/dashboard", { replace: true });
       }, 1400);
     } catch (err) {
       const status = err.response?.status;
@@ -274,6 +273,26 @@ export default function Login() {
                   </h2>
                   <p>Sign in to continue to your dashboard.</p>
                 </div>
+
+                <AnimatePresence>
+                  {registered && (
+                    <motion.div
+                      className="login-alert login-alert--success"
+                      role="status"
+                      initial={{ opacity: 0, y: -8 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -8 }}
+                    >
+                      <ShieldCheck size={18} />
+                      <span>
+                        Account created successfully
+                        {registeredVerify
+                          ? ` for ${registeredEmail}. Check your email to verify your account, then sign in.`
+                          : ` for ${registeredEmail}. Sign in to continue.`}
+                      </span>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
 
                 <AnimatePresence>
                   {serverError && (

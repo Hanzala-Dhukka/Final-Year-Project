@@ -23,6 +23,8 @@ import {
 } from "react-icons/fa"
 import API from "../../api/api"
 import { githubStartScan, githubGetResults } from "../../services/scanService"
+import { useAuth } from "../../contexts/AuthContext"
+import VerificationBanner from "../../components/Auth/VerificationBanner"
 import RepositoryHealth from "../../components/GitHubScanner/RepositoryHealth/RepositoryHealth"
 import RepositoryAnalytics from "../../components/GitHubScanner/RepositoryAnalytics/RepositoryAnalytics"
 import ScanControl from "../../components/GitHubScanner/ScanControl/ScanControl"
@@ -52,6 +54,8 @@ const TABS = [
 ]
 
 function GitHubScanner() {
+  const { user } = useAuth()
+  const unverified = user && !user.is_verified
   const [repoUrl, setRepoUrl] = useState("")
   const [validatedUrl, setValidatedUrl] = useState(null)
   const [result, setResult] = useState(null)
@@ -70,6 +74,10 @@ function GitHubScanner() {
   /* ── URL Validation Flow ─────────────────────────────────── */
   const handleValidate = async () => {
     if (!repoUrl.trim()) return
+    if (unverified) {
+      alert("Please verify your email before running scans.")
+      return
+    }
     try {
       setLoading(true)
       const res = await API.post("/github/validate", { repository: repoUrl })
@@ -87,6 +95,10 @@ function GitHubScanner() {
   const scanIdRef = useRef(null)
 
   const handleScan = async () => {
+    if (unverified) {
+      alert("Please verify your email before running scans.")
+      return
+    }
     try {
       setLoading(true)
       setScanActive(true)
@@ -208,6 +220,8 @@ function GitHubScanner() {
 
   return (
     <div className="gs-page">
+      <VerificationBanner />
+
       {/* ── Repository Header (constant) ──────────────────── */}
       {result && (
         <motion.div
@@ -752,7 +766,7 @@ function GitHubScanner() {
           <button
             className="gs-btn-primary"
             onClick={handleValidate}
-            disabled={loading || !repoUrl.trim()}
+            disabled={loading || !repoUrl.trim() || unverified}
           >
             {loading ? <><FaSync className="gs-spin" /> Validating...</> : <><FaSearch /> Validate</>}
           </button>
@@ -774,7 +788,7 @@ function GitHubScanner() {
               {validatedUrl.description && <p className="gs-preview-desc">{validatedUrl.description}</p>}
             </div>
           </div>
-          <button className="gs-btn-primary gs-btn-lg" onClick={handleScan} disabled={loading}>
+          <button className="gs-btn-primary gs-btn-lg" onClick={handleScan} disabled={loading || unverified}>
             {loading ? <><FaSync className="gs-spin" /> Scanning...</> : <><FaShieldAlt /> Start Scan</>}
           </button>
         </motion.div>

@@ -1,9 +1,11 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import API from "../../api/api";
+import { useAuth } from "../../contexts/AuthContext";
 
 function VerifyEmail() {
   const navigate = useNavigate();
+  const { isAuthenticated, refreshUser } = useAuth();
   const [searchParams] = useSearchParams();
   const token = searchParams.get("token");
 
@@ -20,6 +22,9 @@ function VerifyEmail() {
 
       try {
         await API.get(`/auth/verify-email?token=${token}`);
+        if (isAuthenticated) {
+          await refreshUser();
+        }
         setStatus("success");
         setMessage("Email verified successfully! You can now login.");
       } catch (error) {
@@ -29,7 +34,7 @@ function VerifyEmail() {
     };
 
     verifyEmail();
-  }, [token]);
+  }, [token, isAuthenticated, refreshUser]);
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50">

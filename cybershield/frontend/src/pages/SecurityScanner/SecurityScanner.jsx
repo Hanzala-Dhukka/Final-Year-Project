@@ -18,6 +18,8 @@ import ScanLogs from "../../components/Scanner/ScanLogs";
 import ScanStatus from "../../components/Scanner/ScanStatus";
 import CancelScanButton from "../../components/Scanner/CancelScanButton";
 import ScanResults from "../../components/Scanner/ScanResults";
+import VerificationBanner from "../../components/Auth/VerificationBanner";
+import { useAuth } from "../../contexts/AuthContext";
 import { validateRepository, analyzeRepository, getAnalysisHistory } from "../../api/githubApi";
 import {
   scannerStartScan,
@@ -31,6 +33,9 @@ import {
 import "./scanner.css";
 
 export default function SecurityScanner() {
+  const { user } = useAuth();
+  const unverified = user && !user.is_verified;
+
   // ── Validation & Analysis State ───────────────────────────────
   const [validating, setValidating] = useState(false);
   const [analysis, setAnalysis] = useState(null);
@@ -161,6 +166,10 @@ export default function SecurityScanner() {
 
   // ── Validate Repository ───────────────────────────────────────
   const handleValidate = async (repoUrl) => {
+    if (unverified) {
+      alert("Please verify your email before running scans.");
+      return;
+    }
     setValidating(true);
     setAnalysisError("");
     try {
@@ -186,6 +195,10 @@ export default function SecurityScanner() {
 
   // ── Start Scan ────────────────────────────────────────────────
   const handleScanStart = async ({ repo, branch }) => {
+    if (unverified) {
+      alert("Please verify your email before running scans.");
+      return;
+    }
     setScanActive(true);
     setScanStatus("queued");
     setProgress(0);
@@ -274,6 +287,8 @@ export default function SecurityScanner() {
 
   return (
     <div className="scanner-page">
+      <VerificationBanner />
+
       {/* Professional Repository Header (shown after analysis) or default ScanHeader */}
       {analysis ? (
         <RepositoryHeader

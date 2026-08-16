@@ -107,3 +107,18 @@ async def get_current_user(
             status_code=401,
             detail="Invalid or expired token"
         )
+
+
+async def require_verified_user(
+    current_user: dict = Depends(get_current_user)
+):
+    """
+    Dependency that rejects unverified users so scanning features stay locked
+    until the account email address has been verified.
+    """
+    if not current_user.get("is_verified", False):
+        raise HTTPException(
+            status_code=403,
+            detail="Please verify your email before using this feature"
+        )
+    return current_user

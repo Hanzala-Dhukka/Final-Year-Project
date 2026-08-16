@@ -3,7 +3,7 @@ GitHub Repository Analysis API routes.
 """
 from datetime import datetime
 from fastapi import APIRouter, HTTPException, Depends
-from app.dependencies.auth import get_current_user
+from app.dependencies.auth import get_current_user, require_verified_user
 from app.github.utils import extract_repo_name
 from app.github.parser import validate_repository
 from app.github.github_service import analyze_repository, get_analysis_history, get_analysis_by_id
@@ -13,7 +13,7 @@ router = APIRouter()
 
 
 @router.post("/validate")
-async def validate_repo(data: dict, current_user: dict = Depends(get_current_user)):
+async def validate_repo(data: dict, current_user: dict = Depends(require_verified_user)):
     """Validate that a GitHub repository URL is accessible."""
     repo_url = data.get("repository", "")
     if not repo_url:
@@ -32,7 +32,7 @@ async def validate_repo(data: dict, current_user: dict = Depends(get_current_use
 
 
 @router.post("/analyze")
-async def analyze_repo(data: dict, current_user: dict = Depends(get_current_user)):
+async def analyze_repo(data: dict, current_user: dict = Depends(require_verified_user)):
     """Full repository analysis: metadata, branches, languages, file tree, dependencies, statistics."""
     repo_url = data.get("repository", "")
     if not repo_url:
