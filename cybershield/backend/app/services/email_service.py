@@ -18,6 +18,10 @@ _mail_password = "".join(str(core_settings.MAIL_PASSWORD or "").split())
 _resend_key = (core_settings.RESEND_API_KEY or "").strip()
 _resend_from = core_settings.RESEND_FROM or "CyberShield <onboarding@resend.dev>"
 
+# Brevo API credentials (HTTPS delivery to any recipient — primary provider).
+_brevo_key = (core_settings.BREVO_API_KEY or "").strip()
+_brevo_sender = core_settings.BREVO_SENDER or "cybershield786@gmail.com"
+
 mail_config = ConnectionConfig(
     MAIL_USERNAME=_mail_username,
     MAIL_PASSWORD=_mail_password,
@@ -32,8 +36,41 @@ mail_config = ConnectionConfig(
 
 
 def is_smtp_configured() -> bool:
-    """True when usable email credentials are available (Resend API key or SMTP creds)."""
-    return bool(_resend_key or (_mail_username and _mail_password))
+    """True when usable email credentials are available (Brevo, Resend, or SMTP)."""
+    return bool(_brevo_key or _resend_key or (_mail_username and _mail_password))
+
+
+async def _send_via_brevo(to_email: str, subject: str, body: str,
+                          category: str, html: bool = False) -> bool:
+    """Deliver via Brevo's HTTPS API (port 443), logging to email_logs."""
+    if not _brevo_key:
+        return False
+    try:
+        payload = {
+            "sender": {"name": "CyberShield", "email": _brevo_sender},
+            "to": [{"email": to_email}],
+            "subject": subject,
+            "htmlContent" if html else "textContent": body,
+        }
+        async with httpx.AsyncClient(timeout=30) as client:
+            resp = await client.post(
+                "https://api.brevo.com/v3/smtp/email",
+                headers={"api-key": _brevo_key, "Accept": "application/json"},
+                json=payload,
+            )
+        if resp.status_code in (200, 201):
+            await _log_email(to_email, subject, True, category=category)
+            print(f"[Brevo] {category} email sent to {to_email}")
+            return True
+        await _log_email(to_email, subject, False,
+                         error=f"Brevo HTTP {resp.status_code}: {resp.text[:300]}",
+                         category=category)
+        print(f"[Brevo] {category} email FAILED ({resp.status_code}): {resp.text[:200]}")
+        return False
+    except Exception as e:
+        await _log_email(to_email, subject, False, error=f"Brevo: {e}", category=category)
+        print(f"[Brevo] {category} email error: {e}")
+        return False
 
 
 async def _send_via_resend(to_email: str, subject: str, body: str,
@@ -122,7 +159,9 @@ class EmailService:
                 subtype="plain"
             )
 
-            # Send email — prefer Resend API (works on Render), fall back to SMTP.
+            # Send email — prefer Brevo API (any recipient), then Resend, then SMTP.
+            if _brevo_key:
+                return await _send_via_brevo(str(email), subject, body, "verification")
             if _resend_key:
                 return await _send_via_resend(str(email), subject, body, "verification")
 
@@ -189,7 +228,9 @@ class EmailService:
                 subtype="plain"
             )
 
-            # Send email — prefer Resend API (works on Render), fall back to SMTP.
+            # Send email — prefer Brevo API (any recipient), then Resend, then SMTP.
+            if _brevo_key:
+                return await _send_via_brevo(str(email), subject, body, "reset")
             if _resend_key:
                 return await _send_via_resend(str(email), subject, body, "reset")
 
@@ -238,7 +279,9 @@ class EmailService:
             CyberShield Team
             """
 
-            # Send email — prefer Resend API (works on Render), fall back to SMTP.
+            # Send email — prefer Brevo API (any recipient), then Resend, then SMTP.
+            if _brevo_key:
+                return await _send_via_brevo(str(email), subject, body, "welcome")
             if _resend_key:
                 return await _send_via_resend(str(email), subject, body, "welcome")
 
@@ -345,7 +388,9 @@ async def send_report_email(to_email: str, subject: str, message: str,
 
 
 async def _send_smtp(to_email: str, subject: str, body: str, category: str = "alert") -> bool:
-    """Low-level send with graceful no-credential fallback (Resend API first, SMTP second)."""
+    """Low-level send with graceful no-credential fallback (Brevo first, Resend, then SMTP)."""
+    if _brevo_key:
+        return await _send_via_brevo(to_email, subject, body, category, html=True)
     if _resend_key:
         return await _send_via_resend(to_email, subject, body, category, html=True)
     user = (settings.EMAIL_USER or "").strip()

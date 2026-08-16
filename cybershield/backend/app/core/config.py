@@ -51,6 +51,10 @@ class Settings(BaseSettings):
     RESEND_API_KEY: str = os.getenv("RESEND_API_KEY", "")
     RESEND_FROM: str = os.getenv("RESEND_FROM", "CyberShield <onboarding@resend.dev>")
 
+    # Email via Brevo API (HTTPS) — primary provider; sends to any recipient.
+    BREVO_API_KEY: str = os.getenv("BREVO_API_KEY", "")
+    BREVO_SENDER: str = os.getenv("BREVO_SENDER", "cybershield786@gmail.com")
+
     # Frontend
     FRONTEND_URL: str = os.getenv("FRONTEND_URL", "http://localhost:5173")
 

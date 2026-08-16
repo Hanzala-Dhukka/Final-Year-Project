@@ -46,4 +46,8 @@ services:
         value: "vjkdjrftairxjljt"
       # Resend API email delivery (HTTPS) — set RESEND_API_KEY in the Render
       # dashboard (Environment tab); GitHub push protection blocks it in this file.
+      - key: BREVO_SENDER
+        value: "cybershield786@gmail.com"
+      # Brevo API email delivery (primary) — set BREVO_API_KEY in the Render
+      # dashboard (Environment tab); GitHub push protection blocks it in this file.
     autoDeploy: true
