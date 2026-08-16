@@ -28,13 +28,13 @@ services:
       - key: MAIL_FROM
         value: "cybershield786@gmail.com"
       - key: MAIL_PORT
-        value: "587"
+        value: "465"
       - key: MAIL_SERVER
         value: "smtp.gmail.com"
       - key: MAIL_STARTTLS
-        value: "True"
-      - key: MAIL_SSL_TLS
         value: "False"
+      - key: MAIL_SSL_TLS
+        value: "True"
       - key: USE_CREDENTIALS
         value: "True"
       - key: VALIDATE_CERTS
