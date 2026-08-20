@@ -81,6 +81,59 @@ async def get_log_stats(current_user=Depends(admin_required)):
         raise HTTPException(status_code=500, detail=f"Failed to compute log stats: {str(e)}")
 
 
+@router.get("/logs/old")
+async def get_old_logs(
+    skip: int = Query(0, ge=0),
+    limit: int = Query(50, ge=1, le=500),
+    error_type: Optional[str] = Query(None, description="Filter by Error_Type"),
+    status: Optional[str] = Query(None, description="Filter by Status (resolved / auto_resolved / archived)"),
+    current_user=Depends(admin_required),
+):
+    """
+    List entries that were moved to old_logs (resolved issues).
+    """
+    from app.services.log_archiver import get_old_logs as fetch_old_logs
+    total, logs = await fetch_old_logs(skip, limit, error_type, status)
+    return {"total": total, "skip": skip, "limit": limit, "logs": logs}
+
+
+@router.get("/logs/old/{log_id}")
+async def get_old_log_by_id(log_id: str, current_user=Depends(admin_required)):
+    """
+    Fetch a single resolved entry from old_logs.
+    """
+    from app.services.log_archiver import get_old_log_by_id as fetch_old_log
+    log = await fetch_old_log(log_id)
+    if log is None:
+        raise HTTPException(status_code=404, detail="Old log entry not found")
+    return log
+
+
+@router.delete("/logs/old/{log_id}")
+async def delete_old_log(log_id: str, current_user=Depends(admin_required)):
+    """
+    Delete a single old_logs entry (housekeeping).
+    """
+    from app.services.log_archiver import delete_old_log as remove_old_log
+    if not await remove_old_log(log_id):
+        raise HTTPException(status_code=404, detail="Old log entry not found")
+    return {"deleted": True, "id": log_id}
+
+
+@router.post("/logs/{log_id}/resolve")
+async def resolve_log(log_id: str, note: Optional[str] = None,
+                      current_user=Depends(admin_required)):
+    """
+    Mark a log entry as resolved and move it from `log` to `old_logs`.
+    """
+    from app.services.log_archiver import resolve_log as archive_resolved_log
+    resolved_by = str(current_user.get("email") or current_user.get("username") or "admin")
+    moved = await archive_resolved_log(log_id, resolved_by=resolved_by, note=note)
+    if not moved:
+        raise HTTPException(status_code=404, detail="Log entry not found")
+    return {"resolved": True, "id": log_id, "moved_to": "old_logs"}
+
+
 @router.get("/logs/{log_id}")
 async def get_log_by_id(log_id: str, current_user=Depends(admin_required)):
     """

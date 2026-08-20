@@ -92,5 +92,23 @@ def register_scheduler_jobs() -> None:
         coalesce=True,
     )
 
+    # Auto-archive resolved / old errors into old_logs — daily 05:30
+    import asyncio
+    from app.services import log_archiver
+
+    def _archive_resolved_logs() -> dict:
+        """Sync wrapper so APScheduler can run the async archiver coroutine."""
+        return asyncio.run(log_archiver.auto_archive_resolved_logs())
+
+    scheduler.add_job(
+        _archive_resolved_logs,
+        "cron",
+        hour=5,
+        minute=30,
+        id="archive_resolved_logs",
+        replace_existing=True,
+        coalesce=True,
+    )
+
 
 __all__ = ["register_scheduler_jobs", "scheduler"]
