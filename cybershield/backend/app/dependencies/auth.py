@@ -95,7 +95,6 @@ async def get_current_user(
             await database.sessions.update_one(
                 {"user_id": str(user_object_id), "active": True},
                 {"$set": {"last_activity": datetime.now(timezone.utc)}},
-                sort=[("last_activity", -1)],
             )
         except Exception:
             fire_and_forget_log()
