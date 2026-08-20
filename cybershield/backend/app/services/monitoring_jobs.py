@@ -2,7 +2,9 @@ from app.database.db import database
 from app.services.alert_service import ( 
     create_alert 
 ) 
+from app.services.error_log_service import with_error_logging 
 
+@with_error_logging(extra_info={"job": "scheduled_monitoring"})
 async def monitor_targets(): 
     print("Starting scheduled monitoring scan...")
     targets = await database[ 

@@ -83,6 +83,13 @@ async def ensure_indexes() -> None:
         ("ai_analysis", [
             {"keys": [("finding_id", 1)], "name": "idx_ai_analysis_finding"},
         ]),
+
+        # Server error logs (real-time error monitoring)
+        ("log", [
+            {"keys": [("DateTime", -1)], "name": "idx_log_datetime"},
+            {"keys": [("Error_Type", 1), ("DateTime", -1)], "name": "idx_log_type_date"},
+            {"keys": [("Function", 1), ("DateTime", -1)], "name": "idx_log_function_date"},
+        ]),
     ]
 
     for collection_name, index_list in indexes:

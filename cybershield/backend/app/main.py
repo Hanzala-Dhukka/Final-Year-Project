@@ -62,6 +62,8 @@ from app.reports.routes import router as professional_reports_router
 from app.ai_assistant.routes import router as ai_assistant_router
 from app.learning.learning_routes import router as learning_router
 from app.ai.summary_routes import router as summary_router
+from app.routes.log_routes import router as log_router
+from app.services.error_log_service import log_error
 
 
 # ── App instance ─────────────────────────────────────────────────────────────
@@ -175,6 +177,8 @@ app.include_router(recommendation_router, tags=["Scanner Recommendations"])
 app.include_router(sc5_router, tags=["SC5 AI Recommendations"])
 # ── Professional Security Reports (Module D5) ────────────────────────────────
 app.include_router(professional_reports_router, prefix="/api/v1/reports", tags=["Professional Reports"])
+# ── Server Error Logs (real-time) ────────────────────────────────────────────
+app.include_router(log_router, prefix="/api/v1", tags=["Server Logs"])
 
 from fastapi import WebSocket, WebSocketDisconnect
 from app.websocket.manager import manager as _ws_manager
@@ -195,13 +199,44 @@ async def root_ws_dashboard(websocket: WebSocket):
     except (WebSocketDisconnect, Exception):
         await _ws_manager.disconnect(websocket)
 
+@app.websocket("/ws/logs")
+async def ws_logs(websocket: WebSocket):
+    """Real-time server error log stream — every new log entry is pushed here."""
+    from app.services.error_log_service import log_manager
+    await log_manager.connect(websocket)
+    try:
+        await websocket.send_json({
+            "event": "connected",
+            "message": "Real-time server log stream connected",
+        })
+        while True:
+            await websocket.receive_text()
+    except (WebSocketDisconnect, Exception):
+        await log_manager.disconnect(websocket)
+
 
 
 
 # ── Global Error Handler (Module E5, Part 8) ────────────────────────────────
 @app.exception_handler(Exception)
 async def global_error_handler(request: Request, exc: Exception):
-    """Catch-all handler — returns a consistent JSON error for any unhandled exception."""
+    """Catch-all handler — logs the full error into the `log` collection in
+    real time, then returns a consistent JSON error to the client."""
+    try:
+        await log_error(
+            folder_name="app",
+            file_name="main.py",
+            function="global_error_handler",
+            error=exc,
+            extra_info={
+                "Request_Method": request.method,
+                "Request_Path": str(request.url.path),
+                "Client_Host": request.client.host if request.client else None,
+                "Query_Params": dict(request.query_params),
+            },
+        )
+    except Exception:
+        pass
     print(f"[Error] {request.method} {request.url.path}: {exc}")
     return JSONResponse(
         status_code=500,
