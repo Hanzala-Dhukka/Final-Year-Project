@@ -378,10 +378,10 @@ async def run_github_scan(repo_url: str, user_id: Optional[str] = None,
         from app.ai.scan_summary import generate_scan_summary, save_scan_summary
 
         scan_summary_input = {
-            "critical": severity_counts.get("critical", 0),
-            "high": severity_counts.get("high", 0),
-            "medium": severity_counts.get("medium", 0),
-            "low": severity_counts.get("low", 0),
+            "critical": severity_summary.get("critical", 0),
+            "high": severity_summary.get("high", 0),
+            "medium": severity_summary.get("medium", 0),
+            "low": severity_summary.get("low", 0),
             "score": risk_score,
             "risk_level": risk_level,
             "findings": [

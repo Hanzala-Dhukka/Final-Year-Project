@@ -15,8 +15,8 @@ def _build_id_filter(scan_id: str) -> dict:
         oid = ObjectId(scan_id)
         return {"$or": [{"_id": oid}, {"scan_id": scan_id}]}
     except Exception:
-        # Not a valid ObjectId — match by scan_id field (UUID or other string)
-        fire_and_forget_log()
+        # Not a valid ObjectId — match by scan_id field (UUID or other string).
+        # This is expected for UUID-based scan ids, so it is NOT an error.
         return {"scan_id": scan_id}
 
 
