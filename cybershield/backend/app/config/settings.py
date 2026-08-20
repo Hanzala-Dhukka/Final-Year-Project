@@ -20,8 +20,8 @@ GITHUB_TOKEN = os.getenv("GITHUB_TOKEN")
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")  # kept for backward compat, not used
 AI_PROVIDER = os.getenv("AI_PROVIDER", "groq")
-AI_MODEL = os.getenv("AI_MODEL", "llama-3.3-70b-versatile")
-AI_MODEL_FALLBACK = os.getenv("AI_MODEL_FALLBACK", "llama-3.1-8b-instant")
+AI_MODEL = os.getenv("AI_MODEL", "openai/gpt-oss-120b")
+AI_MODEL_FALLBACK = os.getenv("AI_MODEL_FALLBACK", "qwen/qwen3.6-27b")
 AI_TEMPERATURE = float(os.getenv("AI_TEMPERATURE", "0.2"))
 AI_MAX_TOKENS = int(os.getenv("AI_MAX_TOKENS", "2048"))
 FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:5173")
@@ -67,8 +67,8 @@ class Settings(BaseSettings):
     GEMINI_API_KEY: str = os.getenv("GEMINI_API_KEY") or ""   # kept for compat
     OPENROUTER_API_KEY: str = os.getenv("OPENROUTER_API_KEY") or ""
     AI_PROVIDER: str = os.getenv("AI_PROVIDER", "groq")
-    AI_MODEL: str = os.getenv("AI_MODEL", "llama-3.3-70b-versatile")
-    AI_MODEL_FALLBACK: str = os.getenv("AI_MODEL_FALLBACK", "llama-3.1-8b-instant")
+    AI_MODEL: str = os.getenv("AI_MODEL", "openai/gpt-oss-120b")
+    AI_MODEL_FALLBACK: str = os.getenv("AI_MODEL_FALLBACK", "qwen/qwen3.6-27b")
     AI_TEMPERATURE: float = float(os.getenv("AI_TEMPERATURE", "0.2"))
     AI_MAX_TOKENS: int = int(os.getenv("AI_MAX_TOKENS", "2048"))
 

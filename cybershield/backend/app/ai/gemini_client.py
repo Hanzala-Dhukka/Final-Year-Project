@@ -66,10 +66,10 @@ def _is_model_gone(err: Exception) -> bool:
 
 def _candidate_models() -> List[str]:
     """Ordered list of Groq model IDs to try: primary → fallback → last-resort."""
-    primary  = getattr(settings, "AI_MODEL",          "llama-3.3-70b-versatile")
-    fallback = getattr(settings, "AI_MODEL_FALLBACK",  "llama-3.1-8b-instant")
+    primary  = getattr(settings, "AI_MODEL",          "openai/gpt-oss-120b")
+    fallback = getattr(settings, "AI_MODEL_FALLBACK",  "qwen/qwen3.6-27b")
     seen, models = set(), []
-    for m in [primary, fallback, "llama-3.3-70b-versatile", "llama-3.1-8b-instant"]:
+    for m in [primary, fallback, "openai/gpt-oss-120b", "qwen/qwen3.6-27b", "openai/gpt-oss-20b", "groq/compound-mini"]:
         if m and m not in seen:
             seen.add(m)
             models.append(m)
