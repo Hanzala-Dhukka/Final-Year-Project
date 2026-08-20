@@ -238,7 +238,16 @@ async def send_to_gemini(
             "explore: OWASP Top 10, secure coding, authentication, and threat modeling."
         )
 
-    return await generate(prompt)
+    try:
+        return await generate(prompt)
+    except Exception as e:
+        fire_and_forget_log()
+        print(f"[AI Chat] Error generating response: {e}")
+        return (
+            "I ran into a problem reaching the AI service just now "
+            "(e.g. the API key may be invalid or the service is unavailable). "
+            "Please try again in a moment. If the issue persists, contact the administrator."
+        )
 
 
 async def generate_title(message: str) -> str:
