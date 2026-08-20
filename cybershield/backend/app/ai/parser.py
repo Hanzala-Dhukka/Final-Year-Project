@@ -9,6 +9,8 @@ import json
 import re
 from typing import Any, Dict, Optional
 
+from app.services.error_log_service import fire_and_forget_log
+
 # Default structure when AI response is missing fields
 DEFAULT_ANALYSIS = {
     "summary": "Analysis unavailable",
@@ -53,6 +55,7 @@ def parse_ai_response(raw: str) -> Dict[str, Any]:
         if isinstance(parsed, dict):
             return _fill_defaults(parsed)
     except json.JSONDecodeError:
+        fire_and_forget_log()
         pass
 
     # Try extracting JSON object from surrounding text
@@ -64,6 +67,7 @@ def parse_ai_response(raw: str) -> Dict[str, Any]:
             if isinstance(parsed, dict):
                 return _fill_defaults(parsed)
         except json.JSONDecodeError:
+            fire_and_forget_log()
             pass
 
     # Last resort: try to fix common issues
@@ -79,6 +83,7 @@ def parse_ai_response(raw: str) -> Dict[str, Any]:
             if isinstance(parsed, dict):
                 return _fill_defaults(parsed)
         except json.JSONDecodeError:
+            fire_and_forget_log()
             pass
 
     raise ValueError(f"Unable to parse AI response as JSON. Raw: {text[:200]}...")

@@ -10,6 +10,7 @@ from typing import Dict, Any, Optional
 from datetime import datetime, timezone
 
 from app.database.db import database
+from app.services.error_log_service import fire_and_forget_log
 
 ai_context_col = database.ai_context
 
@@ -50,6 +51,7 @@ async def store_scan_context(
             upsert=True,
         )
     except Exception as e:
+        fire_and_forget_log()
         print(f"[AI Context] Failed to store scan context: {e}")
 
 
@@ -69,5 +71,6 @@ async def get_user_security_context(user_id: str) -> Optional[Dict[str, Any]]:
             doc.pop("_id", None)
             return doc
     except Exception as e:
+        fire_and_forget_log()
         print(f"[AI Context] Failed to retrieve context: {e}")
     return None

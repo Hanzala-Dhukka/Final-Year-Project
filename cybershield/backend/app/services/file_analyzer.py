@@ -3,6 +3,7 @@ import re
 from typing import Dict, Any, List, Optional
 from datetime import datetime
 import os
+from app.services.error_log_service import fire_and_forget_log
 
 
 class FileAnalyzer:
@@ -54,6 +55,7 @@ class FileAnalyzer:
             elif "simulations" in data:
                 return "OWASP Simulation"
         except:
+            fire_and_forget_log()
             pass
         
         # Default based on file extension
@@ -100,6 +102,7 @@ class FileAnalyzer:
                 "summary": f"Found {len(findings)} vulnerabilities: {critical} critical, {high} high, {medium} medium, {low} low"
             }
         except Exception as e:
+            fire_and_forget_log()
             return {
                 "error": str(e),
                 "summary": "Failed to parse GitHub scan report"
@@ -137,6 +140,7 @@ class FileAnalyzer:
                 "summary": f"Identified {len(threats)} threats: {critical} critical, {high} high, {medium} medium, {low} low"
             }
         except Exception as e:
+            fire_and_forget_log()
             return {
                 "error": str(e),
                 "summary": "Failed to parse threat report"
@@ -169,6 +173,7 @@ class FileAnalyzer:
                 "summary": f"Security headers: {present_count}/{len(security_headers)} present, {missing_count} missing"
             }
         except Exception as e:
+            fire_and_forget_log()
             return {
                 "error": str(e),
                 "summary": "Failed to parse security headers report"
@@ -204,6 +209,7 @@ class FileAnalyzer:
                 "summary": f"OWASP tests: {passed} passed, {failed} failed, {warning} warnings out of {len(simulations)}"
             }
         except Exception as e:
+            fire_and_forget_log()
             return {
                 "error": str(e),
                 "summary": "Failed to parse OWASP report"

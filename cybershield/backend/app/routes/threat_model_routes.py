@@ -5,6 +5,8 @@ from app.services.threat_model_service import create_threat_model
 from app.dependencies.auth import get_current_user
 import logging
 
+from app.services.error_log_service import fire_and_forget_log
+
 logger = logging.getLogger(__name__)
 router = APIRouter()
 
@@ -35,8 +37,10 @@ async def create_threat_model_endpoint(
         # Return the full result (threats, recommendations, fix plan, report, etc.)
         return result
     except HTTPException:
+        fire_and_forget_log()
         raise
     except Exception as e:
+        fire_and_forget_log()
         logger.exception("Failed to create threat model")
         raise HTTPException(
             status_code=500,

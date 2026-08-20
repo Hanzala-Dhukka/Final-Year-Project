@@ -35,6 +35,7 @@ from app.schemas.glossary_schema import (
 from app.services import glossary_service
 from app.services.flashcard_service import create_session as fc_create, record_result as fc_record
 from app.services.glossary_export_service import export_term_pdf
+from app.services.error_log_service import fire_and_forget_log
 
 router = APIRouter(
     prefix="/api/v1/glossary",
@@ -48,6 +49,7 @@ async def _startup_seed():
     try:
         await glossary_service.seed_if_empty()
     except Exception as e:
+        fire_and_forget_log()
         print(f"Glossary seed skipped: {e}")
 
 

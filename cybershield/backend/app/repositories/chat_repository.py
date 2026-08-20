@@ -5,6 +5,7 @@ from datetime import datetime, timezone
 from typing import Optional, List, Dict, Any
 from bson import ObjectId
 from app.core.database import get_collection
+from app.services.error_log_service import fire_and_forget_log
 
 
 class ChatRepository:
@@ -34,6 +35,7 @@ class ChatRepository:
             result = await collection.insert_one(conversation_data)
             return str(result.inserted_id)
         except Exception as e:
+            fire_and_forget_log()
             print(f"Error creating conversation: {e}")
             return None
     
@@ -52,6 +54,7 @@ class ChatRepository:
             conversation = await collection.find_one({"_id": ObjectId(conversation_id)})
             return conversation
         except Exception as e:
+            fire_and_forget_log()
             print(f"Error getting conversation by ID: {e}")
             return None
     
@@ -70,6 +73,7 @@ class ChatRepository:
             conversation = await collection.find_one({"conversation_id": conversation_id})
             return conversation
         except Exception as e:
+            fire_and_forget_log()
             print(f"Error getting conversation by conversation_id: {e}")
             return None
     
@@ -94,6 +98,7 @@ class ChatRepository:
             
             return conversations
         except Exception as e:
+            fire_and_forget_log()
             print(f"Error getting user conversations: {e}")
             return []
     
@@ -125,6 +130,7 @@ class ChatRepository:
             
             return result.modified_count > 0
         except Exception as e:
+            fire_and_forget_log()
             print(f"Error adding message to conversation: {e}")
             return False
     
@@ -152,6 +158,7 @@ class ChatRepository:
             
             return result.modified_count > 0
         except Exception as e:
+            fire_and_forget_log()
             print(f"Error updating conversation: {e}")
             return False
     
@@ -170,6 +177,7 @@ class ChatRepository:
             result = await collection.delete_one({"_id": ObjectId(conversation_id)})
             return result.deleted_count > 0
         except Exception as e:
+            fire_and_forget_log()
             print(f"Error deleting conversation: {e}")
             return False
     
@@ -198,6 +206,7 @@ class ChatRepository:
             
             return result.modified_count > 0
         except Exception as e:
+            fire_and_forget_log()
             print(f"Error closing conversation: {e}")
             return False
     
@@ -221,6 +230,7 @@ class ChatRepository:
             
             return conversations
         except Exception as e:
+            fire_and_forget_log()
             print(f"Error getting recent conversations: {e}")
             return []
 

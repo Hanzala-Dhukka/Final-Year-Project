@@ -63,7 +63,7 @@ from app.ai_assistant.routes import router as ai_assistant_router
 from app.learning.learning_routes import router as learning_router
 from app.ai.summary_routes import router as summary_router
 from app.routes.log_routes import router as log_router
-from app.services.error_log_service import log_error
+from app.services.error_log_service import log_error, fire_and_forget_log
 
 
 # ── App instance ─────────────────────────────────────────────────────────────
@@ -197,6 +197,7 @@ async def root_ws_dashboard(websocket: WebSocket):
             await websocket.receive_text()
             await websocket.send_json({"event": "pong"})
     except (WebSocketDisconnect, Exception):
+        fire_and_forget_log()
         await _ws_manager.disconnect(websocket)
 
 @app.websocket("/ws/logs")
@@ -212,6 +213,7 @@ async def ws_logs(websocket: WebSocket):
         while True:
             await websocket.receive_text()
     except (WebSocketDisconnect, Exception):
+        fire_and_forget_log()
         await log_manager.disconnect(websocket)
 
 
@@ -236,6 +238,7 @@ async def global_error_handler(request: Request, exc: Exception):
             },
         )
     except Exception:
+        fire_and_forget_log()
         pass
     print(f"[Error] {request.method} {request.url.path}: {exc}")
     return JSONResponse(
@@ -260,6 +263,16 @@ def health():
 # ── Scheduler ─────────────────────────────────────────────────────────────────
 @app.on_event("startup")
 async def startup():
+    # Install global error hooks — every uncaught exception (threads, event
+    # loop tasks, scheduler jobs) is automatically stored in the `log` collection.
+    try:
+        from app.services.error_log_service import install_global_hooks
+        install_global_hooks()
+        print("[ErrorLog] Global error hooks installed.")
+    except Exception as e:
+        fire_and_forget_log()
+        print(f"Failed to install global error hooks: {e}")
+
     # MongoDB connection verification — fail fast so data can never be
     # silently written to an unreachable database.
     try:
@@ -267,6 +280,7 @@ async def startup():
         await database.command("ping")
         print(f"MongoDB connection verified: {database.name}")
     except Exception as e:
+        fire_and_forget_log()
         print(f"CRITICAL: MongoDB connection failed at startup: {e}")
 
     # Seed the default security hardening checklist catalogue (Module 6.1)
@@ -275,6 +289,7 @@ async def startup():
         seeded = await seed_checklists()
         print(f"Security checklist catalogue ready ({seeded} items).")
     except Exception as e:
+        fire_and_forget_log()
         print(f"Failed to seed security checklists: {e}")
 
     # H7.1: Create indexes for scan_history collection
@@ -283,6 +298,7 @@ async def startup():
         await create_indexes()
         print("Scan history indexes created successfully.")
     except Exception as e:
+        fire_and_forget_log()
         print(f"Failed to create scan history indexes: {e}")
 
     # Module E5, Part 4: Ensure all MongoDB indexes for performance
@@ -290,6 +306,7 @@ async def startup():
         from app.database.indexes import ensure_indexes
         await ensure_indexes()
     except Exception as e:
+        fire_and_forget_log()
         print(f"Failed to ensure MongoDB indexes: {e}")
 
     # Add scheduled jobs

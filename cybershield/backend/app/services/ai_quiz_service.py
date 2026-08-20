@@ -13,6 +13,7 @@ from typing import List, Dict, Any, Optional
 from app.ai.gemini_client import generate, is_available
 from app.ai.quiz_prompt import build_quiz_prompt
 from app.data.questions import QUESTIONS
+from app.services.error_log_service import fire_and_forget_log
 
 
 def _strip_code_fences(text: str) -> str:
@@ -83,6 +84,7 @@ async def generate_quiz_questions(
             if parsed:
                 return parsed[:count], "Gemini"
         except Exception as e:
+            fire_and_forget_log()
             print(f"AI quiz generation failed, using fallback: {e}")
 
     return _fallback_questions(difficulty, category, technology, count), "Fallback"
@@ -92,12 +94,14 @@ def _safe_json_loads(text: str) -> Any:
     try:
         return json.loads(text)
     except Exception:
+        fire_and_forget_log()
         # Try to recover the first {...} JSON object
         m = re.search(r"\{.*\}", text, re.DOTALL)
         if m:
             try:
                 return json.loads(m.group(0))
             except Exception:
+                fire_and_forget_log()
                 return None
         return None
 

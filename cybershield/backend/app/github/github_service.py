@@ -14,6 +14,7 @@ from app.github.parser import (
     get_contributors_count,
 )
 from app.github.analyzer import build_analysis
+from app.services.error_log_service import fire_and_forget_log
 
 
 async def analyze_repository(repo_name: str, user_id: str) -> dict:
@@ -29,6 +30,7 @@ async def analyze_repository(repo_name: str, user_id: str) -> dict:
     try:
         repo = get_repository(repo_name)
     except (GithubException, RateLimitExceededException) as e:
+        fire_and_forget_log()
         status_code = getattr(e, "status", None)
         if status_code == 404:
             raise ValueError("Repository not found. Check the URL and try again.")
@@ -37,32 +39,38 @@ async def analyze_repository(repo_name: str, user_id: str) -> dict:
         else:
             raise ValueError(f"GitHub API error: {str(e)}")
     except Exception as e:
+        fire_and_forget_log()
         raise ValueError(f"Could not access repository: {str(e)}")
 
     # 2. Extract data
     try:
         metadata = repository_metadata(repo)
     except Exception as e:
+        fire_and_forget_log()
         raise ValueError(f"Error reading repository metadata: {str(e)}")
 
     try:
         branches = get_branches(repo)
     except Exception as e:
+        fire_and_forget_log()
         raise ValueError(f"Error reading branches: {str(e)}")
 
     try:
         languages = get_languages(repo)
     except Exception as e:
+        fire_and_forget_log()
         raise ValueError(f"Error reading languages: {str(e)}")
 
     try:
         file_paths = scan_tree(repo)
     except Exception as e:
+        fire_and_forget_log()
         raise ValueError(f"Error scanning file tree: {str(e)}")
 
     try:
         contributors = get_contributors_count(repo)
     except Exception as e:
+        fire_and_forget_log()
         raise ValueError(f"Error reading contributors: {str(e)}")
 
     # 3. Build analysis

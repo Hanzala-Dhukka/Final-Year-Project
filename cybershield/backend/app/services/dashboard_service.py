@@ -5,6 +5,7 @@ from datetime import datetime, timezone, timedelta
 from typing import Dict, Any, List, Optional
 from bson import ObjectId
 from app.database.db import database
+from app.services.error_log_service import fire_and_forget_log
 
 
 async def get_dashboard(user_id: str) -> Dict[str, Any]:
@@ -68,6 +69,7 @@ async def get_dashboard(user_id: str) -> Dict[str, Any]:
         }
         
     except Exception as e:
+        fire_and_forget_log()
         print(f"Error getting dashboard data: {e}")
         import traceback
         traceback.print_exc()
@@ -136,6 +138,7 @@ async def calculate_security_score(user_id: str) -> int:
         return max(0, min(100, int(score)))
         
     except Exception as e:
+        fire_and_forget_log()
         print(f"Error calculating security score: {e}")
         return 0
 
@@ -178,6 +181,7 @@ async def get_recent_scans(user_id: str, limit: int = 5) -> List[Dict[str, Any]]
         
         return scans
     except Exception as e:
+        fire_and_forget_log()
         print(f"Error getting recent scans: {e}")
         return []
 
@@ -210,6 +214,7 @@ async def get_recent_reports(user_id: str, limit: int = 5) -> List[Dict[str, Any
         
         return reports
     except Exception as e:
+        fire_and_forget_log()
         print(f"Error getting recent reports: {e}")
         return []
 
@@ -256,6 +261,7 @@ async def get_quiz_progress(user_id: str) -> Dict[str, Any]:
             "weekly_scores": weekly_scores
         }
     except Exception as e:
+        fire_and_forget_log()
         print(f"Error getting quiz progress: {e}")
         return {
             "completed_quizzes": 0,
@@ -306,6 +312,7 @@ async def get_learning_progress(user_id: str) -> Dict[str, Any]:
             "quiz": quiz_percent
         }
     except Exception as e:
+        fire_and_forget_log()
         print(f"Error getting learning progress: {e}")
         return {
             "glossary": 0,
@@ -365,6 +372,7 @@ async def get_recent_activity(user_id: str, limit: int = 10) -> List[Dict[str, A
         activities.sort(key=lambda x: x["date"], reverse=True)
         return activities[:limit]
     except Exception as e:
+        fire_and_forget_log()
         print(f"Error getting recent activity: {e}")
         return []
 
@@ -405,5 +413,6 @@ async def get_daily_challenge(user_id: str) -> Optional[Dict[str, Any]]:
             "completed": False
         }
     except Exception as e:
+        fire_and_forget_log()
         print(f"Error getting daily challenge: {e}")
         return None

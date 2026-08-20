@@ -6,6 +6,7 @@ from app.scanner.queue import scan_queue
 from app.scanner.scan_engine import execute_scan
 from app.scanner.state_manager import get_scan_job, update_scan_job
 from app.scanner.progress import update_progress, add_log_entry
+from app.services.error_log_service import fire_and_forget_log
 
 
 async def scan_worker():
@@ -31,6 +32,7 @@ async def scan_worker():
             await execute_scan(scan_id)
 
         except Exception as e:
+            fire_and_forget_log()
             # Mark scan as failed
             scan_id = job.get("scan_id", "unknown")
             try:
@@ -40,6 +42,7 @@ async def scan_worker():
                 })
                 await update_progress(scan_id, 0, status="failed", log=f"Error: {str(e)}")
             except Exception:
+                fire_and_forget_log()
                 pass
         finally:
             scan_queue.task_done()

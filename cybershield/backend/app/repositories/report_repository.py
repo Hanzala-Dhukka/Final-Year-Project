@@ -5,6 +5,7 @@ from datetime import datetime, timezone
 from typing import Optional, List, Dict, Any
 from bson import ObjectId
 from app.core.database import get_collection
+from app.services.error_log_service import fire_and_forget_log
 
 
 class ReportRepository:
@@ -32,6 +33,7 @@ class ReportRepository:
             result = await collection.insert_one(report_data)
             return str(result.inserted_id)
         except Exception as e:
+            fire_and_forget_log()
             print(f"Error creating report: {e}")
             return None
     
@@ -50,6 +52,7 @@ class ReportRepository:
             report = await collection.find_one({"_id": ObjectId(report_id)})
             return report
         except Exception as e:
+            fire_and_forget_log()
             print(f"Error getting report by ID: {e}")
             return None
     
@@ -75,6 +78,7 @@ class ReportRepository:
             
             return reports
         except Exception as e:
+            fire_and_forget_log()
             print(f"Error getting reports by user: {e}")
             return []
     
@@ -103,6 +107,7 @@ class ReportRepository:
             
             return result.modified_count > 0
         except Exception as e:
+            fire_and_forget_log()
             print(f"Error updating report: {e}")
             return False
     
@@ -121,6 +126,7 @@ class ReportRepository:
             result = await collection.delete_one({"_id": ObjectId(report_id)})
             return result.deleted_count > 0
         except Exception as e:
+            fire_and_forget_log()
             print(f"Error deleting report: {e}")
             return False
     
@@ -144,6 +150,7 @@ class ReportRepository:
             
             return reports
         except Exception as e:
+            fire_and_forget_log()
             print(f"Error getting recent reports: {e}")
             return []
 

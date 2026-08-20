@@ -7,6 +7,8 @@ recommendations, roadmap, score reasoning). Includes prompt-injection guards.
 """
 import json
 
+from app.services.error_log_service import fire_and_forget_log
+
 SYSTEM_PROMPT = """You are CyberShield Security Copilot.
 
 Act as a senior cybersecurity engineer. You have full visibility into the
@@ -106,6 +108,7 @@ def _safe_json(text: str) -> dict:
     try:
         return json.loads(candidate)
     except Exception:
+        fire_and_forget_log()
         return {}
 
 

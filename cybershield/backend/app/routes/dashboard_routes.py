@@ -7,6 +7,7 @@ import traceback
 from app.utils.security import get_current_user
 from app.services import dashboard_service
 from app.schemas.dashboard_schema import DashboardResponse
+from app.services.error_log_service import fire_and_forget_log
 
 router = APIRouter()
 
@@ -39,8 +40,10 @@ async def get_dashboard(current_user: dict = Depends(get_current_user)):
         return dashboard
 
     except HTTPException:
+        fire_and_forget_log()
         raise
     except Exception as e:
+        fire_and_forget_log()
         traceback.print_exc()
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -77,8 +80,10 @@ async def get_quick_stats(current_user: dict = Depends(get_current_user)):
         }
 
     except HTTPException:
+        fire_and_forget_log()
         raise
     except Exception as e:
+        fire_and_forget_log()
         traceback.print_exc()
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,

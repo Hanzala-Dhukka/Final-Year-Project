@@ -8,6 +8,7 @@ from app.github.utils import extract_repo_name
 from app.github.parser import validate_repository
 from app.github.github_service import analyze_repository, get_analysis_history, get_analysis_by_id
 from app.github.analyzer import detect_dependency_files, extract_dependency_names, compute_file_statistics
+from app.services.error_log_service import fire_and_forget_log
 
 router = APIRouter()
 
@@ -22,6 +23,7 @@ async def validate_repo(data: dict, current_user: dict = Depends(require_verifie
     try:
         repo_name = extract_repo_name(repo_url)
     except ValueError:
+        fire_and_forget_log()
         raise HTTPException(status_code=400, detail="Invalid GitHub repository URL format.")
 
     result = validate_repository(repo_name)
@@ -41,14 +43,17 @@ async def analyze_repo(data: dict, current_user: dict = Depends(require_verified
     try:
         repo_name = extract_repo_name(repo_url)
     except ValueError:
+        fire_and_forget_log()
         raise HTTPException(status_code=400, detail="Invalid GitHub repository URL format.")
 
     try:
         result = await analyze_repository(repo_name, current_user["_id"])
         return result
     except ValueError as e:
+        fire_and_forget_log()
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
+        fire_and_forget_log()
         raise HTTPException(status_code=500, detail=f"Analysis failed: {str(e)}")
 
 
@@ -68,6 +73,7 @@ async def analysis_history(current_user: dict = Depends(get_current_user)):
                 item["created_at"] = item["created_at"].isoformat()
         return history
     except Exception as e:
+        fire_and_forget_log()
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -85,6 +91,8 @@ async def get_analysis(analysis_id: str, current_user: dict = Depends(get_curren
             result["created_at"] = result["created_at"].isoformat()
         return result
     except HTTPException:
+        fire_and_forget_log()
         raise
     except Exception as e:
+        fire_and_forget_log()
         raise HTTPException(status_code=500, detail=str(e))

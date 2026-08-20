@@ -7,6 +7,8 @@ by inspecting key files fetched from the repository via raw GitHub URLs.
 import json
 import requests
 
+from app.services.error_log_service import fire_and_forget_log
+
 # ── file name → language mapping ─────────────────────────────────────────────
 LANGUAGE_FILES = {
     "requirements.txt":        "Python",
@@ -97,6 +99,7 @@ def _fetch_raw(repo_full_name: str, branch: str, path: str) -> str | None:
         if resp.status_code == 200:
             return resp.text
     except Exception:
+        fire_and_forget_log()
         pass
     return None
 
@@ -121,6 +124,7 @@ def _parse_package_json(content: str) -> list[str]:
     try:
         data = json.loads(content)
     except json.JSONDecodeError:
+        fire_and_forget_log()
         return []
     deps: dict = {}
     deps.update(data.get("dependencies", {}))
@@ -250,6 +254,7 @@ def detect_technologies(all_file_paths: list[str], repo_full_name: str, branch: 
                 result["backend"].add("Laravel")
                 result["language"].add("PHP")
         except Exception:
+            fire_and_forget_log()
             pass
 
     # ── .env / application.properties DB detection ────────────────────────────

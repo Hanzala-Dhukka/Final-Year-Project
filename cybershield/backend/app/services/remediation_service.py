@@ -16,6 +16,7 @@ from app.models.remediation_model import (
 )
 from app.ai.remediation_engine import build_remediation_prompt
 from app.ai.gemini_client import generate, is_available
+from app.services.error_log_service import fire_and_forget_log
 
 reports = database.remediation_reports
 actions = database.remediation_actions
@@ -42,6 +43,7 @@ def _safe_json(text: str) -> dict:
     try:
         return json.loads(candidate)
     except Exception:
+        fire_and_forget_log()
         return {}
 
 
@@ -111,6 +113,7 @@ async def generate_fix(
                 ai = _fallback_solution(finding, severity, technology)
                 ai["explanation"] = ai.get("explanation", "") + " (AI refused unsafe request.)"
         except Exception as e:
+            fire_and_forget_log()
             ai = _fallback_solution(finding, severity, technology)
             ai["explanation"] = f"AI generation failed: {e}"
     else:

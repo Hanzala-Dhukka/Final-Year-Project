@@ -16,6 +16,7 @@ from app.schemas.ai_checklist_schema import (
     RegenerateChecklistIn,
     GenerateChecklistOut,
 )
+from app.services.error_log_service import fire_and_forget_log
 
 router = APIRouter(prefix="/api/v1/ai/checklist", tags=["AI Checklist"])
 
@@ -31,6 +32,7 @@ async def generate_checklist(
             str(current_user["_id"]), payload.project_id
         )
     except ValueError as e:
+        fire_and_forget_log()
         raise HTTPException(status_code=400, detail=str(e))
     return GenerateChecklistOut(
         project_id=result["project_id"],
@@ -74,6 +76,7 @@ async def regenerate_checklist(
             str(current_user["_id"]), payload.project_id
         )
     except ValueError as e:
+        fire_and_forget_log()
         raise HTTPException(status_code=400, detail=str(e))
     return GenerateChecklistOut(
         project_id=result["project_id"],
@@ -116,4 +119,5 @@ async def mark_item_complete(
             completed,
         )
     except ValueError as e:
+        fire_and_forget_log()
         raise HTTPException(status_code=400, detail=str(e))

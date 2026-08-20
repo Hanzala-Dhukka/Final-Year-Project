@@ -1,6 +1,7 @@
 import os
 from datetime import datetime
 from typing import Dict, Any, List
+from app.services.error_log_service import fire_and_forget_log
 
 # Reports directory
 REPORTS_DIR = "reports"
@@ -402,6 +403,7 @@ def generate_pdf(project_id: str, project_data: Dict[str, Any]) -> str:
         with open(filepath, 'wb') as f:
             f.write(pdf_bytes)
     except (ImportError, OSError):
+        fire_and_forget_log()
         # Fallback: save as HTML
         filename = f"{project_data.get('project', 'report').replace(' ', '_')}_Threat_Report.html"
         filepath = os.path.join(REPORTS_DIR, filename)
@@ -458,6 +460,7 @@ def generate_pdf_report(report_data: Dict[str, Any], output_path: str) -> None:
         with open(output_path, 'wb') as f:
             f.write(pdf_bytes)
     except (ImportError, OSError):
+        fire_and_forget_log()
         # Fallback: save as HTML
         with open(output_path.replace('.pdf', '.html'), 'w') as f:
             f.write(html_content)

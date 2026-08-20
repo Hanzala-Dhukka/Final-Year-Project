@@ -1,5 +1,6 @@
 import json
 from typing import Dict, Any, List, Optional
+from app.services.error_log_service import fire_and_forget_log
 
 
 async def generate_learning_recommendations(
@@ -62,6 +63,7 @@ async def generate_learning_recommendations(
         }
     
     except Exception as e:
+        fire_and_forget_log()
         print(f"Error generating recommendations: {e}")
         return _get_fallback_recommendations(topic, skill_level, performance_data)
 
@@ -189,6 +191,7 @@ async def generate_follow_up_questions(
         return _get_fallback_follow_up_questions(topic, skill_level)
     
     except Exception as e:
+        fire_and_forget_log()
         print(f"Error generating follow-up questions: {e}")
         return _get_fallback_follow_up_questions(topic, skill_level)
 
@@ -328,6 +331,7 @@ def _parse_json_response(raw: str) -> Any:
     try:
         return json.loads(text)
     except json.JSONDecodeError:
+        fire_and_forget_log()
         pass
     brace = text.find("{")
     bracket = text.find("[")
@@ -347,6 +351,7 @@ def _parse_json_response(raw: str) -> Any:
                 try:
                     return json.loads(text[s:e + 1])
                 except json.JSONDecodeError:
+                    fire_and_forget_log()
                     pass
     return None
 
@@ -469,6 +474,7 @@ async def generate_recommendations(threats: List[Dict[str, Any]], project: Dict[
             if isinstance(parsed, list) and len(parsed) >= 2:
                 return parsed
     except Exception as e:
+        fire_and_forget_log()
         print(f"[RecEngine] AI recommendations failed: {e}")
 
     # Fallback: rule-based
@@ -499,6 +505,7 @@ async def generate_fix_plan(threats: List[Dict[str, Any]], project: Dict[str, An
             if isinstance(parsed, dict) and any(parsed.get(k) for k in ("immediate", "short_term", "long_term")):
                 return parsed
     except Exception as e:
+        fire_and_forget_log()
         print(f"[RecEngine] AI fix plan failed: {e}")
 
     # Fallback: rule-based
@@ -549,6 +556,7 @@ async def generate_security_report(
             if isinstance(parsed, dict) and "executive_summary" in parsed:
                 return parsed
     except Exception as e:
+        fire_and_forget_log()
         print(f"[RecEngine] AI security report failed: {e}")
 
     # Fallback: rule-based

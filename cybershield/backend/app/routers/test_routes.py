@@ -5,6 +5,7 @@ from fastapi import APIRouter, HTTPException
 from datetime import datetime, timezone
 from app.core.database import get_collection
 from typing import Optional
+from app.services.error_log_service import fire_and_forget_log
 
 router = APIRouter()
 
@@ -22,6 +23,7 @@ async def database_test():
             "collections": collections
         }
     except Exception as e:
+        fire_and_forget_log()
         raise HTTPException(
             status_code=500,
             detail=f"Database connection failed: {str(e)}"
@@ -47,6 +49,7 @@ async def create_test_user(name: str, email: str):
             "user_id": str(result.inserted_id)
         }
     except Exception as e:
+        fire_and_forget_log()
         raise HTTPException(
             status_code=500,
             detail=f"Error creating user: {str(e)}"
@@ -68,6 +71,7 @@ async def get_test_users():
         
         return users
     except Exception as e:
+        fire_and_forget_log()
         raise HTTPException(
             status_code=500,
             detail=f"Error fetching users: {str(e)}"
@@ -92,8 +96,10 @@ async def get_test_user(user_id: str):
         user["_id"] = str(user["_id"])
         return user
     except HTTPException:
+        fire_and_forget_log()
         raise
     except Exception as e:
+        fire_and_forget_log()
         raise HTTPException(
             status_code=500,
             detail=f"Error fetching user: {str(e)}"
@@ -136,8 +142,10 @@ async def update_test_user(user_id: str, name: Optional[str] = None, email: Opti
             "modified_count": result.modified_count
         }
     except HTTPException:
+        fire_and_forget_log()
         raise
     except Exception as e:
+        fire_and_forget_log()
         raise HTTPException(
             status_code=500,
             detail=f"Error updating user: {str(e)}"
@@ -164,8 +172,10 @@ async def delete_test_user(user_id: str):
             "deleted_count": result.deleted_count
         }
     except HTTPException:
+        fire_and_forget_log()
         raise
     except Exception as e:
+        fire_and_forget_log()
         raise HTTPException(
             status_code=500,
             detail=f"Error deleting user: {str(e)}"

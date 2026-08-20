@@ -13,6 +13,7 @@ from typing import Optional
 
 from app.dependencies.auth import get_current_user
 from .service import create_recommendations, get_recommendations, get_recommendation_stats
+from app.services.error_log_service import fire_and_forget_log
 
 router = APIRouter(prefix="/api/v1/recommendations", tags=["Scanner Recommendations"])
 
@@ -63,6 +64,7 @@ async def generate_recommendations(
             project_id=project_id,
         )
     except Exception as e:
+        fire_and_forget_log()
         raise HTTPException(status_code=500, detail=f"Failed to generate recommendations: {e}")
 
     return {

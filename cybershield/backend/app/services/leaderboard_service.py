@@ -8,6 +8,7 @@ Sorted by XP descending with pagination.
 from typing import List, Dict, Any, Optional
 
 from app.database.db import database
+from app.services.error_log_service import fire_and_forget_log
 
 
 async def get_leaderboard(limit: int = 20, skip: int = 0) -> List[Dict[str, Any]]:
@@ -64,6 +65,7 @@ async def _user_name(user_id: str) -> str:
         if user:
             return user.get("full_name") or user.get("username") or user.get("email", "Unknown")
     except Exception:
+        fire_and_forget_log()
         pass
     return "Unknown"
 
@@ -80,6 +82,7 @@ async def _quiz_counts(user_ids: List[str]) -> Dict[str, int]:
         async for row in database["quiz_attempts"].aggregate(pipeline):
             counts[row["_id"]] = row.get("count", 0)
     except Exception:
+        fire_and_forget_log()
         pass
     return counts
 
@@ -90,4 +93,5 @@ def _iso(value) -> Optional[str]:
     try:
         return value.isoformat()
     except Exception:
+        fire_and_forget_log()
         return str(value)

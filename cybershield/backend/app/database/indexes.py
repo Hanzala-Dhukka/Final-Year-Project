@@ -5,6 +5,7 @@ Creates performance indexes on key collections. Called once at startup.
 Safe to run repeatedly — indexes are only created if they don't exist.
 """
 from app.database.db import database
+from app.services.error_log_service import fire_and_forget_log
 
 
 async def ensure_indexes() -> None:
@@ -106,6 +107,7 @@ async def ensure_indexes() -> None:
                     background=True,
                 )
         except Exception as e:
+            fire_and_forget_log()
             # Collection may not exist yet — that's fine
             print(f"[Indexes] Skipping {collection_name}: {e}")
 

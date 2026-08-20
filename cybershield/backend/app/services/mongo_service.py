@@ -7,6 +7,7 @@ from datetime import datetime
 import os
 from motor import motor_asyncio
 from pymongo import MongoClient
+from app.services.error_log_service import fire_and_forget_log
 
 # MongoDB configuration
 # Load .env so DATABASE_NAME resolves to the configured value (CyberShieldDB)
@@ -15,6 +16,7 @@ try:
     from dotenv import load_dotenv
     load_dotenv(override=True)
 except Exception:
+    fire_and_forget_log()
     pass
 MONGO_URI = os.getenv("MONGO_URI", "mongodb://localhost:27017/")
 DATABASE_NAME = os.getenv("DATABASE_NAME", "CyberShieldDB")
@@ -26,6 +28,7 @@ def get_mongo_client():
         client = MongoClient(MONGO_URI)
         return client
     except Exception as e:
+        fire_and_forget_log()
         print(f"MongoDB connection failed: {e}")
         return None
 
@@ -81,6 +84,7 @@ def save_user_progress(user_id: str, xp: int, level: int, labs: int,
         )
         return True
     except Exception as e:
+        fire_and_forget_log()
         print(f"Error saving user progress to MongoDB: {e}")
         return False
 
@@ -103,6 +107,7 @@ def get_user_progress(user_id: str) -> Optional[Dict[str, Any]]:
         collection = db["user_progress"]
         return collection.find_one({"user_id": user_id})
     except Exception as e:
+        fire_and_forget_log()
         print(f"Error getting user progress from MongoDB: {e}")
         return None
 
@@ -122,6 +127,7 @@ def get_all_users_progress() -> List[Dict[str, Any]]:
         collection = db["user_progress"]
         return list(collection.find({}))
     except Exception as e:
+        fire_and_forget_log()
         print(f"Error getting all users progress from MongoDB: {e}")
         return []
 
@@ -154,6 +160,7 @@ def save_achievement(user_id: str, badge: str, date: str) -> bool:
         })
         return True
     except Exception as e:
+        fire_and_forget_log()
         print(f"Error saving achievement to MongoDB: {e}")
         return False
 
@@ -177,6 +184,7 @@ def get_user_achievements(user_id: str) -> List[str]:
         records = collection.find({"user_id": user_id})
         return [r["badge"] for r in records]
     except Exception as e:
+        fire_and_forget_log()
         print(f"Error getting user achievements from MongoDB: {e}")
         return []
 
@@ -219,6 +227,7 @@ def save_certificate(user_id: str, certificate_id: str, course: str,
         )
         return True
     except Exception as e:
+        fire_and_forget_log()
         print(f"Error saving certificate to MongoDB: {e}")
         return False
 
@@ -241,6 +250,7 @@ def get_user_certificate(user_id: str) -> Optional[Dict[str, Any]]:
         collection = db["certificates"]
         return collection.find_one({"user_id": user_id})
     except Exception as e:
+        fire_and_forget_log()
         print(f"Error getting user certificate from MongoDB: {e}")
         return None
 
@@ -280,6 +290,7 @@ def save_lab_attempt(user_id: str, lab_id: str, category: str,
         })
         return True
     except Exception as e:
+        fire_and_forget_log()
         print(f"Error saving lab attempt to MongoDB: {e}")
         return False
 
@@ -302,6 +313,7 @@ def get_user_lab_attempts(user_id: str) -> List[Dict[str, Any]]:
         collection = db["lab_attempts"]
         return list(collection.find({"user_id": user_id}))
     except Exception as e:
+        fire_and_forget_log()
         print(f"Error getting user lab attempts from MongoDB: {e}")
         return []
 
@@ -349,6 +361,7 @@ def save_learning_history(user_id: str, topic: str, attempts: int,
         )
         return True
     except Exception as e:
+        fire_and_forget_log()
         print(f"Error saving learning history to MongoDB: {e}")
         return False
 
@@ -377,5 +390,6 @@ def get_user_learning_history(user_id: str, topic: str = None) -> List[Dict[str,
         
         return list(collection.find(query))
     except Exception as e:
+        fire_and_forget_log()
         print(f"Error getting user learning history from MongoDB: {e}")
         return []

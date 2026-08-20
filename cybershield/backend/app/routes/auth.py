@@ -5,6 +5,7 @@ from app.models.user import User
 
 from app.models.user_model import UserCreate
 from app.utils.security import hash_password
+from app.services.error_log_service import fire_and_forget_log
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
 
@@ -17,6 +18,7 @@ def debug_bcrypt():
         hashed = hash_password("testpassword")
         hash_status = "success"
     except Exception as e:
+        fire_and_forget_log()
         import traceback
         hashed = traceback.format_exc()
         hash_status = "failed"

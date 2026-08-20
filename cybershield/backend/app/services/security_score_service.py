@@ -8,6 +8,7 @@ from app.repositories.user_repository import user_repository
 from app.repositories.progress_repository import progress_repository
 from app.repositories.quiz_repository import quiz_repository
 from app.services.password_service import password_service
+from app.services.error_log_service import fire_and_forget_log
 
 
 def make_timezone_aware(dt):
@@ -18,6 +19,7 @@ def make_timezone_aware(dt):
         try:
             dt = datetime.fromisoformat(dt.replace("Z", "+00:00"))
         except Exception:
+            fire_and_forget_log()
             return None
 
     if isinstance(dt, datetime):
@@ -102,6 +104,7 @@ class SecurityScoreService:
                 "calculated_at": datetime.now(timezone.utc)
             }
         except Exception as e:
+            fire_and_forget_log()
             print(f"Error calculating security score: {e}")
             return None
     
@@ -146,6 +149,7 @@ class SecurityScoreService:
             if completed_labs < 10:
                 recommendations.append("Try advanced labs like CSRF and SQL Injection")
         except Exception as e:
+            fire_and_forget_log()
             print(f"Error calculating lab score: {e}")
         
         return score, recommendations
@@ -181,6 +185,7 @@ class SecurityScoreService:
             if len(quiz_attempts) >= 10:
                 score = min(score + 5, 25)
         except Exception as e:
+            fire_and_forget_log()
             print(f"Error calculating learning score: {e}")
         
         return score, recommendations
@@ -240,6 +245,7 @@ class SecurityScoreService:
                 return await SecurityScoreService.calculate_security_score(user_id)
             return score
         except Exception as e:
+            fire_and_forget_log()
             print(f"Error getting security score: {e}")
             return None
 

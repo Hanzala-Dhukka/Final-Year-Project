@@ -7,6 +7,7 @@ from starlette.middleware.base import BaseHTTPMiddleware
 from app.repositories.session_repository import session_repository
 from app.repositories.refresh_token_repository import refresh_token_repository
 from app.config.settings import settings
+from app.services.error_log_service import fire_and_forget_log
 
 
 class ActivityTrackerMiddleware(BaseHTTPMiddleware):
@@ -107,6 +108,7 @@ class ActivityTrackerMiddleware(BaseHTTPMiddleware):
             return False
             
         except Exception as e:
+            fire_and_forget_log()
             print(f"Error checking session activity: {e}")
             return False
     
@@ -125,6 +127,7 @@ class ActivityTrackerMiddleware(BaseHTTPMiddleware):
                     session_id = str(session["_id"])
                     await session_repository.update_session_activity(session_id)
         except Exception as e:
+            fire_and_forget_log()
             print(f"Error updating activity: {e}")
     
     def _should_skip_tracking(self, path: str) -> bool:
@@ -163,5 +166,6 @@ async def cleanup_inactive_sessions_task():
         print(f"Cleaned up {cleaned_count} inactive sessions")
         return cleaned_count
     except Exception as e:
+        fire_and_forget_log()
         print(f"Error cleaning up inactive sessions: {e}")
         return 0

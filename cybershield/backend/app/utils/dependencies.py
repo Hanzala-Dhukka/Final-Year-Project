@@ -6,6 +6,7 @@ from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from jose import jwt, JWTError
 
 from app.core.config import settings
+from app.services.error_log_service import fire_and_forget_log
 
 security = HTTPBearer()
 
@@ -34,6 +35,7 @@ def verify_token(
         return payload
 
     except JWTError:
+        fire_and_forget_log()
         raise HTTPException(
             status_code=401,
             detail="Invalid or expired token"

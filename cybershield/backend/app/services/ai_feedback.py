@@ -1,6 +1,7 @@
 from typing import Dict, Any, List, Optional
 from app.services.gemini_service import generate_ai_response, get_model, call_groq_sync
 from app.config.settings import settings
+from app.services.error_log_service import fire_and_forget_log
 
 
 class AIFeedbackEngine:
@@ -127,6 +128,7 @@ Return only valid JSON:"""
             return ai_feedback
         
         except Exception as e:
+            fire_and_forget_log()
             print(f"Notice: AI feedback fallback used ({e})")
             return None
     

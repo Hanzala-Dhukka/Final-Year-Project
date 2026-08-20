@@ -40,6 +40,7 @@ from app.services.dependency_scanner import scan_dependencies
 from app.services.scan_progress import create_scan, get_scan
 from app.services.github_scan_runner import run_repository_scan
 from app.services.file_reader import fetch_file_content, build_highlights, detect_language as detect_monaco_language
+from app.services.error_log_service import fire_and_forget_log
  
 router = APIRouter() 
  
@@ -79,6 +80,7 @@ def scan_single_file(repo_full_name, branch, file_path):
                 "issues": issues
             }
     except Exception:
+        fire_and_forget_log()
         pass
     return None
 
@@ -332,6 +334,7 @@ Respond in this exact JSON format (no markdown, no code fences):
                 "confidence": ai_result.get("confidence", "90%"),
             }
         except Exception:
+            fire_and_forget_log()
             pass  # Fall through to rule-based
 
     # ── 5. Rule-based fallback ─────────────────────────────────────────
@@ -420,6 +423,7 @@ async def scan_repository_sync(
     try:
         repo_info = get_repository_info(repo_url)
     except ValueError as val_err:
+        fire_and_forget_log()
         err_msg = str(val_err)
         if "not found" in err_msg.lower():
             raise HTTPException(status_code=404, detail="Repository not found.")
@@ -440,8 +444,10 @@ async def scan_repository_sync(
                     detail=f"GitHub API rate limit exceeded."
                 )
         except HTTPException:
+            fire_and_forget_log()
             raise
         except (BadCredentialsException, GithubException) as ge:
+            fire_and_forget_log()
             if isinstance(ge, BadCredentialsException) or (hasattr(ge, "status") and ge.status == 401):
                 print("WARNING: GitHub token is invalid or expired. Falling back to unauthenticated mode.")
                 github_client = Github()
@@ -450,14 +456,17 @@ async def scan_repository_sync(
             else:
                 pass
         except Exception:
+            fire_and_forget_log()
             pass
 
         try:
             repo = github_client.get_repo(repo_name)
         except BadCredentialsException:
+            fire_and_forget_log()
             github_client = Github()
             repo = github_client.get_repo(repo_name)
         except GithubException as ge:
+            fire_and_forget_log()
             if ge.status == 404:
                 raise HTTPException(status_code=404, detail="Repository not found.")
             elif ge.status in [403, 429]:
@@ -562,10 +571,13 @@ async def scan_repository_sync(
          }
 
     except HTTPException:
+        fire_and_forget_log()
         raise
     except BadCredentialsException:
+        fire_and_forget_log()
         raise HTTPException(status_code=401, detail="Invalid GitHub credentials. Please check your token.")
     except Exception as e:
+        fire_and_forget_log()
         import traceback
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=f"Error scanning repository: {str(e)}")
@@ -649,6 +661,7 @@ async def get_scan_history(current_user: dict = Depends(get_current_user)):
             
         return scans
     except Exception as e:
+        fire_and_forget_log()
         raise HTTPException(
             status_code=500,
             detail=str(e)
@@ -706,6 +719,7 @@ async def get_repository_history(repository: str, current_user: dict = Depends(g
 
         return result
     except Exception as e:
+        fire_and_forget_log()
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -723,6 +737,7 @@ async def delete_scan_record(identifier: str, current_user: dict = Depends(get_c
     try:
         query = {"_id": ObjectId(identifier)}
     except Exception:
+        fire_and_forget_log()
         pass
 
     scan_doc = await scan_collection.find_one(query)

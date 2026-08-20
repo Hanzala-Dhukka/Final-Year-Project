@@ -6,6 +6,7 @@ from app.services.challenge_generator import ChallengeGenerator
 from app.services.streak_service import StreakService
 from app.services.challenge_history import ChallengeHistoryService
 from app.services.gemini_service import generate_daily_explanation
+from app.services.error_log_service import fire_and_forget_log
 
 router = APIRouter()
 
@@ -41,6 +42,7 @@ async def get_todays_challenge(user_id: str = "anonymous") -> Dict[str, Any]:
             "total_xp": user_streak["total_xp"],
         }
     except Exception as e:
+        fire_and_forget_log()
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -124,8 +126,10 @@ async def submit_challenge(request: ChallengeSubmitRequest) -> Dict[str, Any]:
                 "explanation": "",
             }
     except HTTPException:
+        fire_and_forget_log()
         raise
     except Exception as e:
+        fire_and_forget_log()
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -136,6 +140,7 @@ async def get_challenge_history(user_id: str = "anonymous", limit: int = 30) -> 
         history = await history_service.get_history(user_id, limit)
         return {"success": True, "history": history}
     except Exception as e:
+        fire_and_forget_log()
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -146,6 +151,7 @@ async def get_user_streak(user_id: str = "anonymous") -> Dict[str, Any]:
         streak = await streak_service.get_user_streak(user_id)
         return {"success": True, "streak": streak}
     except Exception as e:
+        fire_and_forget_log()
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -157,6 +163,7 @@ async def get_challenge_statistics(user_id: str = "anonymous") -> Dict[str, Any]
         stats["user_id"] = user_id
         return {"success": True, "statistics": stats}
     except Exception as e:
+        fire_and_forget_log()
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -171,6 +178,7 @@ async def get_challenge_calendar(
         calendar = await history_service.get_calendar(user_id, year, month)
         return {"success": True, "calendar": calendar}
     except Exception as e:
+        fire_and_forget_log()
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -181,6 +189,7 @@ async def get_leaderboard(limit: int = 10) -> Dict[str, Any]:
         leaderboard = await history_service.get_leaderboard(limit)
         return {"success": True, "leaderboard": leaderboard}
     except Exception as e:
+        fire_and_forget_log()
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -192,6 +201,7 @@ async def generate_challenge(date: Optional[str] = None) -> Dict[str, Any]:
         await challenge_generator.get_or_create_today()
         return {"success": True, "challenge": challenge}
     except Exception as e:
+        fire_and_forget_log()
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -202,4 +212,5 @@ async def get_categories() -> Dict[str, Any]:
         from app.data.daily_templates import get_all_categories
         return {"success": True, "categories": get_all_categories()}
     except Exception as e:
+        fire_and_forget_log()
         raise HTTPException(status_code=500, detail=str(e))

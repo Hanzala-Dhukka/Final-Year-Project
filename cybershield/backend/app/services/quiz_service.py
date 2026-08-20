@@ -12,6 +12,7 @@ from app.models.quiz import quiz_session_document, question_bank_document
 from app.models.quiz_attempt import quiz_attempt_document
 from app.services.ai_quiz_service import generate_quiz_questions
 from app.services.progress_service import ProgressService
+from app.services.error_log_service import fire_and_forget_log
 
 # XP formula (spec Step 19) — overrides the generic ProgressService base.
 XP_PER_CORRECT = 5
@@ -66,6 +67,7 @@ async def generate_quiz(
         if bank_docs:
             await database[QUESTION_BANK].insert_many(bank_docs)
     except Exception as e:
+        fire_and_forget_log()
         print(f"Failed to cache question bank: {e}")
 
     return {
@@ -172,6 +174,7 @@ async def submit_quiz(user_id: str, session_id: str, answers: Dict[str, str]) ->
             user_id, "quiz", score=percentage, perfect_score=(score == total)
         )
     except Exception as e:
+        fire_and_forget_log()
         print(f"Failed to award quiz XP: {e}")
 
     # Adaptive recommendations (spec Step 17): focus on weak topics
@@ -205,6 +208,7 @@ async def submit_quiz(user_id: str, session_id: str, answers: Dict[str, str]) ->
             {"percentage": percentage, "category": session.get("category")},
         )
     except Exception:
+        fire_and_forget_log()
         pass
 
     # Mark session complete
@@ -297,6 +301,7 @@ async def _user_rank(user_id: str) -> int:
         user_progress = ProgressService.get_user_progress(user_id)
         user_xp = user_progress.get("xp", 0)
     except Exception:
+        fire_and_forget_log()
         user_xp = 0
 
     # Count users with strictly more XP using the progress collection
@@ -306,4 +311,5 @@ async def _user_rank(user_id: str) -> int:
         )
         return count + 1
     except Exception:
+        fire_and_forget_log()
         return 0

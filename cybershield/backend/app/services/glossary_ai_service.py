@@ -8,6 +8,7 @@ fallback that reuses the existing definition.
 from typing import Tuple
 
 from app.ai.gemini_client import generate, is_available
+from app.services.error_log_service import fire_and_forget_log
 
 
 PROMPT_TEMPLATE = """Explain the cybersecurity term.
@@ -48,6 +49,7 @@ async def explain_term(term: str, definition: str = None) -> Tuple[str, str]:
             if text:
                 return text.strip(), "Gemini"
         except Exception as e:
+            fire_and_forget_log()
             print(f"Glossary AI explain failed, using fallback: {e}")
 
     fallback = _fallback_markdown(term, definition)

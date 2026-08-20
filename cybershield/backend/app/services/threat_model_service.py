@@ -6,6 +6,7 @@ from typing import Dict, Any, List, Optional
 from app.models.threat_model import ThreatModelCreate
 from app.services.threat_engine import generate_threats
 from app.services.risk_matrix import process_threats_with_risk_matrix
+from app.services.error_log_service import fire_and_forget_log
 
 logger = logging.getLogger(__name__)
 
@@ -121,6 +122,7 @@ async def create_threat_model(data: ThreatModelCreate, user_id: Optional[str] = 
             await database["threat_reports"].insert_one(threat_report_doc)
             logger.info(f"Saved threat report to MongoDB for user {user_id}, project {data.project_name}")
         except Exception as e:
+            fire_and_forget_log()
             logger.warning(f"Failed to save threat report to MongoDB: {e}")
 
     # Save to Google Sheets (non-fatal)
@@ -146,6 +148,7 @@ async def create_threat_model(data: ThreatModelCreate, user_id: Optional[str] = 
             recommendations=recommendations,
         )
     except Exception:
+        fire_and_forget_log()
         pass
 
     return final_result

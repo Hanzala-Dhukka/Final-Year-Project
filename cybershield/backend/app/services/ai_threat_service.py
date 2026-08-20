@@ -17,6 +17,7 @@ from typing import Any, Dict
 from app.core.config import settings
 from app.ai import ai_service
 from app.services import threat_analysis_service
+from app.services.error_log_service import fire_and_forget_log
 
 
 FALLBACK_MESSAGE = "AI service unavailable. Using local threat analyzer."
@@ -35,6 +36,7 @@ async def analyze_with_ai(data: Dict[str, Any], user_id: str = None) -> Dict[str
         provider = "Gemini"
         model = settings.AI_MODEL
     except Exception as e:  # timeout, API error, invalid JSON, validation error
+        fire_and_forget_log()
         traceback.print_exc()
         message = FALLBACK_MESSAGE
         ai_payload = None

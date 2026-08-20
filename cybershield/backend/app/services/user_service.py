@@ -1,5 +1,6 @@
 from fastapi import HTTPException, UploadFile
 from app.database.db import database
+from app.services.error_log_service import fire_and_forget_log
 from datetime import datetime
 from bson import ObjectId
 from bson.errors import InvalidId
@@ -19,6 +20,7 @@ def _to_object_id(user_id: str):
     try:
         return ObjectId(user_id)
     except (InvalidId, TypeError):
+        fire_and_forget_log()
         raise HTTPException(status_code=404, detail="User not found")
 
 

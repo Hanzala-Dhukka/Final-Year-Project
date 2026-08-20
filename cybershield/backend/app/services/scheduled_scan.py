@@ -26,6 +26,7 @@ from app.services import notification_service as notif
 from app.services import email_service
 from app.services import scan_runner
 from app.services import ai_checklist_service
+from app.services.error_log_service import fire_and_forget_log
 
 # Retry backoff for transient GitHub failures.
 RETRY_DELAYS = [timedelta(minutes=5), timedelta(minutes=30)]
@@ -61,6 +62,7 @@ async def _process_results(user_id: str, project_id: Optional[str],
     try:
         await automation_service.evaluate_rules(user_id, project_id, result)
     except Exception as e:
+        fire_and_forget_log()
         print(f"[scheduler] automation rule evaluation failed: {e}")
 
 
@@ -95,8 +97,10 @@ async def run_scan_for_schedule(schedule: Dict[str, Any]) -> None:
                 await notif.log_activity(user_id, "checklist_updated", "AI checklist updated",
                                    "Regenerated after scheduled scan.", project_id=project_id)
             except Exception:
+                fire_and_forget_log()
                 pass
     except Exception as e:
+        fire_and_forget_log()
         print(f"[scheduler] scan failed for schedule {schedule_id}: {e}")
         await notif.log_activity(user_id, "scan_failed", "Scheduled scan failed",
                            f"GitHub scan failed: {str(e)[:200]}", project_id=project_id)
@@ -119,6 +123,7 @@ async def run_due_scans() -> None:
         try:
             await run_scan_for_schedule(schedule)
         except Exception:
+            fire_and_forget_log()
             traceback.print_exc()
 
 
@@ -134,6 +139,7 @@ async def _get_actor_name(user_id: str) -> str:
             user_doc = await database.users.find_one({"_id": ObjectId(user_id)})
             return display_name(user_doc, "Scheduled Scan")
     except Exception:
+        fire_and_forget_log()
         pass
     return "Scheduled Scan"
 
@@ -219,6 +225,7 @@ async def _persist_report_version(project_id: str, user_id: str,
         ))
         return version
     except Exception as e:
+        fire_and_forget_log()
         print(f"[scheduled_scan] failed to persist report version: {e}")
         return None
 
@@ -235,6 +242,7 @@ async def _refresh_hardening(project_id: str, user_id: str, scan_uuid: str) -> N
         await create_recommendations(
             scan_id=scan_uuid, user_id=str(user_id), project_id=str(project_id))
     except Exception as e:
+        fire_and_forget_log()
         print(f"[scheduled_scan] recommendation generation failed: {e}")
 
     try:
@@ -244,6 +252,7 @@ async def _refresh_hardening(project_id: str, user_id: str, scan_uuid: str) -> N
         posture = calculate_posture(tasks)
         await save_posture_snapshot(str(user_id), str(project_id), posture)
     except Exception as e:
+        fire_and_forget_log()
         print(f"[scheduled_scan] posture snapshot failed: {e}")
 
     try:
@@ -252,6 +261,7 @@ async def _refresh_hardening(project_id: str, user_id: str, scan_uuid: str) -> N
         await notif.log_activity(user_id, "checklist_updated", "AI checklist updated",
                                  "Regenerated after GitHub scan.", project_id=project_id)
     except Exception:
+        fire_and_forget_log()
         pass
 
 
@@ -272,6 +282,7 @@ async def _refresh_compliance(project_id: str, user_id: str, scan_uuid: str) -> 
             await compliance_service.save_report(report)
             compliance_score = report.get("overall_score") or 0.0
     except Exception as e:
+        fire_and_forget_log()
         print(f"[scheduled_scan] compliance generation failed: {e}")
 
     try:
@@ -300,6 +311,7 @@ async def _refresh_compliance(project_id: str, user_id: str, scan_uuid: str) -> 
             sev_override=sev,
         )
     except Exception as e:
+        fire_and_forget_log()
         print(f"[scheduled_scan] analytics snapshot failed: {e}")
 
 
@@ -331,12 +343,14 @@ async def schedule_project_scan(project_id: str, repo_url: str, user_id: str) ->
     try:
         await run_project_scan(project_id, repo_url, user_id)
     except Exception as e:
+        fire_and_forget_log()
         print(f"[scheduled_scan] background scan failed for project {project_id}: {e}")
         try:
             await notif.log_activity(user_id, "scan_failed", "GitHub scan failed",
                                      f"Automatic scan error: {str(e)[:200]}",
                                      project_id=project_id)
         except Exception:
+            fire_and_forget_log()
             pass
 
 
@@ -363,6 +377,7 @@ async def run_daily_scans() -> None:
                     continue
             await run_project_scan(project_id, repo_url, str(owner_id))
         except Exception as e:
+            fire_and_forget_log()
             print(f"[scheduled_scan] daily scan failed for project {project_id}: {e}")
             traceback.print_exc()
 
@@ -385,4 +400,5 @@ async def refresh_due_checklists() -> None:
             await notif.log_activity(uid, "checklist_updated", "AI checklist refreshed",
                                "Daily automated refresh.", project_id=pid)
         except Exception:
+            fire_and_forget_log()
             pass

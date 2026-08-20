@@ -9,6 +9,7 @@ from app.data.defense_scenarios import (
     get_all_categories, get_random_scenario
 )
 from app.services.google_sheets_service import save_defense_session_to_sheet
+from app.services.error_log_service import fire_and_forget_log
 import uuid
 from datetime import datetime
 
@@ -26,6 +27,7 @@ async def get_categories():
         categories = get_all_categories()
         return {"categories": categories}
     except Exception as e:
+        fire_and_forget_log()
         raise HTTPException(status_code=500, detail=f"Failed to get categories: {str(e)}")
 
 
@@ -38,8 +40,10 @@ async def get_scenario(category: str):
             raise HTTPException(status_code=404, detail="No scenarios found for this category")
         return scenario
     except HTTPException:
+        fire_and_forget_log()
         raise
     except Exception as e:
+        fire_and_forget_log()
         raise HTTPException(status_code=500, detail=f"Failed to get scenario: {str(e)}")
 
 
@@ -52,8 +56,10 @@ async def get_scenario_by_id_endpoint(scenario_id: str):
             raise HTTPException(status_code=404, detail="Scenario not found")
         return scenario
     except HTTPException:
+        fire_and_forget_log()
         raise
     except Exception as e:
+        fire_and_forget_log()
         raise HTTPException(status_code=500, detail=f"Failed to get scenario: {str(e)}")
 
 
@@ -145,8 +151,10 @@ async def submit_defense(submission: DefenseSubmission):
         )
     
     except HTTPException:
+        fire_and_forget_log()
         raise
     except Exception as e:
+        fire_and_forget_log()
         raise HTTPException(status_code=500, detail=f"Failed to submit defense: {str(e)}")
 
 
@@ -166,6 +174,7 @@ async def get_defense_history(user_id: str):
         history = defense_history_store[user_id]
         return DefenseHistory(**history)
     except Exception as e:
+        fire_and_forget_log()
         raise HTTPException(status_code=500, detail=f"Failed to get history: {str(e)}")
 
 
@@ -177,8 +186,10 @@ async def get_session(session_id: str):
             raise HTTPException(status_code=404, detail="Session not found")
         return defense_sessions_store[session_id]
     except HTTPException:
+        fire_and_forget_log()
         raise
     except Exception as e:
+        fire_and_forget_log()
         raise HTTPException(status_code=500, detail=f"Failed to get session: {str(e)}")
 
 
@@ -204,6 +215,7 @@ async def get_leaderboard(limit: int = 10):
             "total_users": len(leaderboard)
         }
     except Exception as e:
+        fire_and_forget_log()
         raise HTTPException(status_code=500, detail=f"Failed to get leaderboard: {str(e)}")
 
 
@@ -220,6 +232,7 @@ async def get_achievements(user_id: str):
             "total_achievements": len(history["achievements"])
         }
     except Exception as e:
+        fire_and_forget_log()
         raise HTTPException(status_code=500, detail=f"Failed to get achievements: {str(e)}")
 
 
@@ -234,6 +247,7 @@ async def get_hint(scenario_id: str, hint_level: int = 1):
             "hint": hint
         }
     except Exception as e:
+        fire_and_forget_log()
         raise HTTPException(status_code=500, detail=f"Failed to get hint: {str(e)}")
 
 
@@ -247,6 +261,7 @@ async def explain_category(category: str):
             "explanation": explanation
         }
     except Exception as e:
+        fire_and_forget_log()
         raise HTTPException(status_code=500, detail=f"Failed to get explanation: {str(e)}")
 
 
@@ -281,6 +296,7 @@ async def get_stats():
             "status_breakdown": status_counts
         }
     except Exception as e:
+        fire_and_forget_log()
         raise HTTPException(status_code=500, detail=f"Failed to get stats: {str(e)}")
 
 

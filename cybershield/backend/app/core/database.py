@@ -7,6 +7,7 @@ from motor.motor_asyncio import AsyncIOMotorDatabase
 from motor.motor_asyncio import AsyncIOMotorCollection
 from typing import Optional
 from app.core.config import settings
+from app.services.error_log_service import fire_and_forget_log
 
 # Global client and database instances
 _client: Optional[AsyncIOMotorClient] = None
@@ -28,6 +29,7 @@ def get_client() -> AsyncIOMotorClient:
             _client = AsyncIOMotorClient(settings.MONGODB_URI)
             print(f"MongoDB client connected successfully to {settings.MONGODB_URI}")
         except Exception as e:
+            fire_and_forget_log()
             print(f"Failed to connect to MongoDB: {e}")
             raise
     
@@ -136,6 +138,7 @@ async def create_indexes():
         try:
             await users_collection.drop_index("user_id_1")
         except Exception:
+            fire_and_forget_log()
             pass  # Index didn't exist yet, that's fine
         await users_collection.create_index("user_id", unique=True, sparse=True)
         await users_collection.create_index("created_at")
@@ -162,6 +165,7 @@ async def create_indexes():
         try:
             await progress_collection.drop_index("user_id_1")
         except Exception:
+            fire_and_forget_log()
             pass  # Index didn't exist yet, that's fine
         await progress_collection.create_index("user_id", unique=True, sparse=True)
         await progress_collection.create_index("updated_at")
@@ -212,6 +216,7 @@ async def create_indexes():
         print("All database indexes created successfully")
         
     except Exception as e:
+        fire_and_forget_log()
         print(f"Error creating indexes: {e}")
 
 

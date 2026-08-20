@@ -21,6 +21,7 @@ from app.services.ai_learning_service import (
     get_user_progress
 )
 from app.services.adaptive_learning import AdaptiveLearningEngine
+from app.services.error_log_service import fire_and_forget_log
 
 router = APIRouter()
 adaptive_engine = AdaptiveLearningEngine()
@@ -46,6 +47,7 @@ async def explain_attempt(request: ExplainRequest):
             "data": result
         }
     except Exception as e:
+        fire_and_forget_log()
         raise HTTPException(status_code=500, detail=f"Error generating explanation: {str(e)}")
 
 
@@ -69,6 +71,7 @@ async def get_hint_route(request: HintRequest):
             "data": result
         }
     except Exception as e:
+        fire_and_forget_log()
         raise HTTPException(status_code=500, detail=f"Error generating hint: {str(e)}")
 
 
@@ -94,6 +97,7 @@ async def generate_practice_question_route(request: PracticeQuestionRequest):
             "data": result
         }
     except Exception as e:
+        fire_and_forget_log()
         raise HTTPException(status_code=500, detail=f"Error generating practice question: {str(e)}")
 
 
@@ -131,6 +135,7 @@ async def update_progress_route(request: ProgressUpdateRequest):
             }
         }
     except Exception as e:
+        fire_and_forget_log()
         raise HTTPException(status_code=500, detail=f"Error updating progress: {str(e)}")
 
 
@@ -148,6 +153,7 @@ async def get_progress_route(user_id: str):
             "data": progress
         }
     except Exception as e:
+        fire_and_forget_log()
         raise HTTPException(status_code=500, detail=f"Error retrieving progress: {str(e)}")
 
 
@@ -191,6 +197,7 @@ async def get_learning_history_route(user_id: str, topic: str = None):
             "data": history
         }
     except Exception as e:
+        fire_and_forget_log()
         raise HTTPException(status_code=500, detail=f"Error retrieving learning history: {str(e)}")
 
 
@@ -224,6 +231,7 @@ async def get_adaptive_difficulty_route(request: AdaptiveDifficultyRequest):
             "data": recommendation
         }
     except Exception as e:
+        fire_and_forget_log()
         raise HTTPException(status_code=500, detail=f"Error getting adaptive difficulty: {str(e)}")
 
 
@@ -257,6 +265,7 @@ async def get_learning_path_route(user_id: str, current_topic: str = "Web Securi
             }
         }
     except Exception as e:
+        fire_and_forget_log()
         raise HTTPException(status_code=500, detail=f"Error getting learning path: {str(e)}")
 
 
@@ -281,6 +290,7 @@ async def get_weak_areas_route(user_id: str):
             }
         }
     except Exception as e:
+        fire_and_forget_log()
         raise HTTPException(status_code=500, detail=f"Error retrieving weak areas: {str(e)}")
 
 
@@ -306,6 +316,7 @@ async def get_user_skill_level_route(user_id: str):
             }
         }
     except Exception as e:
+        fire_and_forget_log()
         raise HTTPException(status_code=500, detail=f"Error retrieving skill level: {str(e)}")
 
 

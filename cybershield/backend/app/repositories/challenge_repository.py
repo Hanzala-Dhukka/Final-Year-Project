@@ -8,6 +8,7 @@ from bson import ObjectId
 from pymongo.collection import Collection
 
 from app.core.database import get_collection
+from app.services.error_log_service import fire_and_forget_log
 
 
 class ChallengeRepository:
@@ -45,6 +46,7 @@ class ChallengeRepository:
                 challenge["_id"] = str(challenge["_id"])
             return challenge
         except Exception as e:
+            fire_and_forget_log()
             print(f"Error getting today's challenge: {e}")
             return None
 
@@ -74,6 +76,7 @@ class DailyChallengeRepository:
         try:
             return await collection.find_one({"_id": ObjectId(challenge_id)})
         except Exception:
+            fire_and_forget_log()
             return None
     
     async def get_all_challenges(self, limit: int = 100) -> List[Dict[str, Any]]:
@@ -137,6 +140,7 @@ class UserChallengeRepository:
             )
             return result.modified_count > 0
         except Exception:
+            fire_and_forget_log()
             return False
 
 

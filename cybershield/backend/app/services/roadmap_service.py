@@ -5,6 +5,7 @@ Generates personalized learning roadmap using Gemini AI
 from typing import Dict, Any, List, Optional
 from datetime import datetime
 from app.services.analytics_service import AnalyticsService
+from app.services.error_log_service import fire_and_forget_log
 from app.services.gemini_service import _generate_content
 
 
@@ -124,6 +125,7 @@ Return only a JSON array of topic names in recommended order:
             return recommendations if isinstance(recommendations, list) else []
             
         except Exception as e:
+            fire_and_forget_log()
             print(f"Notice: AI recommendations fallback used ({e})")
             return []
     

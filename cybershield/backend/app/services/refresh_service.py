@@ -9,6 +9,7 @@ from app.repositories.refresh_token_repository import refresh_token_repository
 from app.repositories.session_repository import session_repository
 from app.repositories.user_repository import user_repository
 from app.config.settings import settings
+from app.services.error_log_service import fire_and_forget_log
 
 
 def _decode_refresh(refresh_token: str):
@@ -19,6 +20,7 @@ def _decode_refresh(refresh_token: str):
             refresh_token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM]
         )
     except Exception:
+        fire_and_forget_log()
         return None
     if payload.get("type") != "refresh":
         return None
@@ -93,6 +95,7 @@ class RefreshService:
 
             return True
         except Exception as e:
+            fire_and_forget_log()
             print(f"Error storing refresh token: {e}")
             return False
     
@@ -134,6 +137,7 @@ class RefreshService:
             
             return plain_token
         except Exception as e:
+            fire_and_forget_log()
             print(f"Error creating refresh token: {e}")
             return None
     
@@ -169,6 +173,7 @@ class RefreshService:
 
             return {"user_id": user_id, "sub": user_id}
         except Exception as e:
+            fire_and_forget_log()
             print(f"Error verifying refresh token: {e}")
             return None
 
@@ -232,6 +237,7 @@ class RefreshService:
             }
             
         except Exception as e:
+            fire_and_forget_log()
             print(f"Error refreshing access token: {e}")
             return None
     
@@ -256,6 +262,7 @@ class RefreshService:
             )
             return result.modified_count > 0
         except Exception as e:
+            fire_and_forget_log()
             print(f"Error updating token last used: {e}")
             return False
     
@@ -272,6 +279,7 @@ class RefreshService:
         try:
             return await self.refresh_repo.revoke_token(refresh_token)
         except Exception as e:
+            fire_and_forget_log()
             print(f"Error revoking refresh token: {e}")
             return False
     
@@ -288,6 +296,7 @@ class RefreshService:
         try:
             return await self.refresh_repo.revoke_all_user_tokens(user_id)
         except Exception as e:
+            fire_and_forget_log()
             print(f"Error revoking all user tokens: {e}")
             return False
 

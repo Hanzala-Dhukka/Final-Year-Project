@@ -6,6 +6,7 @@ from typing import Optional, List
 from bson import ObjectId
 from app.core.database import get_collection
 from app.models.refresh_token_model import SessionInDB
+from app.services.error_log_service import fire_and_forget_log
 
 
 class SessionRepository:
@@ -31,6 +32,7 @@ class SessionRepository:
             result = await collection.insert_one(session_dict)
             return str(result.inserted_id)
         except Exception as e:
+            fire_and_forget_log()
             print(f"Error creating session: {e}")
             return None
     
@@ -54,6 +56,7 @@ class SessionRepository:
             
             return await sessions.to_list(length=None)
         except Exception as e:
+            fire_and_forget_log()
             print(f"Error getting user sessions: {e}")
             return []
     
@@ -73,6 +76,7 @@ class SessionRepository:
             session = await collection.find_one({"_id": ObjectId(session_id)})
             return session
         except Exception as e:
+            fire_and_forget_log()
             print(f"Error getting session: {e}")
             return None
     
@@ -101,6 +105,7 @@ class SessionRepository:
             
             return result.modified_count > 0
         except Exception as e:
+            fire_and_forget_log()
             print(f"Error closing session: {e}")
             return False
     
@@ -129,6 +134,7 @@ class SessionRepository:
             
             return result.modified_count > 0
         except Exception as e:
+            fire_and_forget_log()
             print(f"Error closing all user sessions: {e}")
             return False
     
@@ -152,6 +158,7 @@ class SessionRepository:
             
             return result.modified_count > 0
         except Exception as e:
+            fire_and_forget_log()
             print(f"Error updating session activity: {e}")
             return False
     
@@ -185,6 +192,7 @@ class SessionRepository:
             
             return result.modified_count
         except Exception as e:
+            fire_and_forget_log()
             print(f"Error cleaning up inactive sessions: {e}")
             return 0
     
@@ -216,6 +224,7 @@ class SessionRepository:
             
             return session
         except Exception as e:
+            fire_and_forget_log()
             print(f"Error getting session by token hash: {e}")
             return None
 

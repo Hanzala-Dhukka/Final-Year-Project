@@ -15,6 +15,7 @@ from typing import Optional, List
 
 from app.ai.gemini_client import generate as ai_generate, is_available as ai_available
 from app.rules.rule_engine import process_finding
+from app.services.error_log_service import fire_and_forget_log
 
 # ── AI Prompt Template ────────────────────────────────────────────────────────
 
@@ -55,6 +56,7 @@ def _parse_ai_response(raw: str) -> Optional[dict]:
     try:
         return json.loads(cleaned)
     except json.JSONDecodeError:
+        fire_and_forget_log()
         pass
 
     # Try extracting first JSON object
@@ -63,6 +65,7 @@ def _parse_ai_response(raw: str) -> Optional[dict]:
         try:
             return json.loads(match.group())
         except json.JSONDecodeError:
+            fire_and_forget_log()
             pass
 
     return None
@@ -111,6 +114,7 @@ async def generate_ai_recommendation(finding: dict) -> Optional[dict]:
                     "file": file_path,
                 }
         except Exception:
+            fire_and_forget_log()
             pass  # Fall through to rule-based
 
     # Fallback: SC2 rule engine

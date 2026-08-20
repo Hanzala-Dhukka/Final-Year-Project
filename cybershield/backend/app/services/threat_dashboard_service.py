@@ -27,6 +27,7 @@ from app.schemas.threat_dashboard_schema import (
     ExecutiveSummary,
     TimelinePoint,
 )
+from app.services.error_log_service import fire_and_forget_log
 
 # ── Static reference data ────────────────────────────────────────────────────
 OWASP_TOP_10 = [
@@ -268,6 +269,7 @@ async def get_user_reports(user_id: str) -> List[Dict[str, Any]]:
             )
         return reports
     except Exception as e:  # pragma: no cover - defensive
+        fire_and_forget_log()
         print(f"Error listing threat reports: {e}")
         return []
 
@@ -284,6 +286,7 @@ async def get_dashboard_data(report_id: str, user: Dict[str, Any]) -> ThreatDash
                 {"$or": [{"project_id": report_id}, {"report_id": report_id}]}
             )
     except InvalidId:
+        fire_and_forget_log()
         doc = None
 
     if doc:
@@ -293,6 +296,7 @@ async def get_dashboard_data(report_id: str, user: Dict[str, Any]) -> ThreatDash
             try:
                 return ThreatDashboardResponse(report_id=report_id, **cache)
             except Exception:
+                fire_and_forget_log()
                 pass
 
         score = doc.get("security_score")
@@ -306,6 +310,7 @@ async def get_dashboard_data(report_id: str, user: Dict[str, Any]) -> ThreatDash
         try:
             dashboard.timeline = await get_risk_history(user_id)
         except Exception:
+            fire_and_forget_log()
             dashboard.timeline = []
 
         # Best-effort cache for next time.
@@ -315,6 +320,7 @@ async def get_dashboard_data(report_id: str, user: Dict[str, Any]) -> ThreatDash
                 {"$set": {"dashboard_cache": dashboard.model_dump(mode="json")}},
             )
         except Exception:
+            fire_and_forget_log()
             pass
         return dashboard
 
@@ -323,6 +329,7 @@ async def get_dashboard_data(report_id: str, user: Dict[str, Any]) -> ThreatDash
     try:
         dashboard.timeline = await get_risk_history(user_id)
     except Exception:
+        fire_and_forget_log()
         dashboard.timeline = []
     return dashboard
 
@@ -351,6 +358,7 @@ async def get_risk_history(user_id: str) -> List[RiskTrendPoint]:
             points = [RiskTrendPoint(date=d, score=s, project="Demo") for d, s in demo]
         return points
     except Exception as e:  # pragma: no cover - defensive
+        fire_and_forget_log()
         print(f"Error building risk history: {e}")
         return [
             RiskTrendPoint(date="2026-01", score=84, project="Demo"),

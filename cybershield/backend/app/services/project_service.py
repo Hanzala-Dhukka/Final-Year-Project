@@ -13,6 +13,7 @@ from app.models.project_model import build_project_doc, build_member_doc, can
 from app.schemas.project_schema import ProjectCreate, ProjectUpdate
 from app.services.risk_engine import calculate_risk_score_from_severity
 from app.utils.user_names import display_name
+from app.services.error_log_service import fire_and_forget_log
 
 
 # ── Membership helpers ─────────────────────────────────────────────────────────
@@ -79,6 +80,7 @@ async def _linked_risk_data(project_doc: dict) -> Optional[dict]:
             try:
                 return datetime.fromisoformat(raw.replace("Z", "+00:00"))
             except ValueError:
+                fire_and_forget_log()
                 return datetime.min
         return datetime.min
 
@@ -161,6 +163,7 @@ async def _trigger_auto_scan(project_id: str, repo_url: str, user_id: str) -> No
             scheduled_scan.schedule_project_scan(project_id, repo_url, user_id)
         )
     except Exception as e:
+        fire_and_forget_log()
         print(f"[projects] failed to start auto scan for {project_id}: {e}")
 
 

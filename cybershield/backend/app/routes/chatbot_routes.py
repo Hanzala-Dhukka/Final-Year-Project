@@ -5,6 +5,7 @@ from app.services.gemini_service import generate_ai_response
 from app.services.context_builder import build_context
 from app.services.google_sheets_service import save_chat_to_sheet
 from app.config.settings import settings
+from app.services.error_log_service import fire_and_forget_log
 
 router = APIRouter()
 
@@ -57,6 +58,7 @@ async def ask_question(request: ChatRequest):
         )
     
     except Exception as e:
+        fire_and_forget_log()
         raise HTTPException(
             status_code=500,
             detail=f"Failed to generate response: {str(e)}"

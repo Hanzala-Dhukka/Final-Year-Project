@@ -7,6 +7,7 @@ from bson import ObjectId
 from app.core.database import get_collection
 from app.models.refresh_token_model import RefreshTokenCreate, RefreshTokenInDB
 import hashlib
+from app.services.error_log_service import fire_and_forget_log
 
 
 class RefreshTokenRepository:
@@ -39,6 +40,7 @@ class RefreshTokenRepository:
             result = await collection.insert_one(token_dict)
             return str(result.inserted_id)
         except Exception as e:
+            fire_and_forget_log()
             print(f"Error creating refresh token: {e}")
             return None
     
@@ -63,6 +65,7 @@ class RefreshTokenRepository:
             
             return token_doc
         except Exception as e:
+            fire_and_forget_log()
             print(f"Error getting refresh token: {e}")
             return None
     
@@ -92,6 +95,7 @@ class RefreshTokenRepository:
             
             return result.modified_count > 0
         except Exception as e:
+            fire_and_forget_log()
             print(f"Error revoking token: {e}")
             return False
     
@@ -120,6 +124,7 @@ class RefreshTokenRepository:
             
             return result.modified_count > 0
         except Exception as e:
+            fire_and_forget_log()
             print(f"Error revoking all user tokens: {e}")
             return False
     
@@ -143,6 +148,7 @@ class RefreshTokenRepository:
             
             return result.modified_count > 0
         except Exception as e:
+            fire_and_forget_log()
             print(f"Error updating last_used: {e}")
             return False
     
@@ -167,6 +173,7 @@ class RefreshTokenRepository:
             
             return await tokens.to_list(length=None)
         except Exception as e:
+            fire_and_forget_log()
             print(f"Error getting user tokens: {e}")
             return []
     
@@ -186,6 +193,7 @@ class RefreshTokenRepository:
             
             return result.deleted_count
         except Exception as e:
+            fire_and_forget_log()
             print(f"Error cleaning up expired tokens: {e}")
             return 0
 

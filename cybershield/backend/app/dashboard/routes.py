@@ -13,6 +13,7 @@ from app.dashboard.realtime import build_realtime_dashboard
 # Use the shared WebSocket manager and event service
 from app.websocket.manager import manager
 from app.services.event_service import event_service
+from app.services.error_log_service import fire_and_forget_log
 
 router = APIRouter(
     prefix="/dashboard",
@@ -37,6 +38,7 @@ async def get_optional_user(credentials: Optional[HTTPAuthorizationCredentials] 
                 return user
             return {"_id": str(user_id), "username": payload.get("username", "Hanzala")}
     except Exception:
+        fire_and_forget_log()
         pass
     return None
 
@@ -68,6 +70,7 @@ async def get_dashboard(current_user: Optional[dict] = Depends(get_optional_user
                         or "Hanzala"
                     )
         except Exception:
+            fire_and_forget_log()
             pass
     dash["username"] = username
     return dash
@@ -91,6 +94,7 @@ async def websocket_dashboard(websocket: WebSocket):
                 "timestamp": datetime.utcnow().strftime("%I:%M %p"),
             })
     except (WebSocketDisconnect, Exception):
+        fire_and_forget_log()
         await manager.disconnect(websocket)
 
 
@@ -133,6 +137,7 @@ async def get_preferences(current_user: Optional[dict] = Depends(get_optional_us
         if database is not None and hasattr(database, "dashboard_preferences"):
             doc = await database["dashboard_preferences"].find_one({"user_id": user_id})
     except Exception as e:
+        fire_and_forget_log()
         print(f"MongoDB dashboard preferences fetch warning: {e}")
 
     if not doc:
@@ -145,6 +150,7 @@ async def get_preferences(current_user: Optional[dict] = Depends(get_optional_us
                     upsert=True
                 )
         except Exception as e:
+            fire_and_forget_log()
             print(f"MongoDB dashboard preferences upsert warning: {e}")
 
     doc.pop("_id", None)
@@ -173,6 +179,7 @@ async def save_preferences(
                 upsert=True
             )
     except Exception as e:
+        fire_and_forget_log()
         print(f"MongoDB dashboard preferences save warning: {e}")
         raise HTTPException(status_code=500, detail="Failed to save preferences")
 
@@ -190,6 +197,7 @@ async def reset_preferences(current_user: Optional[dict] = Depends(get_optional_
         if database is not None and hasattr(database, "dashboard_preferences"):
             await database["dashboard_preferences"].delete_one({"user_id": user_id})
     except Exception as e:
+        fire_and_forget_log()
         print(f"MongoDB dashboard preferences delete warning: {e}")
         raise HTTPException(status_code=500, detail="Failed to reset preferences")
 

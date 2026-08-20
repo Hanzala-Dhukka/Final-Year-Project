@@ -3,6 +3,7 @@ from google.oauth2.service_account import Credentials
 from typing import List, Dict, Any, Optional
 import os
 from datetime import datetime
+from app.services.error_log_service import fire_and_forget_log
 
 # Google Sheets configuration
 SCOPES = [
@@ -25,6 +26,7 @@ def get_google_sheets_client():
         gc = gspread.authorize(credentials)
         return gc
     except Exception as e:
+        fire_and_forget_log()
         print(f"Google Sheets client initialization failed: {e}")
         return None
 
@@ -60,6 +62,7 @@ def save_threats_to_sheet(project_id: str, project_name: str, threats: List[Dict
         try:
             worksheet = sh.worksheet("ThreatResults")
         except gspread.WorksheetNotFound:
+            fire_and_forget_log()
             worksheet = sh.add_worksheet(title="ThreatResults", rows=1000, cols=10)
             # Add header row
             worksheet.append_row([
@@ -83,6 +86,7 @@ def save_threats_to_sheet(project_id: str, project_name: str, threats: List[Dict
         
         return True
     except Exception as e:
+        fire_and_forget_log()
         print(f"Error saving to Google Sheets: {e}")
         return False
 
@@ -118,6 +122,7 @@ def save_risk_matrix_to_sheet(project_id: str, project_name: str, threats: List[
         try:
             worksheet = sh.worksheet("ThreatRiskMatrix")
         except gspread.WorksheetNotFound:
+            fire_and_forget_log()
             worksheet = sh.add_worksheet(title="ThreatRiskMatrix", rows=1000, cols=10)
             # Add header row
             worksheet.append_row([
@@ -140,6 +145,7 @@ def save_risk_matrix_to_sheet(project_id: str, project_name: str, threats: List[
         
         return True
     except Exception as e:
+        fire_and_forget_log()
         print(f"Error saving risk matrix to Google Sheets: {e}")
         return False
 
@@ -175,6 +181,7 @@ def save_recommendations_to_sheet(project_id: str, project_name: str, recommenda
         try:
             worksheet = sh.worksheet("ThreatRecommendations")
         except gspread.WorksheetNotFound:
+            fire_and_forget_log()
             worksheet = sh.add_worksheet(title="ThreatRecommendations", rows=1000, cols=10)
             # Add header row
             worksheet.append_row([
@@ -197,6 +204,7 @@ def save_recommendations_to_sheet(project_id: str, project_name: str, recommenda
         
         return True
     except Exception as e:
+        fire_and_forget_log()
         print(f"Error saving recommendations to Google Sheets: {e}")
         return False
 
@@ -236,6 +244,7 @@ def save_chat_to_sheet(project_id: str, question: str, answer: str, provider: st
         try:
             worksheet = sh.worksheet("ChatHistory")
         except gspread.WorksheetNotFound:
+            fire_and_forget_log()
             worksheet = sh.add_worksheet(title="ChatHistory", rows=1000, cols=8)
             # Add header row
             worksheet.append_row([
@@ -257,6 +266,7 @@ def save_chat_to_sheet(project_id: str, question: str, answer: str, provider: st
         
         return True
     except Exception as e:
+        fire_and_forget_log()
         print(f"Error saving chat to Google Sheets: {e}")
         return False
 
@@ -291,6 +301,7 @@ def save_conversation_memory(conversation_id: str, project_id: str, user_name: s
         try:
             worksheet = sh.worksheet("ConversationMemory")
         except gspread.WorksheetNotFound:
+            fire_and_forget_log()
             worksheet = sh.add_worksheet(title="ConversationMemory", rows=1000, cols=6)
             # Add header row
             worksheet.append_row([
@@ -328,6 +339,7 @@ def save_conversation_memory(conversation_id: str, project_id: str, user_name: s
         
         return True
     except Exception as e:
+        fire_and_forget_log()
         print(f"Error saving conversation memory to Google Sheets: {e}")
         return False
 
@@ -362,6 +374,7 @@ def get_threats_from_sheet(project_id: str, spreadsheet_id: str = None) -> List[
         # Filter by project_id
         return [r for r in records if r.get("Project ID") == project_id]
     except Exception as e:
+        fire_and_forget_log()
         print(f"Error retrieving from Google Sheets: {e}")
         return []
 
@@ -398,6 +411,7 @@ def save_defense_session_to_sheet(session_id: str, user_id: str, category: str, 
         try:
             worksheet = sh.worksheet("DefenseSessions")
         except gspread.WorksheetNotFound:
+            fire_and_forget_log()
             worksheet = sh.add_worksheet(title="DefenseSessions", rows=1000, cols=6)
             # Add header row
             worksheet.append_row([
@@ -416,6 +430,7 @@ def save_defense_session_to_sheet(session_id: str, user_id: str, category: str, 
         
         return True
     except Exception as e:
+        fire_and_forget_log()
         print(f"Error saving defense session to Google Sheets: {e}")
         return False
 
@@ -453,6 +468,7 @@ def save_attack_lab_to_sheet(lab_id: str, user_id: str, category: str, difficult
         try:
             worksheet = sh.worksheet("AttackLabs")
         except gspread.WorksheetNotFound:
+            fire_and_forget_log()
             worksheet = sh.add_worksheet(title="AttackLabs", rows=1000, cols=7)
             # Add header row
             worksheet.append_row([
@@ -472,6 +488,7 @@ def save_attack_lab_to_sheet(lab_id: str, user_id: str, category: str, difficult
         
         return True
     except Exception as e:
+        fire_and_forget_log()
         print(f"Error saving attack lab to Google Sheets: {e}")
         return False
 
@@ -518,6 +535,7 @@ def save_learning_history_to_sheet(
         try:
             worksheet = sh.worksheet("LearningHistory")
         except gspread.WorksheetNotFound:
+            fire_and_forget_log()
             worksheet = sh.add_worksheet(title="LearningHistory", rows=1000, cols=7)
             # Add header row
             worksheet.append_row([
@@ -533,6 +551,7 @@ def save_learning_history_to_sheet(
                     row_index = idx
                     break
         except Exception:
+            fire_and_forget_log()
             row_index = None
         
         # Update or append
@@ -560,6 +579,7 @@ def save_learning_history_to_sheet(
         
         return True
     except Exception as e:
+        fire_and_forget_log()
         print(f"Error saving learning history to Google Sheets: {e}")
         return False
 
@@ -595,6 +615,7 @@ def get_learning_history_from_sheet(
         try:
             worksheet = sh.worksheet("LearningHistory")
         except gspread.WorksheetNotFound:
+            fire_and_forget_log()
             return []
         
         # Get all records
@@ -609,6 +630,7 @@ def get_learning_history_from_sheet(
         
         return user_records
     except Exception as e:
+        fire_and_forget_log()
         print(f"Error retrieving learning history from Google Sheets: {e}")
         return []
 
@@ -663,6 +685,7 @@ def save_daily_challenge_to_sheet(
         try:
             worksheet = sh.worksheet("DailyChallenges")
         except gspread.WorksheetNotFound:
+            fire_and_forget_log()
             worksheet = sh.add_worksheet(title="DailyChallenges", rows=1000, cols=10)
             # Add header row
             worksheet.append_row([
@@ -689,6 +712,7 @@ def save_daily_challenge_to_sheet(
         
         return True
     except Exception as e:
+        fire_and_forget_log()
         print(f"Error saving daily challenge to Google Sheets: {e}")
         return False
 
@@ -727,6 +751,7 @@ def save_user_progress_to_sheet(user_id: str, xp: int, level: int, labs: int,
         try:
             worksheet = sh.worksheet("UserProgress")
         except gspread.WorksheetNotFound:
+            fire_and_forget_log()
             worksheet = sh.add_worksheet(title="UserProgress", rows=1000, cols=7)
             # Add header row
             worksheet.append_row([
@@ -742,6 +767,7 @@ def save_user_progress_to_sheet(user_id: str, xp: int, level: int, labs: int,
                     row_index = idx
                     break
         except Exception:
+            fire_and_forget_log()
             row_index = None
         
         # Update or append
@@ -765,6 +791,7 @@ def save_user_progress_to_sheet(user_id: str, xp: int, level: int, labs: int,
         
         return True
     except Exception as e:
+        fire_and_forget_log()
         print(f"Error saving user progress to Google Sheets: {e}")
         return False
 
@@ -795,6 +822,7 @@ def get_user_progress_from_sheet(user_id: str, spreadsheet_id: str = None) -> Op
         try:
             worksheet = sh.worksheet("UserProgress")
         except gspread.WorksheetNotFound:
+            fire_and_forget_log()
             return None
         
         records = worksheet.get_all_records()
@@ -811,6 +839,7 @@ def get_user_progress_from_sheet(user_id: str, spreadsheet_id: str = None) -> Op
         
         return None
     except Exception as e:
+        fire_and_forget_log()
         print(f"Error getting user progress from Google Sheets: {e}")
         return None
 
@@ -844,6 +873,7 @@ def save_achievement_to_sheet(user_id: str, badge: str, date: str, spreadsheet_i
         try:
             worksheet = sh.worksheet("Achievements")
         except gspread.WorksheetNotFound:
+            fire_and_forget_log()
             worksheet = sh.add_worksheet(title="Achievements", rows=1000, cols=3)
             # Add header row
             worksheet.append_row([
@@ -858,6 +888,7 @@ def save_achievement_to_sheet(user_id: str, badge: str, date: str, spreadsheet_i
         
         return True
     except Exception as e:
+        fire_and_forget_log()
         print(f"Error saving achievement to Google Sheets: {e}")
         return False
 
@@ -893,6 +924,7 @@ def save_certificate_to_sheet(user_id: str, certificate_id: str, course: str,
         try:
             worksheet = sh.worksheet("Certificates")
         except gspread.WorksheetNotFound:
+            fire_and_forget_log()
             worksheet = sh.add_worksheet(title="Certificates", rows=1000, cols=4)
             # Add header row
             worksheet.append_row([
@@ -908,6 +940,7 @@ def save_certificate_to_sheet(user_id: str, certificate_id: str, course: str,
         
         return True
     except Exception as e:
+        fire_and_forget_log()
         print(f"Error saving certificate to Google Sheets: {e}")
         return False
 
@@ -951,6 +984,7 @@ def get_all_users_progress(spreadsheet_id: str = None) -> List[Dict[str, Any]]:
         try:
             worksheet = sh.worksheet("UserProgress")
         except gspread.WorksheetNotFound:
+            fire_and_forget_log()
             return []
         
         records = worksheet.get_all_records()
@@ -966,5 +1000,6 @@ def get_all_users_progress(spreadsheet_id: str = None) -> List[Dict[str, Any]]:
             for record in records
         ]
     except Exception as e:
+        fire_and_forget_log()
         print(f"Error getting all users progress from Google Sheets: {e}")
         return []

@@ -8,6 +8,7 @@ from bson import ObjectId
 from pymongo.collection import Collection
 
 from app.core.database import get_collection
+from app.services.error_log_service import fire_and_forget_log
 
 
 class QuizRepository:
@@ -36,6 +37,7 @@ class QuizRepository:
                 attempts.append(attempt)
             return attempts
         except Exception as e:
+            fire_and_forget_log()
             print(f"Error getting quiz attempts: {e}")
             return []
 
@@ -65,6 +67,7 @@ class QuizSessionRepository:
         try:
             return await collection.find_one({"_id": ObjectId(session_id)})
         except Exception:
+            fire_and_forget_log()
             return None
     
     async def get_user_sessions(self, user_id: str, limit: int = 100) -> List[Dict[str, Any]]:
@@ -88,6 +91,7 @@ class QuizSessionRepository:
             )
             return result.modified_count > 0
         except Exception:
+            fire_and_forget_log()
             return False
 
 

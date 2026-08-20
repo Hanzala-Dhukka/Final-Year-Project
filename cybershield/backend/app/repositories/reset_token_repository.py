@@ -6,6 +6,7 @@ from typing import Optional
 from bson import ObjectId
 from app.core.database import get_collection
 from app.models.reset_token_model import PasswordResetToken
+from app.services.error_log_service import fire_and_forget_log
 
 
 class ResetTokenRepository:
@@ -42,6 +43,7 @@ class ResetTokenRepository:
             result = await collection.insert_one(reset_token.model_dump())
             return str(result.inserted_id)
         except Exception as e:
+            fire_and_forget_log()
             print(f"Error creating reset token: {e}")
             return None
     
@@ -67,6 +69,7 @@ class ResetTokenRepository:
             
             return reset_token
         except Exception as e:
+            fire_and_forget_log()
             print(f"Error getting reset token: {e}")
             return None
     
@@ -90,6 +93,7 @@ class ResetTokenRepository:
             
             return result.modified_count > 0
         except Exception as e:
+            fire_and_forget_log()
             print(f"Error marking token as used: {e}")
             return False
     
@@ -113,6 +117,7 @@ class ResetTokenRepository:
             
             return result.modified_count > 0
         except Exception as e:
+            fire_and_forget_log()
             print(f"Error invalidating user tokens: {e}")
             return False
     
@@ -132,6 +137,7 @@ class ResetTokenRepository:
             
             return result.deleted_count
         except Exception as e:
+            fire_and_forget_log()
             print(f"Error cleaning up expired tokens: {e}")
             return 0
 

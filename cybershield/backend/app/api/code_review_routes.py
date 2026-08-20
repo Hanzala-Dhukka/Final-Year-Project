@@ -24,6 +24,7 @@ from app.schemas.code_review_schema import (
 from app.services import code_review_service as svc
 from app.services.language_detector import is_allowed_extension
 from app.config.settings import settings
+from app.services.error_log_service import fire_and_forget_log
 
 router = APIRouter()
 
@@ -62,6 +63,7 @@ async def review_uploaded_file(
     try:
         code = raw.decode("utf-8")
     except UnicodeDecodeError:
+        fire_and_forget_log()
         raise HTTPException(status_code=400, detail="File is not valid UTF-8 text.")
 
     user_id = str(user["_id"])
@@ -131,6 +133,7 @@ async def export_review(
             headers={"Content-Disposition": f"attachment; filename=code_review_{review_id}.pdf"},
         )
     except Exception:
+        fire_and_forget_log()
         # Fallback to HTML if weasyprint is unavailable
         return Response(
             content=html,

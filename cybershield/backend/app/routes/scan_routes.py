@@ -8,6 +8,7 @@ from app.models.scan_model import ScanModel, VulnerabilityModel
 from app.repositories.scan_repository import scan_repository
 from app.dependencies.auth import get_current_user, require_verified_user
 from app.services.gemini_service import generate_ai_response
+from app.services.error_log_service import fire_and_forget_log
 
 router = APIRouter(prefix="/security-scan")
 
@@ -29,6 +30,7 @@ class ConnectionManager:
             try:
                 await self.active_connections[scan_id].send_json(data)
             except Exception:
+                fire_and_forget_log()
                 pass
 
 manager = ConnectionManager()
@@ -78,8 +80,10 @@ async def start_scan(
         }
     
     except HTTPException:
+        fire_and_forget_log()
         raise
     except Exception as e:
+        fire_and_forget_log()
         raise HTTPException(status_code=500, detail=f"Failed to start scan: {str(e)}")
 
 @router.get("/{scan_id}/status")
@@ -259,6 +263,7 @@ async def get_ai_remediation(
                     "best_practice": "Follow security guidelines"
                 }
         except:
+            fire_and_forget_log()
             remediation = {
                 "solution": response[:200],
                 "example": "See solution",
@@ -268,6 +273,7 @@ async def get_ai_remediation(
         return remediation
     
     except Exception as e:
+        fire_and_forget_log()
         raise HTTPException(status_code=500, detail=f"Failed to generate remediation: {str(e)}")
 
 @router.websocket("/ws/{scan_id}")
@@ -284,8 +290,10 @@ async def websocket_scan_progress(websocket: WebSocket, scan_id: str):
             if progress:
                 await manager.send_progress(scan_id, progress)
     except WebSocketDisconnect:
+        fire_and_forget_log()
         manager.disconnect(scan_id)
     except Exception as e:
+        fire_and_forget_log()
         manager.disconnect(scan_id)
 
 # Background scan task
@@ -414,6 +422,7 @@ async def run_security_scan(scan_id: str, repo_url: str):
         await scan_repository.create_security_score(score_data)
         
     except Exception as e:
+        fire_and_forget_log()
         await scan_repository.update_scan(scan_id, {
             "status": "failed",
             "error_message": str(e),

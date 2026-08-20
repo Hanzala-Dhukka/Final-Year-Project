@@ -25,6 +25,7 @@ from app.services.oauth_service import (
 )
 from app.utils.security import create_access_token, create_refresh_token, get_current_user
 from app.core.config import settings
+from app.services.error_log_service import fire_and_forget_log
 
 router = APIRouter()
 
@@ -172,8 +173,10 @@ async def register(user_data: UserCreate, background_tasks: BackgroundTasks):
         )
         
     except HTTPException:
+        fire_and_forget_log()
         raise
     except Exception as e:
+        fire_and_forget_log()
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Registration failed: {str(e)}"
@@ -252,6 +255,7 @@ async def login(credentials: UserLogin, request: Request):
                 ip_address=request.client.host if request.client else "Unknown"
             )
         except Exception as e:
+            fire_and_forget_log()
             print(f"WARNING: Failed to store refresh token: {e}")
         
         # Create session (with error handling)
@@ -262,6 +266,7 @@ async def login(credentials: UserLogin, request: Request):
                 ip_address=request.client.host if request.client else "Unknown"
             )
         except Exception as e:
+            fire_and_forget_log()
             print(f"WARNING: Failed to create session: {e}")
         
         # Update last login (with error handling)
@@ -270,6 +275,7 @@ async def login(credentials: UserLogin, request: Request):
                 "last_login": datetime.now(timezone.utc)
             })
         except Exception as e:
+            fire_and_forget_log()
             print(f"WARNING: Failed to update last login: {e}")
         
         print(f"LOGIN SUCCESS: Token created for user {user_id}")
@@ -282,8 +288,10 @@ async def login(credentials: UserLogin, request: Request):
         )
         
     except HTTPException:
+        fire_and_forget_log()
         raise
     except Exception as e:
+        fire_and_forget_log()
         print(f"LOGIN ERROR: {e}")
         import traceback
         traceback.print_exc()
@@ -351,8 +359,10 @@ async def refresh_token(request: RefreshTokenRequest):
         )
         
     except HTTPException:
+        fire_and_forget_log()
         raise
     except Exception as e:
+        fire_and_forget_log()
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Token refresh failed: {str(e)}"
@@ -382,6 +392,7 @@ async def logout(current_user: dict = Depends(get_current_user)):
         return {"message": "Logged out successfully"}
         
     except Exception as e:
+        fire_and_forget_log()
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Logout failed: {str(e)}"
@@ -398,6 +409,7 @@ async def logout_all(current_user: dict = Depends(get_current_user)):
         await logout_all_devices(user_id)
         return {"message": "Logged out from all devices successfully"}
     except Exception as e:
+        fire_and_forget_log()
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Logout failed: {str(e)}"
@@ -448,8 +460,10 @@ async def verify_email_endpoint(token: str):
 
         return {"success": True, "message": "Email verified successfully"}
     except HTTPException:
+        fire_and_forget_log()
         raise
     except Exception as e:
+        fire_and_forget_log()
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Email verification failed: {str(e)}"
@@ -573,6 +587,7 @@ async def resend_verification(request: ResendVerificationRequest, background_tas
             message="If an account exists, a verification email has been sent"
         )
     except Exception as e:
+        fire_and_forget_log()
         # Still return success to avoid user enumeration
         return PasswordResetResponse(
             message="If an account exists, a verification email has been sent"
@@ -621,6 +636,7 @@ async def forgot_password(request: PasswordResetRequest, background_tasks: Backg
         return PasswordResetResponse(message="If an account exists, a reset link has been sent")
         
     except Exception as e:
+        fire_and_forget_log()
         # Still return success to prevent user enumeration
         return PasswordResetResponse(message="If an account exists, a reset link has been sent")
 
@@ -685,8 +701,10 @@ async def reset_password(request: PasswordResetConfirm):
         return PasswordResetResponse(message="Password updated successfully")
         
     except HTTPException:
+        fire_and_forget_log()
         raise
     except Exception as e:
+        fire_and_forget_log()
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Password reset failed: {str(e)}"
@@ -769,6 +787,7 @@ async def oauth_callback(
             state_payload = _verify_state(state, provider)
             frontend_url = state_payload.get("frontend_url", frontend_url)
         except Exception:
+            fire_and_forget_log()
             # State couldn't be decoded â€” fall back to settings.
             pass
 
@@ -788,9 +807,11 @@ async def oauth_callback(
     try:
         result = await process_oauth_login(provider, code, state, request)
     except HTTPException as exc:
+        fire_and_forget_log()
         params = urlencode({"error": str(exc.detail)})
         return RedirectResponse(url=f"{frontend_url}/oauth/callback?{params}")
     except Exception as exc:
+        fire_and_forget_log()
         print(f"[OAuth callback] Unexpected error: {exc}")
         import traceback
         traceback.print_exc()

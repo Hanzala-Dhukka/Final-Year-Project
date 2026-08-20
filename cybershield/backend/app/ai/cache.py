@@ -10,6 +10,7 @@ from datetime import datetime, timezone, timedelta
 from typing import Any, Dict, Optional
 
 from app.database.db import database
+from app.services.error_log_service import fire_and_forget_log
 
 CACHE_COLLECTION = "ai_vulnerability_analysis"
 CACHE_TTL_HOURS = 48
@@ -48,6 +49,7 @@ async def get_cached_analysis(finding: Dict[str, Any]) -> Optional[Dict[str, Any
         doc.pop("_id", None)
         return doc
     except Exception:
+        fire_and_forget_log()
         return None
 
 
@@ -73,6 +75,7 @@ async def save_analysis(finding: Dict[str, Any], analysis: Dict[str, Any]) -> No
             upsert=True,
         )
     except Exception as exc:
+        fire_and_forget_log()
         print(f"[AI Cache] Failed to save analysis: {exc}")
 
 
@@ -82,4 +85,5 @@ async def invalidate_cache(finding_id: str) -> bool:
         result = await database[CACHE_COLLECTION].delete_one({"finding_id": finding_id})
         return result.deleted_count > 0
     except Exception:
+        fire_and_forget_log()
         return False

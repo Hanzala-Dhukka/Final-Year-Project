@@ -11,6 +11,8 @@ layer can parse it deterministically.
 """
 import json
 
+from app.services.error_log_service import fire_and_forget_log
+
 SYSTEM_PROMPT = """You are CyberShield AI Security Remediation Expert.
 
 Your job is to turn a single security finding into an actionable, technology-
@@ -50,6 +52,7 @@ def _fmt(value):
         try:
             return json.dumps(value, indent=2, default=str)
         except Exception:
+            fire_and_forget_log()
             return str(value)
     return str(value)
 

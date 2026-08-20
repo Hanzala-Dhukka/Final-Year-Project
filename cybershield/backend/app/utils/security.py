@@ -8,6 +8,7 @@ from fastapi import Depends, HTTPException
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from app.config.settings import settings
 from app.repositories.user_repository import user_repository
+from app.services.error_log_service import fire_and_forget_log
 
 security = HTTPBearer()
 
@@ -46,12 +47,14 @@ async def get_current_user(
 
         return user
     except JWTError as e:
+        fire_and_forget_log()
         print(f"ERROR: JWT decode failed: {e}")
         raise HTTPException(
             status_code=401,
             detail="Invalid or expired token"
         )
     except Exception as e:
+        fire_and_forget_log()
         print(f"ERROR: Unexpected error in get_current_user: {e}")
         import traceback
         traceback.print_exc()
@@ -157,8 +160,10 @@ def verify_token(token: str, token_type: str = "access") -> Optional[Dict[str, A
         return payload
         
     except JWTError:
+        fire_and_forget_log()
         return None
     except Exception:
+        fire_and_forget_log()
         return None
 
 

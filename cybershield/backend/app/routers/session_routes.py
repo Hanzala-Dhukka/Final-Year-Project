@@ -8,6 +8,7 @@ from app.repositories.session_repository import session_repository
 from app.repositories.refresh_token_repository import refresh_token_repository
 from app.dependencies.auth import get_current_user
 from app.models.refresh_token_model import SessionResponse
+from app.services.error_log_service import fire_and_forget_log
 
 router = APIRouter()
 
@@ -38,6 +39,7 @@ async def get_active_sessions(current_user: dict = Depends(get_current_user)):
         
         return session_responses
     except Exception as e:
+        fire_and_forget_log()
         raise HTTPException(
             status_code=500,
             detail=f"Error fetching sessions: {str(e)}"
@@ -85,8 +87,10 @@ async def logout_session(session_id: str, current_user: dict = Depends(get_curre
             "session_id": session_id
         }
     except HTTPException:
+        fire_and_forget_log()
         raise
     except Exception as e:
+        fire_and_forget_log()
         raise HTTPException(
             status_code=500,
             detail=f"Error closing session: {str(e)}"
@@ -114,6 +118,7 @@ async def logout_all_sessions(current_user: dict = Depends(get_current_user)):
             "message": "All sessions closed successfully"
         }
     except Exception as e:
+        fire_and_forget_log()
         raise HTTPException(
             status_code=500,
             detail=f"Error closing all sessions: {str(e)}"
@@ -164,6 +169,7 @@ async def get_session_activity(current_user: dict = Depends(get_current_user)):
             "last_activity": None
         }
     except Exception as e:
+        fire_and_forget_log()
         raise HTTPException(
             status_code=500,
             detail=f"Error fetching session activity: {str(e)}"

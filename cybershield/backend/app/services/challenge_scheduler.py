@@ -5,6 +5,7 @@ from app.services.streak_service import StreakService
 import schedule
 import time
 import threading
+from app.services.error_log_service import fire_and_forget_log
 
 
 class ChallengeScheduler:
@@ -63,6 +64,7 @@ class ChallengeScheduler:
             return challenge
             
         except Exception as e:
+            fire_and_forget_log()
             print(f"❌ Error generating daily challenge: {e}")
             return None
     
@@ -75,6 +77,7 @@ class ChallengeScheduler:
             # Implementation depends on storage strategy
             pass
         except Exception as e:
+            fire_and_forget_log()
             print(f"Error in cleanup: {e}")
     
     def get_todays_challenge_status(self, user_id: str) -> Dict[str, Any]:
@@ -117,6 +120,7 @@ class ChallengeScheduler:
             }
             
         except Exception as e:
+            fire_and_forget_log()
             print(f"Error getting challenge status: {e}")
             return {
                 "has_challenge": False,
@@ -140,6 +144,7 @@ class ChallengeScheduler:
                 "challenge": challenge
             }
         except Exception as e:
+            fire_and_forget_log()
             return {
                 "success": False,
                 "error": str(e)

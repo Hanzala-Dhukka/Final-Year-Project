@@ -1,6 +1,7 @@
 import os
 from typing import Dict, Any
 from datetime import datetime
+from app.services.error_log_service import fire_and_forget_log
 
 
 def load_prompt_template(template_name: str) -> str:
@@ -22,6 +23,7 @@ def load_prompt_template(template_name: str) -> str:
         with open(template_path, 'r', encoding='utf-8') as f:
             return f.read()
     except Exception as e:
+        fire_and_forget_log()
         print(f"Error loading prompt template {template_name}: {e}")
         return ""
 

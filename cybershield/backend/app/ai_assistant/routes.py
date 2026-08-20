@@ -13,6 +13,7 @@ from typing import Dict, Any, Optional
 from app.config.settings import settings
 from app.database.db import database
 from app.ai_assistant import service
+from app.services.error_log_service import fire_and_forget_log
 
 router = APIRouter(prefix="/assistant", tags=["AI Assistant"])
 
@@ -35,6 +36,7 @@ async def _get_user_id(
         )
         return str(payload.get("user_id") or payload.get("sub") or "anonymous")
     except Exception:
+        fire_and_forget_log()
         return "anonymous"
 
 

@@ -26,6 +26,7 @@ from app.ai.copilot_engine import build_copilot_prompt, parse_copilot_response
 from app.ai.gemini_client import generate, is_available
 from app.database.db import database
 from app.models.copilot_model import advisory_document
+from app.services.error_log_service import fire_and_forget_log
 
 router = APIRouter()
 
@@ -45,6 +46,7 @@ async def _run_analysis(user_id: str, project_id: str = None, question: str = No
                 text, context["security_score"], context["risk_level"]
             )
         except Exception as e:
+            fire_and_forget_log()
             parsed = parse_copilot_response(
                 "", context["security_score"], context["risk_level"]
             )

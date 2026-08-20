@@ -22,6 +22,7 @@ from app.database.db import database
 from app.ai.checklist_prompt import build_checklist_prompt
 from app.services.checklist_generator import generate_checklist
 from app.ai.gemini_client import is_available, generate as gemini_generate
+from app.services.error_log_service import fire_and_forget_log
 
 GENERATED_COLLECTION = "generated_checklists"
 PRIORITY_ORDER = {"Critical": 0, "High": 1, "Medium": 2, "Low": 3}
@@ -31,6 +32,7 @@ def _oid(value: str):
     try:
         return ObjectId(value)
     except Exception:
+        fire_and_forget_log()
         return None
 
 

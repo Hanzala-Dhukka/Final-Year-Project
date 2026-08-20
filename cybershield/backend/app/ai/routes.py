@@ -18,6 +18,7 @@ from jose import jwt
 from app.config.settings import settings
 from app.database.db import database
 from app.ai.dashboard_ai_service import dashboard_ai_service
+from app.services.error_log_service import fire_and_forget_log
 
 router = APIRouter(prefix="/ai-dashboard", tags=["AI Dashboard"])
 
@@ -40,6 +41,7 @@ async def _get_user_id(
         )
         return str(payload.get("user_id") or payload.get("sub") or "anonymous")
     except Exception:
+        fire_and_forget_log()
         return "anonymous"
 
 
@@ -54,6 +56,7 @@ def _hash_data(data: Any) -> str:
     try:
         raw = json.dumps(data, sort_keys=True, default=str)
     except Exception:
+        fire_and_forget_log()
         raw = str(data)
     return hashlib.md5(raw.encode()).hexdigest()[:12]
 
@@ -68,6 +71,7 @@ async def _get_cache(key: str) -> Optional[Dict]:
             return None
         return doc.get("result")
     except Exception:
+        fire_and_forget_log()
         return None
 
 
@@ -88,6 +92,7 @@ async def _set_cache(key: str, user_id: str, endpoint: str, result: Dict) -> Non
             upsert=True,
         )
     except Exception as exc:
+        fire_and_forget_log()
         print(f"[AI Cache] write failed: {exc}")
 
 
@@ -214,4 +219,5 @@ async def clear_cache(user_id: str = Depends(_get_user_id)):
         result = await database[CACHE_COLLECTION].delete_many({"user_id": user_id})
         return {"deleted": result.deleted_count, "message": "AI insight cache cleared"}
     except Exception as exc:
+        fire_and_forget_log()
         raise HTTPException(status_code=500, detail=str(exc))

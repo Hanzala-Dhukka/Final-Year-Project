@@ -8,6 +8,7 @@ from bson import ObjectId
 from pymongo.collection import Collection
 
 from app.core.database import get_collection
+from app.services.error_log_service import fire_and_forget_log
 
 
 class NotificationRepository:
@@ -105,6 +106,7 @@ class NotificationRepository:
             )
             return result.modified_count > 0
         except Exception:
+            fire_and_forget_log()
             return False
     
     async def mark_all_as_read(self, user_id: str) -> int:
@@ -141,6 +143,7 @@ class NotificationRepository:
             result = await collection.delete_one({"_id": ObjectId(notification_id)})
             return result.deleted_count > 0
         except Exception:
+            fire_and_forget_log()
             return False
 
 

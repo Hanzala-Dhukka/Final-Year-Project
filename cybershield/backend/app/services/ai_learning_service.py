@@ -7,6 +7,7 @@ from app.services.explanation_builder import (
 )
 from app.services.google_sheets_service import save_attack_lab_to_sheet
 from app.services.adaptive_learning import AdaptiveLearningEngine
+from app.services.error_log_service import fire_and_forget_log
 
 
 class AILearningService:
@@ -289,6 +290,7 @@ class AILearningService:
                 time_taken=0
             )
         except Exception as e:
+            fire_and_forget_log()
             print(f"Error saving learning progress: {e}")
             # Don't fail the request if saving fails
             pass

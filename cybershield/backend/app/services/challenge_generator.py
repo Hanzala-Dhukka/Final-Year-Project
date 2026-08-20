@@ -2,6 +2,7 @@ from typing import Dict, Any, Optional
 from datetime import datetime, timedelta
 from app.data.daily_templates import get_random_challenge, get_all_categories
 from app.database.db import database
+from app.services.error_log_service import fire_and_forget_log
 
 CHALLENGE_COLLECTION = "security_challenges"
 
@@ -54,6 +55,7 @@ class ChallengeGenerator:
                 doc.pop("_id", None)
                 return doc
         except Exception as e:
+            fire_and_forget_log()
             print(f"Error loading today's challenge from Mongo: {e}")
 
         challenge = self.generate_daily_challenge()
@@ -62,6 +64,7 @@ class ChallengeGenerator:
                 {"date": challenge["date"]}, {"$set": challenge}, upsert=True
             )
         except Exception as e:
+            fire_and_forget_log()
             print(f"Error saving today's challenge to Mongo: {e}")
 
         return challenge
@@ -76,6 +79,7 @@ class ChallengeGenerator:
             expiry = datetime.fromisoformat(expires_at)
             return max(0, int((expiry - datetime.now()).total_seconds()))
         except Exception:
+            fire_and_forget_log()
             return 0
 
     def _calculate_streak_bonus(self, streak: int) -> int:

@@ -26,10 +26,12 @@ try:
     from groq import AsyncGroq
     GROQ_AVAILABLE = True
 except ImportError:
+    fire_and_forget_log()
     AsyncGroq = None  # type: ignore
     GROQ_AVAILABLE = False
 
 from app.config.settings import settings
+from app.services.error_log_service import fire_and_forget_log
 
 # ── Singleton state ───────────────────────────────────────────────────────────
 _client: Optional[object] = None
@@ -108,6 +110,7 @@ def initialize() -> Optional[object]:
         _initialized = True
         print(f"[Groq] AI client ready — models: {_candidate_models()}")
     except Exception as e:
+        fire_and_forget_log()
         print(f"[Groq] Error initialising client: {e} — will retry on next request.")
         _client = None  # _initialized stays False → next call retries
 
@@ -174,6 +177,7 @@ async def generate(prompt: str) -> str:
                 return text
 
             except asyncio.TimeoutError:
+                fire_and_forget_log()
                 last_exc = RuntimeError(
                     f"Groq request timed out after {TIMEOUT_SECS}s "
                     f"(model={model}, attempt {attempt}/{MAX_RETRIES})."
@@ -181,6 +185,7 @@ async def generate(prompt: str) -> str:
                 print(f"[Groq] Timeout — model={model}, attempt {attempt}/{MAX_RETRIES}")
 
             except Exception as e:
+                fire_and_forget_log()
                 if _is_quota(e):
                     print(f"[Groq] Rate limit hit on model={model}: {e}")
                     # Back off 60 s on first quota hit, then move to next model

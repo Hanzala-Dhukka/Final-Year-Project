@@ -7,6 +7,7 @@ import time
 
 from app.config.settings import settings
 from app.github.utils import bytes_to_percentage
+from app.services.error_log_service import fire_and_forget_log
 
 
 _github: Optional[Github] = None
@@ -31,6 +32,7 @@ def _check_rate_limit(client: Github):
                 "Set GITHUB_TOKEN for higher limits."
             )
     except Exception as e:
+        fire_and_forget_log()
         if "rate limit" in str(e).lower():
             raise
 
@@ -47,8 +49,10 @@ def validate_repository(repo_name: str) -> dict:
         client.get_repo(repo_name)
         return {"ok": True}
     except RateLimitExceededException:
+        fire_and_forget_log()
         return {"ok": False, "error": "GitHub API rate limit exceeded. Please wait or configure a GITHUB_TOKEN."}
     except GithubException as e:
+        fire_and_forget_log()
         status = getattr(e, "status", None)
         if status == 404:
             return {"ok": False, "error": "Repository not found. Check the URL and try again."}
@@ -56,6 +60,7 @@ def validate_repository(repo_name: str) -> dict:
             return {"ok": False, "error": "Access denied. The repository may be private or the GitHub token lacks permissions."}
         return {"ok": False, "error": f"GitHub API error (HTTP {status})."}
     except Exception as e:
+        fire_and_forget_log()
         return {"ok": False, "error": f"Could not reach GitHub: {e}"}
 
 
@@ -72,6 +77,7 @@ def repository_metadata(repo) -> dict:
     try:
         raw_size = int(repo.size) if repo.size else 0
     except (TypeError, ValueError):
+        fire_and_forget_log()
         raw_size = 0
 
     return {
@@ -118,6 +124,7 @@ def scan_tree(repo, path: str = "") -> list:
         tree = repo.get_git_tree(repo.default_branch, recursive=True)
         return [item.path for item in tree.tree if item.type == "blob"]
     except GithubException:
+        fire_and_forget_log()
         # Fallback to manual scan for any tree API errors
         return _scan_tree_manual(repo, path)
 
@@ -128,6 +135,7 @@ def _scan_tree_manual(repo, path: str = "") -> list:
     try:
         contents = repo.get_contents(path)
     except GithubException:
+        fire_and_forget_log()
         return files
 
     if not isinstance(contents, list):
@@ -145,6 +153,7 @@ def _scan_tree_manual(repo, path: str = "") -> list:
                 elif hasattr(dir_contents, "path"):
                     files.append(dir_contents.path)
             except GithubException:
+                fire_and_forget_log()
                 pass
         else:
             files.append(file.path)
@@ -163,4 +172,5 @@ def get_contributors_count(repo) -> int:
                 break
         return count
     except Exception:
+        fire_and_forget_log()
         return 0

@@ -14,6 +14,7 @@ from app.database.db import database
 from app.scanner.rules import ALL_RULES
 from app.scanner.engine.rule_engine import match_rules, calculate_severity_summary
 from app.scanner.engine.snippet_engine import get_file_lines
+from app.services.error_log_service import fire_and_forget_log
 
 FINDINGS_COLLECTION = "scan_findings"
 
@@ -86,6 +87,7 @@ async def scan_repository_files(
                 all_findings.extend(findings)
                 
             except Exception as e:
+                fire_and_forget_log()
                 errors.append({"file": file_path, "error": str(e)})
     
     # Process in batches
@@ -134,6 +136,7 @@ async def _fetch_file_content(raw_base: str, file_path: str) -> Optional[str]:
                     return None
                 return content
     except Exception:
+        fire_and_forget_log()
         pass
     return None
 

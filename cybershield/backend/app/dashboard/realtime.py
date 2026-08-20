@@ -15,6 +15,7 @@ from bson import ObjectId
 
 from app.database.db import database
 from app.services.progress_service import ProgressService
+from app.services.error_log_service import fire_and_forget_log
 
 WEEK_DAYS = 7
 QUIZ_TOTAL = 30
@@ -41,6 +42,7 @@ def _valid_oid(value: str) -> Optional[ObjectId]:
     try:
         return ObjectId(value)
     except Exception:
+        fire_and_forget_log()
         return None
 
 
@@ -61,11 +63,13 @@ def _parse_dt(value) -> Optional[datetime]:
     try:
         return datetime.fromisoformat(raw.replace("Z", "+00:00"))
     except Exception:
+        fire_and_forget_log()
         pass
     for fmt in ("%Y-%m-%d %H:%M:%S.%f", "%Y-%m-%d %H:%M:%S", "%Y-%m-%d"):
         try:
             return datetime.strptime(raw, fmt).replace(tzinfo=timezone.utc)
         except Exception:
+            fire_and_forget_log()
             continue
     return None
 
@@ -248,8 +252,10 @@ async def _collect_scans(user_id: str) -> Dict[str, Any]:
                 async for scan in cursor:
                     _ingest(scan)
             except Exception as e:
+                fire_and_forget_log()
                 print(f"[realtime] {collection_name} aggregation error: {e}")
     except Exception as e:
+        fire_and_forget_log()
         print(f"[realtime] scan aggregation error: {e}")
 
     weekly_scans = [{"day": b["day"], "count": b["count"]} for b in buckets.values()]
@@ -283,6 +289,7 @@ async def _collect_projects(user_id: str) -> int:
             if ObjectId.is_valid(m.get("project_id", "")):
                 count += 1
     except Exception as e:
+        fire_and_forget_log()
         print(f"[realtime] project aggregation error: {e}")
     return count
 
@@ -302,6 +309,7 @@ async def _collect_reports(user_id: str) -> Dict[str, Any]:
                     "created": dt.strftime("%Y-%m-%d") if dt else "",
                 })
     except Exception as e:
+        fire_and_forget_log()
         print(f"[realtime] report aggregation error: {e}")
     return {"total": len(reports), "recent": reports}
 
@@ -319,6 +327,7 @@ async def _collect_quiz(user_id: str) -> Dict[str, Any]:
             if dt and dt >= week_ago:
                 weekly_scores.append(score)
     except Exception as e:
+        fire_and_forget_log()
         print(f"[realtime] quiz aggregation error: {e}")
 
     return {
@@ -355,6 +364,7 @@ async def _collect_learning(user_id: str) -> Dict[str, Any]:
             "overall": overall,
         }
     except Exception as e:
+        fire_and_forget_log()
         print(f"[realtime] learning aggregation error: {e}")
         return {"glossary": 0, "owasp": 0, "quiz": 0, "overall": 0}
 
@@ -366,6 +376,7 @@ async def _collect_progress(user_id: str) -> Dict[str, Any]:
         async for log in database.activity_log.find(_user_filter(user_id)):
             xp += int(log.get("xp", 0) or 0)
     except Exception as e:
+        fire_and_forget_log()
         print(f"[realtime] activity xp error: {e}")
 
     if xp == 0:
@@ -373,6 +384,7 @@ async def _collect_progress(user_id: str) -> Dict[str, Any]:
             async for prog in database.user_progress.find(_user_filter(user_id)):
                 xp = max(xp, int(prog.get("xp", 0) or 0))
         except Exception as e:
+            fire_and_forget_log()
             print(f"[realtime] progress xp error: {e}")
 
     level = ProgressService.calculate_level(xp)
@@ -397,6 +409,7 @@ async def _collect_achievements(user_id: str) -> List[Dict[str, Any]]:
             if key:
                 unlocked_keys.add(str(key))
     except Exception as e:
+        fire_and_forget_log()
         print(f"[realtime] badge aggregation error: {e}")
 
     try:
@@ -412,6 +425,7 @@ async def _collect_achievements(user_id: str) -> List[Dict[str, Any]]:
             })
         return result[:12]
     except Exception as e:
+        fire_and_forget_log()
         print(f"[realtime] achievement catalogue error: {e}")
 
     if unlocked_keys:
@@ -450,6 +464,7 @@ async def _collect_activity(user_id: str, last_scan_dt: Optional[datetime], thre
                 "type": a_type,
             })
     except Exception as e:
+        fire_and_forget_log()
         print(f"[realtime] activity log error: {e}")
 
     if not activities:
@@ -487,6 +502,7 @@ async def _collect_activity(user_id: str, last_scan_dt: Optional[datetime], thre
                     "type": "threat",
                 })
         except Exception as e:
+            fire_and_forget_log()
             print(f"[realtime] activity fallback error: {e}")
 
     return activities[:5]
@@ -511,6 +527,7 @@ async def _collect_daily_challenge(user_id: str) -> Optional[Dict[str, Any]]:
             "completed": completed,
         }
     except Exception as e:
+        fire_and_forget_log()
         print(f"[realtime] daily challenge error: {e}")
         return None
 
@@ -572,6 +589,7 @@ async def build_realtime_dashboard(user_id: str) -> Dict[str, Any]:
         if doc and doc.get("score") is not None:
             security_score = int(doc.get("score"))
     except Exception as e:
+        fire_and_forget_log()
         print(f"[realtime] security score error: {e}")
 
     if security_score is None:

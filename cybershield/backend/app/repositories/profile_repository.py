@@ -6,6 +6,7 @@ from typing import Optional, List, Dict, Any
 from bson import ObjectId
 from app.core.database import get_collection
 from app.models.profile_model import UserProfile, UserSettings, LoginHistory, SecurityScore
+from app.services.error_log_service import fire_and_forget_log
 
 
 def _sanitize(doc: Optional[Dict[str, Any]]) -> Optional[Dict[str, Any]]:
@@ -44,6 +45,7 @@ class ProfileRepository:
             profile = await collection.find_one({"user_id": user_id})
             return _sanitize(profile)
         except Exception as e:
+            fire_and_forget_log()
             print(f"Error getting profile: {e}")
             return None
     
@@ -56,6 +58,7 @@ class ProfileRepository:
             result = await collection.insert_one(profile_data)
             return str(result.inserted_id)
         except Exception as e:
+            fire_and_forget_log()
             print(f"Error creating profile: {e}")
             return None
     
@@ -70,6 +73,7 @@ class ProfileRepository:
             )
             return result.modified_count > 0
         except Exception as e:
+            fire_and_forget_log()
             print(f"Error updating profile: {e}")
             return False
     
@@ -91,6 +95,7 @@ class ProfileRepository:
             settings = await collection.find_one({"user_id": user_id})
             return _sanitize(settings)
         except Exception as e:
+            fire_and_forget_log()
             print(f"Error getting settings: {e}")
             return None
     
@@ -103,6 +108,7 @@ class ProfileRepository:
             result = await collection.insert_one(settings_data)
             return str(result.inserted_id)
         except Exception as e:
+            fire_and_forget_log()
             print(f"Error creating settings: {e}")
             return None
     
@@ -117,6 +123,7 @@ class ProfileRepository:
             )
             return result.modified_count > 0
         except Exception as e:
+            fire_and_forget_log()
             print(f"Error updating settings: {e}")
             return False
     
@@ -139,6 +146,7 @@ class ProfileRepository:
             result = await collection.insert_one(history_data)
             return str(result.inserted_id)
         except Exception as e:
+            fire_and_forget_log()
             print(f"Error adding login history: {e}")
             return None
     
@@ -152,6 +160,7 @@ class ProfileRepository:
                 history.append(_sanitize(entry))
             return history
         except Exception as e:
+            fire_and_forget_log()
             print(f"Error getting login history: {e}")
             return []
     
@@ -163,6 +172,7 @@ class ProfileRepository:
             score = await collection.find_one({"user_id": user_id})
             return _sanitize(score)
         except Exception as e:
+            fire_and_forget_log()
             print(f"Error getting security score: {e}")
             return None
     
@@ -186,6 +196,7 @@ class ProfileRepository:
             
             return True
         except Exception as e:
+            fire_and_forget_log()
             print(f"Error updating security score: {e}")
             return False
 

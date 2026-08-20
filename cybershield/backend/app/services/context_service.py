@@ -15,12 +15,14 @@ from typing import Optional
 from bson import ObjectId
 
 from app.database.db import database
+from app.services.error_log_service import fire_and_forget_log
 
 
 def _oid(value: str):
     try:
         return ObjectId(value)
     except Exception:
+        fire_and_forget_log()
         return None
 
 
@@ -171,6 +173,7 @@ async def build_context(user_id: str, project_id: Optional[str] = None) -> dict:
         quiz_count = await database.quiz_attempts.count_documents({"user_id": user_id})
         owasp_count = await database.owasp_sessions.count_documents({"user_id": user_id})
     except Exception:
+        fire_and_forget_log()
         quiz_count = owasp_count = 0
 
     return {

@@ -11,6 +11,7 @@ from datetime import datetime, timezone, timedelta
 from app.database.db import database
 from app.models.gamification import learning_goal_document
 from app.schemas.achievement_schema import LearningGoalOut
+from app.services.error_log_service import fire_and_forget_log
 
 GOALS = "learning_goals"
 ACTIVITY = "activity_log"
@@ -64,6 +65,7 @@ async def _enrich(goal: Dict[str, Any]) -> Dict[str, Any]:
             "created_at": {"$gte": since},
         })
     except Exception:
+        fire_and_forget_log()
         current = 0
 
     target = goal.get("target", 0)
@@ -76,6 +78,7 @@ async def _enrich(goal: Dict[str, Any]) -> Dict[str, Any]:
             {"$set": {"current": current, "completed": completed, "updated_at": datetime.now(timezone.utc)}},
         )
     except Exception:
+        fire_and_forget_log()
         pass
 
     return {

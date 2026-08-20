@@ -13,6 +13,7 @@ from app.database.db import database
 from app.ai.gemini_client import generate, is_available
 from app.ai_assistant.prompts import SECURITY_ASSISTANT_PROMPT
 from app.ai_assistant.models import chat_history_document
+from app.services.error_log_service import fire_and_forget_log
 
 # MongoDB collection
 chat_history = database.ai_chat_history
@@ -38,6 +39,7 @@ async def ask_ai(question: str, scan_data: dict = None, user_id: str = None) -> 
         try:
             scan_text = json.dumps(scan_data, indent=2, default=str)
         except Exception:
+            fire_and_forget_log()
             scan_text = str(scan_data)
 
     # Build the prompt
@@ -57,6 +59,7 @@ async def ask_ai(question: str, scan_data: dict = None, user_id: str = None) -> 
     try:
         answer = await generate(prompt)
     except Exception as e:
+        fire_and_forget_log()
         print(f"[AI Assistant] Error generating response: {e}")
         answer = (
             "I encountered an error processing your question. Please try again "

@@ -11,6 +11,7 @@ from app.database.db import database
 from app.ai.gemini_client import generate, is_available
 from app.ai.summary_prompt import SCAN_SUMMARY_PROMPT
 from app.models.scan_summary_model import scan_summary_document
+from app.services.error_log_service import fire_and_forget_log
 
 # MongoDB collection
 summaries_col = database.scan_summaries
@@ -65,6 +66,7 @@ async def generate_scan_summary(scan_data: Dict[str, Any]) -> Dict[str, Any]:
 
         return result
     except Exception as e:
+        fire_and_forget_log()
         print(f"[ScanSummary] AI generation failed: {e}")
         return _fallback_summary(compact)
 
@@ -161,6 +163,7 @@ async def save_scan_summary(
     try:
         await summaries_col.insert_one(doc)
     except Exception as e:
+        fire_and_forget_log()
         print(f"[ScanSummary] Failed to save summary: {e}")
 
 

@@ -19,6 +19,7 @@ from app.scanner.progress import get_scan_logs, get_timeline
 from app.github.utils import extract_repo_name
 from app.github.parser import get_repository, scan_tree
 from app.websocket.manager import manager as ws_manager
+from app.services.error_log_service import fire_and_forget_log
 
 router = APIRouter()
 
@@ -36,17 +37,20 @@ async def analyze_repository(data: dict, current_user: dict = Depends(get_curren
         repo_name = extract_repo_name(repo_url)
         repo = get_repository(repo_name)
     except Exception as e:
+        fire_and_forget_log()
         raise HTTPException(status_code=400, detail=f"Cannot access repository: {str(e)}")
 
     try:
         tree = repo.get_git_tree(repo.default_branch, recursive=True)
         files = [item.path for item in tree.tree if item.type == "blob"]
     except Exception:
+        fire_and_forget_log()
         files = []
 
     try:
         branches = [b.name for b in repo.get_branches()]
     except Exception:
+        fire_and_forget_log()
         branches = [repo.default_branch]
 
     return {
@@ -91,6 +95,7 @@ async def start_scan(data: dict, current_user: dict = Depends(get_current_user))
         repo_name = extract_repo_name(repo_url)
         repo = get_repository(repo_name)
     except Exception as e:
+        fire_and_forget_log()
         raise HTTPException(status_code=400, detail=f"Cannot access repository: {str(e)}")
 
     # Fetch file tree
@@ -98,6 +103,7 @@ async def start_scan(data: dict, current_user: dict = Depends(get_current_user))
         tree = repo.get_git_tree(repo.default_branch, recursive=True)
         files = [item.path for item in tree.tree if item.type == "blob"]
     except Exception:
+        fire_and_forget_log()
         files = []
 
     if not files:

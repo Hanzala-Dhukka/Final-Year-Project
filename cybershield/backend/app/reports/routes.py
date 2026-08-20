@@ -30,6 +30,7 @@ from app.reports.pdf_generator import generate_report_pdf
 from app.reports.csv_generator import generate_report_csv
 from app.reports.json_generator import generate_report_json
 from app.reports.charts import get_severity_pie_data, get_comparison_bar_data
+from app.services.error_log_service import fire_and_forget_log
 
 router = APIRouter()
 
@@ -74,8 +75,10 @@ async def generate_report(
     try:
         report_data = await get_report_for_scan(scan_id)
     except ValueError as e:
+        fire_and_forget_log()
         raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:
+        fire_and_forget_log()
         raise HTTPException(status_code=500, detail=f"Report generation failed: {e}")
 
     # Attach user info for ownership
@@ -193,6 +196,7 @@ async def download_pdf(
     try:
         generate_report_pdf(report, pdf_path)
     except Exception as e:
+        fire_and_forget_log()
         raise HTTPException(status_code=500, detail=f"PDF generation failed: {e}")
 
     if not os.path.isfile(pdf_path):
@@ -225,6 +229,7 @@ async def download_json(
     try:
         generate_report_json(report, json_path)
     except Exception as e:
+        fire_and_forget_log()
         raise HTTPException(status_code=500, detail=f"JSON generation failed: {e}")
 
     if not os.path.isfile(json_path):
@@ -257,6 +262,7 @@ async def download_csv(
     try:
         generate_report_csv(report, csv_path)
     except Exception as e:
+        fire_and_forget_log()
         raise HTTPException(status_code=500, detail=f"CSV generation failed: {e}")
 
     if not os.path.isfile(csv_path):
@@ -291,6 +297,7 @@ async def email_report(
     try:
         generate_report_pdf(report, pdf_path)
     except Exception:
+        fire_and_forget_log()
         pdf_path = None  # Send without attachment if PDF fails
 
     success = await send_report_email(
@@ -329,8 +336,10 @@ async def compare_two_scans(
     try:
         result = await compare_scans(body.old_scan_id, body.new_scan_id)
     except ValueError as e:
+        fire_and_forget_log()
         raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:
+        fire_and_forget_log()
         raise HTTPException(status_code=500, detail=f"Comparison failed: {e}")
 
     return result
@@ -352,6 +361,7 @@ async def ai_summary(
         try:
             report = await get_report_for_scan(scan_id)
         except ValueError as e:
+            fire_and_forget_log()
             raise HTTPException(status_code=404, detail=str(e))
 
     summary = await generate_ai_executive_summary(report)

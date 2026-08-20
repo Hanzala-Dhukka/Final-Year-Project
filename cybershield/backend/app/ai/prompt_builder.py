@@ -5,6 +5,8 @@ Builds the CyberShield system prompt plus a conversation history section so the
 model can answer follow-up questions in context (foundation for later modules).
 """
 
+from app.services.error_log_service import fire_and_forget_log
+
 SYSTEM_PROMPT = """You are CyberShield AI.
 
 You are a cybersecurity instructor.
@@ -63,6 +65,7 @@ def _fmt(value) -> str:
             import json
             return json.dumps(value, indent=2, default=str)
         except Exception:
+            fire_and_forget_log()
             return str(value)
     return str(value)
 

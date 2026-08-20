@@ -8,6 +8,8 @@ for every pattern match in source code.
 import re
 from typing import List, Dict, Optional, Tuple
 
+from app.services.error_log_service import fire_and_forget_log
+
 
 def _offset_to_line_col(content: str, offset: int) -> Tuple[int, int]:
     """Convert a character offset to 1-based (line, column)."""
@@ -38,6 +40,7 @@ def find_pattern_locations(
     try:
         compiled = re.compile(pattern, re.IGNORECASE)
     except re.error:
+        fire_and_forget_log()
         return locations
 
     for match in compiled.finditer(content):

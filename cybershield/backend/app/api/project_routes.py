@@ -5,6 +5,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from app.dependencies.auth import get_current_user
 from app.schemas.project_schema import ProjectCreate, ProjectUpdate, MemberInvite
 from app.services import project_service as svc
+from app.services.error_log_service import fire_and_forget_log
 
 router = APIRouter()
 
@@ -14,6 +15,7 @@ async def create(payload: ProjectCreate, user=Depends(get_current_user)):
     try:
         return await svc.create_project(user, payload)
     except ValueError as e:
+        fire_and_forget_log()
         raise HTTPException(status_code=400, detail=str(e))
 
 
@@ -27,8 +29,10 @@ async def get_project(project_id: str, user=Depends(get_current_user)):
     try:
         return await svc.get_project(user, project_id)
     except ValueError as e:
+        fire_and_forget_log()
         raise HTTPException(status_code=404, detail=str(e))
     except PermissionError as e:
+        fire_and_forget_log()
         raise HTTPException(status_code=403, detail=str(e))
 
 
@@ -37,8 +41,10 @@ async def update(project_id: str, payload: ProjectUpdate, user=Depends(get_curre
     try:
         return await svc.update_project(user, project_id, payload)
     except ValueError as e:
+        fire_and_forget_log()
         raise HTTPException(status_code=404, detail=str(e))
     except PermissionError as e:
+        fire_and_forget_log()
         raise HTTPException(status_code=403, detail=str(e))
 
 
@@ -47,8 +53,10 @@ async def delete(project_id: str, user=Depends(get_current_user)):
     try:
         await svc.delete_project(user, project_id)
     except PermissionError as e:
+        fire_and_forget_log()
         raise HTTPException(status_code=403, detail=str(e))
     except Exception as e:
+        fire_and_forget_log()
         raise HTTPException(status_code=400, detail=str(e))
 
 
@@ -59,8 +67,10 @@ async def invite(project_id: str, payload: MemberInvite, user=Depends(get_curren
             user, project_id, payload.user_id, payload.email, payload.role
         )
     except ValueError as e:
+        fire_and_forget_log()
         raise HTTPException(status_code=400, detail=str(e))
     except PermissionError as e:
+        fire_and_forget_log()
         raise HTTPException(status_code=403, detail=str(e))
 
 
@@ -69,6 +79,7 @@ async def members(project_id: str, user=Depends(get_current_user)):
     try:
         return await svc.list_members(user, project_id)
     except PermissionError as e:
+        fire_and_forget_log()
         raise HTTPException(status_code=403, detail=str(e))
 
 
@@ -77,6 +88,8 @@ async def remove_member(project_id: str, target_user_id: str, user=Depends(get_c
     try:
         await svc.remove_member(user, project_id, target_user_id)
     except ValueError as e:
+        fire_and_forget_log()
         raise HTTPException(status_code=404, detail=str(e))
     except PermissionError as e:
+        fire_and_forget_log()
         raise HTTPException(status_code=403, detail=str(e))

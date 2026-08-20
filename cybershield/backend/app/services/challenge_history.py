@@ -6,6 +6,7 @@ from typing import Dict, Any, List, Optional
 from datetime import datetime, timedelta
 from bson import ObjectId
 from app.database.db import database
+from app.services.error_log_service import fire_and_forget_log
 
 COMPLETIONS_COLLECTION = "challenge_completions"
 
@@ -41,6 +42,7 @@ class ChallengeHistoryService:
                 })
             return history
         except Exception as e:
+            fire_and_forget_log()
             print(f"Error fetching challenge history: {e}")
             return []
 
@@ -53,6 +55,7 @@ class ChallengeHistoryService:
                 records.append(doc)
             return self._compute_statistics(user_id, records)
         except Exception as e:
+            fire_and_forget_log()
             print(f"Error fetching statistics: {e}")
             return self._get_empty_statistics(user_id)
 
@@ -72,6 +75,7 @@ class ChallengeHistoryService:
                 })
             return {"days": days, "year": year, "month": month}
         except Exception as e:
+            fire_and_forget_log()
             print(f"Error fetching calendar: {e}")
             return {"days": [], "year": year, "month": month}
 
@@ -106,6 +110,7 @@ class ChallengeHistoryService:
                 })
             return leaderboard
         except Exception as e:
+            fire_and_forget_log()
             print(f"Error fetching leaderboard: {e}")
             return []
 
@@ -122,6 +127,7 @@ class ChallengeHistoryService:
                     or user_id
                 )
         except Exception:
+            fire_and_forget_log()
             pass
         return user_id
 

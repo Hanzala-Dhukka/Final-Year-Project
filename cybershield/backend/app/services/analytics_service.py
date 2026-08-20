@@ -8,6 +8,7 @@ from datetime import datetime
 from app.services.progress_service import ProgressService
 from app.services.mongo_service import save_lab_attempt, get_user_lab_attempts
 from app.data.attack_labs import get_all_categories
+from app.services.error_log_service import fire_and_forget_log
 
 
 class AnalyticsService:
@@ -37,6 +38,7 @@ class AnalyticsService:
         try:
             save_lab_attempt(user_id, lab_id, category, score, attempts, success)
         except Exception as e:
+            fire_and_forget_log()
             print(f"Error saving lab attempt to MongoDB: {e}")
     
     @classmethod

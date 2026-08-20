@@ -15,6 +15,7 @@ from app.schemas.profile_schema import (
 from app.services.profile_service import profile_service
 from app.services.security_score_service import security_score_service
 from app.utils.security import get_current_user
+from app.services.error_log_service import fire_and_forget_log
 
 router = APIRouter()
 
@@ -39,8 +40,10 @@ async def get_profile(current_user: dict = Depends(get_current_user)):
         
         return UserProfileResponse(**profile_data)
     except HTTPException:
+        fire_and_forget_log()
         raise
     except Exception as e:
+        fire_and_forget_log()
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Error fetching profile: {str(e)}"
@@ -71,8 +74,10 @@ async def update_profile(profile_data: ProfileUpdate, current_user: dict = Depen
         
         return {"message": "Profile updated successfully"}
     except HTTPException:
+        fire_and_forget_log()
         raise
     except Exception as e:
+        fire_and_forget_log()
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Error updating profile: {str(e)}"
@@ -99,8 +104,10 @@ async def get_settings(current_user: dict = Depends(get_current_user)):
         
         return settings
     except HTTPException:
+        fire_and_forget_log()
         raise
     except Exception as e:
+        fire_and_forget_log()
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Error fetching settings: {str(e)}"
@@ -140,8 +147,10 @@ async def update_settings(settings_data: SettingsUpdate, current_user: dict = De
         
         return {"message": "Settings updated successfully"}
     except HTTPException:
+        fire_and_forget_log()
         raise
     except Exception as e:
+        fire_and_forget_log()
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Error updating settings: {str(e)}"
@@ -176,8 +185,10 @@ async def change_password(password_data: PasswordChange, current_user: dict = De
         
         return {"message": message}
     except HTTPException:
+        fire_and_forget_log()
         raise
     except Exception as e:
+        fire_and_forget_log()
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Error changing password: {str(e)}"
@@ -222,6 +233,7 @@ async def get_activity(current_user: dict = Depends(get_current_user)):
             "last_login": login_history[0].get("login_time") if login_history else None
         }
     except Exception as e:
+        fire_and_forget_log()
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Error fetching activity: {str(e)}"
@@ -249,8 +261,10 @@ async def get_security_score(current_user: dict = Depends(get_current_user)):
         
         return SecurityScoreResponse(**score_data)
     except HTTPException:
+        fire_and_forget_log()
         raise
     except Exception as e:
+        fire_and_forget_log()
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Error fetching security score: {str(e)}"
@@ -278,8 +292,10 @@ async def calculate_security_score(current_user: dict = Depends(get_current_user
         
         return SecurityScoreResponse(**score_data)
     except HTTPException:
+        fire_and_forget_log()
         raise
     except Exception as e:
+        fire_and_forget_log()
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Error calculating security score: {str(e)}"

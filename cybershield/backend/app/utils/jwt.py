@@ -1,6 +1,7 @@
 from datetime import datetime, timedelta, timezone
 from jose import JWTError, jwt
 from app.config.settings import settings
+from app.services.error_log_service import fire_and_forget_log
 
 
 def create_access_token(data: dict, expires_delta: timedelta = None) -> str:
@@ -17,4 +18,5 @@ def decode_access_token(token: str) -> dict | None:
         payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
         return payload
     except JWTError:
+        fire_and_forget_log()
         return None

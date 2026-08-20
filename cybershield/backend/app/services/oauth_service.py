@@ -17,6 +17,7 @@ from jose import jwt as _jwt
 
 from app.config.settings import settings as cfg_settings
 from app.repositories.user_repository import user_repository
+from app.services.error_log_service import fire_and_forget_log
 from app.services.refresh_service import refresh_service
 from app.services.session_service import session_service
 from app.utils.security import create_access_token, create_refresh_token
@@ -138,6 +139,7 @@ def _verify_state(state: Optional[str], provider: str) -> Dict:
             algorithms=[cfg_settings.ALGORITHM],
         )
     except Exception:
+        fire_and_forget_log()
         raise HTTPException(status_code=400, detail="Invalid OAuth state")
     if payload.get("type") != "oauth_state" or payload.get("provider") != provider:
         raise HTTPException(status_code=400, detail="Invalid OAuth state")
@@ -348,11 +350,13 @@ async def process_oauth_login(
             ip_address=ip_address,
         )
     except Exception as e:
+        fire_and_forget_log()
         print(f"WARNING: Failed to store refresh token (oauth): {e}")
 
     try:
         await session_service.create_session(user_id=user_id, device=device, ip_address=ip_address)
     except Exception as e:
+        fire_and_forget_log()
         print(f"WARNING: Failed to create session (oauth): {e}")
 
     return {

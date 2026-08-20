@@ -3,6 +3,7 @@ import re
 from typing import Dict, Any, Optional
 from app.services.gemini_service import generate_ai_response
 from app.services.prompt_builder import build_explanation_prompt
+from app.services.error_log_service import fire_and_forget_log
 
 
 async def generate_explanation(
@@ -107,6 +108,7 @@ async def generate_explanation(
         }
     
     except Exception as e:
+        fire_and_forget_log()
         return generate_fallback_explanation(topic, payload, result, skill_level)
 
 
@@ -341,6 +343,7 @@ def build_hint_prompt(topic: str, payload: str, hint_number: int, skill_level: s
         with open("app/prompts/hint_prompt.txt", "r") as f:
             template = f.read()
     except FileNotFoundError:
+        fire_and_forget_log()
         template = get_fallback_hint_prompt()
     
     attempts_str = ", ".join(previous_attempts) if previous_attempts else "None"
@@ -458,6 +461,7 @@ def build_practice_prompt(topic: str, skill_level: str, question_type: str) -> s
         with open("app/prompts/practice_prompt.txt", "r") as f:
             template = f.read()
     except FileNotFoundError:
+        fire_and_forget_log()
         template = get_fallback_practice_prompt()
     
     prompt = template.format(

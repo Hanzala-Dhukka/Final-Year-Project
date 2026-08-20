@@ -9,6 +9,7 @@ the scenario's curated explanation offline.
 from typing import Tuple
 
 from app.ai.gemini_client import generate, is_available
+from app.services.error_log_service import fire_and_forget_log
 
 
 PROMPT = """You are an OWASP security trainer.
@@ -51,6 +52,7 @@ async def coach_explain(
             if text:
                 return text.strip(), "Gemini"
         except Exception as e:
+            fire_and_forget_log()
             print(f"AI coach failed, using fallback: {e}")
 
     return _fallback(attack, difficulty, payload, success, fallback), "Fallback"

@@ -3,6 +3,7 @@ from bson import ObjectId
 from datetime import datetime
 from app.database.db import database
 from app.dependencies.auth import get_current_user
+from app.services.error_log_service import fire_and_forget_log
 
 
 def _user_filter(user_id: str) -> dict:
@@ -10,6 +11,7 @@ def _user_filter(user_id: str) -> dict:
     try:
         oid = ObjectId(str(user_id))
     except Exception:
+        fire_and_forget_log()
         return {"user_id": str(user_id)}
     return {"$or": [{"user_id": str(user_id)}, {"user_id": oid}]}
 
@@ -169,8 +171,10 @@ async def summary(
     try:
         return await svc.build_dashboard(_uid(current_user), sort_by=sort_by)
     except HTTPException:
+        fire_and_forget_log()
         raise
     except Exception as e:  # pragma: no cover - defensive
+        fire_and_forget_log()
         raise HTTPException(status_code=500, detail=f"Dashboard error: {str(e)}")
 
 
@@ -180,6 +184,7 @@ async def trends(current_user: dict = Depends(get_current_user)):
     try:
         return await trend_service.get_trends(_uid(current_user))
     except Exception as e:
+        fire_and_forget_log()
         raise HTTPException(status_code=500, detail=f"Trends error: {str(e)}")
 
 
@@ -199,6 +204,7 @@ async def vulnerabilities(current_user: dict = Depends(get_current_user)):
             for r in rows
         ]
     except Exception as e:
+        fire_and_forget_log()
         raise HTTPException(status_code=500, detail=f"Vulnerability trend error: {str(e)}")
 
 
@@ -211,6 +217,7 @@ async def compare(
     try:
         return await svc.compare_projects(_uid(current_user), sort_by=sort_by)
     except Exception as e:
+        fire_and_forget_log()
         raise HTTPException(status_code=500, detail=f"Compare error: {str(e)}")
 
 
@@ -229,12 +236,14 @@ async def report(current_user: dict = Depends(get_current_user)):
                 headers={"Content-Disposition": "attachment; filename=Executive_Security_Report.pdf"},
             )
         except Exception:
+            fire_and_forget_log()
             return StreamingResponse(
                 io.StringIO(html),
                 media_type="text/html",
                 headers={"Content-Disposition": "attachment; filename=Executive_Security_Report.html"},
-            )
+)
     except Exception as e:
+        fire_and_forget_log()
         raise HTTPException(status_code=500, detail=f"Report error: {str(e)}")
 
 
@@ -249,6 +258,7 @@ async def report_json(current_user: dict = Depends(get_current_user)):
             headers={"Content-Disposition": "attachment; filename=Executive_Security_Report.json"},
         )
     except Exception as e:
+        fire_and_forget_log()
         raise HTTPException(status_code=500, detail=f"Report error: {str(e)}")
 
 

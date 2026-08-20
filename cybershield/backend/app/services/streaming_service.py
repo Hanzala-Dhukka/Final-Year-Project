@@ -6,6 +6,7 @@ from app.services.memory_service import get_conversation, append_message, build_
 from app.services.gemini_service import get_model
 from app.services.prompt_builder import build_prompt
 from app.config.settings import settings
+from app.services.error_log_service import fire_and_forget_log
 
 
 class StreamingService:
@@ -81,6 +82,7 @@ class StreamingService:
             })
         
         except Exception as e:
+            fire_and_forget_log()
             yield json.dumps({
                 "type": "error",
                 "content": f"Error: {str(e)}"
@@ -145,6 +147,7 @@ Only return the JSON array, no other text:"""
                 if isinstance(questions, list) and len(questions) > 0:
                     return questions[:3]
             except:
+                fire_and_forget_log()
                 pass
             
             return [
@@ -154,6 +157,7 @@ Only return the JSON array, no other text:"""
             ]
         
         except Exception as e:
+            fire_and_forget_log()
             print(f"Error generating suggested questions: {e}")
             return [
                 "Tell me more",

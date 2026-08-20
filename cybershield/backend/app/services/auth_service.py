@@ -6,6 +6,7 @@ from app.core.security import create_access_token, create_refresh_token
 from app.services.email_service import EmailService
 from datetime import datetime, timedelta
 import secrets
+from app.services.error_log_service import fire_and_forget_log
 
 
 async def register_user(request: RegisterRequest):
@@ -271,6 +272,7 @@ async def refresh_token(refresh_token_str: str):
         try:
             user_object_id = ObjectId(raw_user_id)
         except (InvalidId, TypeError):
+            fire_and_forget_log()
             raise HTTPException(status_code=401, detail="Invalid user identifier in token")
 
         user = await database.users.find_one({"_id": user_object_id})
@@ -301,8 +303,10 @@ async def refresh_token(refresh_token_str: str):
         }
 
     except HTTPException:
+        fire_and_forget_log()
         raise
     except Exception:
+        fire_and_forget_log()
         raise HTTPException(status_code=401, detail="Invalid refresh token")
 
 

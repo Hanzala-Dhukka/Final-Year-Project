@@ -14,6 +14,8 @@ from typing import Optional
 
 from bson import ObjectId
 
+from app.services.error_log_service import fire_and_forget_log
+
 
 def new_id() -> str:
     return str(uuid.uuid4())
@@ -101,4 +103,5 @@ def to_object_id(value: str) -> Optional[ObjectId]:
     try:
         return ObjectId(value)
     except Exception:
+        fire_and_forget_log()
         return None

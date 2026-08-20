@@ -5,6 +5,18 @@ Records every exception into the MongoDB `log` collection in real time so that
 server-side errors (e.g. a changed API requirement breaking a function) can be
 inspected later with full context.
 
+Three layers of automatic coverage:
+
+1. ``fire_and_forget_log`` — callable from ANY code path (sync or async). Auto
+   derives the caller's folder/file/function, so a single no-arg call inside an
+   ``except`` block is enough: ``fire_and_forget_log()``.
+
+2. ``install_global_hooks`` — overrides ``sys.excepthook``, ``threading.excepthook``
+   and the asyncio loop exception handler, so even uncaught exceptions in threads,
+   scheduled jobs and event-loop tasks are recorded automatically.
+
+3. ``with_error_logging`` — opt-in decorator for functions you want fully wrapped.
+
 Every entry stores:
 - DateTime, Folder_Name, File_Name, Function, Line
 - Error_Message, Error_Type, full Traceback
@@ -77,22 +89,20 @@ async def log_error(
     """
     Write a full error report into the `log` collection in real time.
 
-    Designed to be called from inside any `except` block (or from the global
-    exception handler), so the traceback of the active exception is captured
-    automatically. If called outside an active `except`, it falls back to
-    ``error.__traceback__``.
+    The traceback of the passed exception is captured from ``error.__traceback__``
+    so it works from any context (except block, decorator, thread hook, task).
 
     Returns the inserted MongoDB ``_id`` as a string, or ``None`` if the
     database write failed.
     """
-    exc_type, exc_value, exc_tb = sys.exc_info()
-    if exc_type is None:
-        exc_type = type(error)
-        exc_value = error
-        exc_tb = getattr(error, "__traceback__", None)
-
-    tb_str = "".join(traceback.format_exception(exc_type, exc_value, exc_tb))
-    line = exc_tb.tb_lineno if exc_tb is not None else None
+    exc_type = type(error)
+    tb = getattr(error, "__traceback__", None)
+    if tb is not None:
+        tb_str = "".join(traceback.format_exception(exc_type, error, tb))
+        line = tb.tb_lineno
+    else:
+        tb_str = f"{exc_type.__name__}: {error}"
+        line = None
 
     data = {
         "DateTime": get_current_datetime(),
@@ -100,7 +110,7 @@ async def log_error(
         "File_Name": file_name,
         "Function": function,
         "Error_Message": str(error),
-        "Error_Type": exc_type.__name__ if exc_type else type(error).__name__,
+        "Error_Type": exc_type.__name__,
         "Line": line,
         "Traceback": tb_str,
         "System_Info": _capture_system_info(),
@@ -138,28 +148,153 @@ async def log_exception(
     return await log_error(folder_name, file_name, function, error, extra_info)
 
 
-def fire_and_forget_log(
-    folder_name: str,
-    file_name: str,
-    function: str,
-    error: Exception,
-    extra_info: dict = None,
-) -> None:
-    """
-    Schedule logging without awaiting it — usable from sync code such as
-    scheduler jobs, background threads, or callbacks that cannot block.
-    """
-    coro = log_error(folder_name, file_name, function, error, extra_info)
+def _derive_caller(frame) -> tuple:
+    """Auto-derive (folder_name, file_name, function) from a caller frame."""
+    function = frame.f_code.co_name
+    file_name = os.path.basename(frame.f_code.co_filename)
+    folder_name = os.path.basename(os.path.dirname(frame.f_code.co_filename))
+    return folder_name, file_name, function
+
+
+def _schedule(coro) -> None:
+    """Run a coroutine in the safest available way (best-effort, never raises)."""
     try:
-        asyncio.get_running_loop().create_task(coro)
-    except RuntimeError:
-        try:
-            loop = asyncio.new_event_loop()
+        loop = asyncio.get_running_loop()
+        if loop.is_running():
             loop.create_task(coro)
+        else:
+            loop.run_until_complete(coro)
+    except RuntimeError:
+        # No running event loop (e.g. plain thread / scheduler) — run inline.
+        try:
+            asyncio.run(coro)
         except Exception:
             pass
     except Exception:
         pass
+
+
+def fire_and_forget_log(
+    error: Exception = None,
+    extra_info: dict = None,
+    folder_name: str = None,
+    file_name: str = None,
+    function: str = None,
+) -> None:
+    """
+    Record an error into the `log` collection from any code path.
+
+    Call it as the first statement of an ``except`` block:
+
+        except Exception:
+            fire_and_forget_log()
+
+    The folder / file / function are auto-derived from the caller frame, and the
+    current exception is taken from ``sys.exc_info()`` when ``error`` is omitted.
+    It never raises and never blocks the caller.
+    """
+    if error is None:
+        exc = sys.exc_info()[1]
+        if exc is None:
+            return
+        error = exc
+
+    if folder_name is None or file_name is None or function is None:
+        try:
+            frame = sys._getframe(1)
+            d_folder, d_file, d_func = _derive_caller(frame)
+            folder_name = folder_name or d_folder
+            file_name = file_name or d_file
+            function = function or d_func
+        except Exception:
+            folder_name = folder_name or "app"
+            file_name = file_name or "unknown"
+            function = function or "unknown"
+
+    _schedule(log_error(folder_name, file_name, function, error, extra_info))
+
+
+# ── Global safety nets ──────────────────────────────────────────────────────
+
+# Saved originals so we can preserve default behaviour after overriding.
+_ORIG_THREAD_EXCEPTHOOK = threading.excepthook
+_ORIG_SYS_EXCEPTHOOK = sys.excepthook
+
+
+def _thread_excepthook(args) -> None:
+    """Record exceptions that escape a thread (background jobs, scheduler)."""
+    if args.exc_value is not None:
+        fire_and_forget_log(
+            args.exc_value,
+            extra_info={"Thread": args.thread.name if args.thread else None},
+        )
+    # Keep the default behaviour (prints the traceback) as well.
+    _ORIG_THREAD_EXCEPTHOOK(args)
+
+
+def _main_excepthook(exc_type, exc_value, exc_tb) -> None:
+    """Record exceptions that escape the main thread / interpreter."""
+    fire_and_forget_log(
+        exc_value,
+        extra_info={"Hook": "sys.excepthook"},
+    )
+    # Keep the default behaviour.
+    _ORIG_SYS_EXCEPTHOOK(exc_type, exc_value, exc_tb)
+
+
+def _loop_exception_handler(loop, context) -> None:
+    """Record exceptions raised by asyncio tasks that were never awaited."""
+    exc = context.get("exception")
+    message = context.get("message", "Unhandled exception in asyncio task")
+    if exc is not None:
+        fire_and_forget_log(exc, extra_info={"Async_Message": message})
+    else:
+        print(f"[Async] {message}")
+    # Preserve standard asyncio behaviour (logs + task cleanup).
+    try:
+        loop.default_exception_handler(context)
+    except Exception:
+        pass
+
+
+def install_global_hooks() -> None:
+    """
+    Install project-wide automatic error logging.
+
+    Call once at app startup. Overrides:
+    - ``sys.excepthook`` (uncaught exceptions in the main thread)
+    - ``threading.excepthook`` (uncaught exceptions in worker threads)
+    - asyncio loop exception handler (unhandled task exceptions)
+
+    Also safe to call multiple times (idempotent for the asyncio part).
+    """
+    try:
+        sys.excepthook = _main_excepthook
+    except Exception:
+        pass
+
+    try:
+        threading.excepthook = _thread_excepthook
+    except Exception:
+        pass
+
+    try:
+        loop = asyncio.get_running_loop()
+        loop.set_exception_handler(_loop_exception_handler)
+    except RuntimeError:
+        pass  # not inside an event loop yet — installed again on startup event
+
+
+def install_loop_exception_handler() -> None:
+    """Attach the asyncio exception handler. Must be called from inside the loop."""
+    try:
+        loop = asyncio.get_running_loop()
+        loop.set_exception_handler(_loop_exception_handler)
+    except RuntimeError:
+        pass
+
+
+# ── Opt-in decorator ────────────────────────────────────────────────────────
 
 
 def _derive_location(func: Callable) -> tuple:
@@ -217,7 +352,7 @@ def with_error_logging(
             try:
                 return func(*args, **kwargs)
             except Exception as e:
-                fire_and_forget_log(actual_folder, actual_file, func.__name__, e, extra_info)
+                fire_and_forget_log(e, folder_name=actual_folder, file_name=actual_file, function=func.__name__)
                 raise
 
         if asyncio.iscoroutinefunction(func):

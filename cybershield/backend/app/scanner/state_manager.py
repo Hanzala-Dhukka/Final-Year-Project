@@ -5,6 +5,7 @@ import uuid
 from datetime import datetime
 from bson import ObjectId
 from app.database.db import database
+from app.services.error_log_service import fire_and_forget_log
 
 
 def _build_id_filter(scan_id: str) -> dict:
@@ -15,6 +16,7 @@ def _build_id_filter(scan_id: str) -> dict:
         return {"$or": [{"_id": oid}, {"scan_id": scan_id}]}
     except Exception:
         # Not a valid ObjectId — match by scan_id field (UUID or other string)
+        fire_and_forget_log()
         return {"scan_id": scan_id}
 
 

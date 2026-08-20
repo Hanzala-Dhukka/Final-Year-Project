@@ -16,6 +16,7 @@ from app.models.glossary import (
     suggestion_document,
 )
 from app.services.glossary_ai_service import explain_term
+from app.services.error_log_service import fire_and_forget_log
 
 TERMS = "glossary_terms"
 PROGRESS = "glossary_progress"
@@ -29,6 +30,7 @@ async def seed_if_empty() -> int:
     try:
         count = await database[TERMS].count_documents({})
     except Exception:
+        fire_and_forget_log()
         count = 0
     if count > 0:
         return 0
@@ -93,6 +95,7 @@ async def get_categories() -> List[str]:
         cats = await database[TERMS].distinct("category")
         return sorted([c for c in cats if c])
     except Exception:
+        fire_and_forget_log()
         return []
 
 
@@ -174,6 +177,7 @@ async def is_favorite(user_id: str, term_id: str) -> bool:
         )
         return doc is not None
     except Exception:
+        fire_and_forget_log()
         return False
 
 
@@ -311,6 +315,7 @@ async def mark_learned(user_id: str, term_id: str) -> None:
             {"user_id": user_id}, {"$inc": {"completed_glossary": 1}}, upsert=True
         )
     except Exception:
+        fire_and_forget_log()
         pass
 
 

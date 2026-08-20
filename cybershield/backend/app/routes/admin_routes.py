@@ -6,6 +6,7 @@ from typing import Optional
 from app.dependencies.admin_auth import admin_required
 from app.services.admin_service import admin_service
 from app.services.audit_service import log_action
+from app.services.error_log_service import fire_and_forget_log
 
 router = APIRouter()
 
@@ -31,6 +32,7 @@ async def get_all_users(
         result = await admin_service.get_all_users(skip, limit)
         return result
     except Exception as e:
+        fire_and_forget_log()
         raise HTTPException(status_code=500, detail=f"Failed to fetch users: {str(e)}")
 
 
@@ -57,6 +59,7 @@ async def search_users(
             "users": users
         }
     except Exception as e:
+        fire_and_forget_log()
         raise HTTPException(status_code=500, detail=f"Search failed: {str(e)}")
 
 
@@ -94,8 +97,10 @@ async def change_user_role(
         else:
             raise HTTPException(status_code=400, detail=result["message"])
     except HTTPException:
+        fire_and_forget_log()
         raise
     except Exception as e:
+        fire_and_forget_log()
         raise HTTPException(status_code=500, detail=f"Failed to update role: {str(e)}")
 
 
@@ -133,8 +138,10 @@ async def change_user_status(
         else:
             raise HTTPException(status_code=400, detail=result["message"])
     except HTTPException:
+        fire_and_forget_log()
         raise
     except Exception as e:
+        fire_and_forget_log()
         raise HTTPException(status_code=500, detail=f"Failed to update status: {str(e)}")
 
 
@@ -165,8 +172,10 @@ async def delete_user(
         else:
             raise HTTPException(status_code=400, detail=result["message"])
     except HTTPException:
+        fire_and_forget_log()
         raise
     except Exception as e:
+        fire_and_forget_log()
         raise HTTPException(status_code=500, detail=f"Failed to delete user: {str(e)}")
 
 
@@ -191,8 +200,10 @@ async def get_user_activity(
             raise HTTPException(status_code=404, detail="User not found")
         return activity
     except HTTPException:
+        fire_and_forget_log()
         raise
     except Exception as e:
+        fire_and_forget_log()
         raise HTTPException(status_code=500, detail=f"Failed to fetch activity: {str(e)}")
 
 
@@ -209,6 +220,7 @@ async def get_platform_statistics(current_user = Depends(admin_required)):
         stats = await admin_service.get_platform_statistics()
         return stats
     except Exception as e:
+        fire_and_forget_log()
         raise HTTPException(status_code=500, detail=f"Failed to fetch statistics: {str(e)}")
 
 
@@ -225,6 +237,7 @@ async def get_security_monitoring(current_user = Depends(admin_required)):
         monitoring = await admin_service.get_security_monitoring()
         return monitoring
     except Exception as e:
+        fire_and_forget_log()
         raise HTTPException(status_code=500, detail=f"Failed to fetch monitoring data: {str(e)}")
 
 
@@ -250,6 +263,7 @@ async def get_recent_activities(
             "activities": activities
         }
     except Exception as e:
+        fire_and_forget_log()
         raise HTTPException(status_code=500, detail=f"Failed to fetch activities: {str(e)}")
 
 
@@ -282,4 +296,5 @@ async def get_admin_dashboard(current_user = Depends(admin_required)):
             "recent_users": recent_users_result.get("users", [])
         }
     except Exception as e:
+        fire_and_forget_log()
         raise HTTPException(status_code=500, detail=f"Failed to fetch dashboard data: {str(e)}")

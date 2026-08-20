@@ -10,6 +10,7 @@ from app.repositories.quiz_repository import quiz_repository
 from app.services.password_service import password_service
 from app.services.session_service import session_service
 from app.services.refresh_service import refresh_service
+from app.services.error_log_service import fire_and_forget_log
 
 
 class ProfileService:
@@ -51,6 +52,7 @@ class ProfileService:
                 "statistics": statistics
             }
         except Exception as e:
+            fire_and_forget_log()
             print(f"Error getting user profile: {e}")
             return None
     
@@ -92,6 +94,7 @@ class ProfileService:
                 "streak_days": progress.get("streak_days", 0) if progress else 0
             }
         except Exception as e:
+            fire_and_forget_log()
             print(f"Error getting statistics: {e}")
             return {}
     
@@ -110,6 +113,7 @@ class ProfileService:
         try:
             return await profile_repository.create_or_update_profile(user_id, profile_data)
         except Exception as e:
+            fire_and_forget_log()
             print(f"Error updating profile: {e}")
             return False
     
@@ -141,6 +145,7 @@ class ProfileService:
                 return default_settings
             return settings
         except Exception as e:
+            fire_and_forget_log()
             print(f"Error getting settings: {e}")
             return None
     
@@ -159,9 +164,10 @@ class ProfileService:
         try:
             return await profile_repository.create_or_update_settings(user_id, settings_data)
         except Exception as e:
+            fire_and_forget_log()
             print(f"Error updating settings: {e}")
             return False
-    
+
     @staticmethod
     async def change_password(user_id: str, old_password: str, new_password: str) -> tuple[bool, str]:
         """
@@ -211,6 +217,7 @@ class ProfileService:
             
             return True, "Password changed successfully"
         except Exception as e:
+            fire_and_forget_log()
             print(f"Error changing password: {e}")
             return False, "Failed to change password"
     
@@ -240,6 +247,7 @@ class ProfileService:
             }
             return await profile_repository.add_login_history(history_data) is not None
         except Exception as e:
+            fire_and_forget_log()
             print(f"Error recording login activity: {e}")
             return False
     
@@ -258,6 +266,7 @@ class ProfileService:
         try:
             return await profile_repository.get_login_history(user_id, limit)
         except Exception as e:
+            fire_and_forget_log()
             print(f"Error getting login history: {e}")
             return []
 

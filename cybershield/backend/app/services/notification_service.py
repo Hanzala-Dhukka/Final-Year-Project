@@ -10,6 +10,7 @@ from typing import Optional, Dict, Any, List
 from bson import ObjectId
 
 from app.database.db import database
+from app.services.error_log_service import fire_and_forget_log
 
 NOTIFICATIONS = "notifications"
 ACTIVITY = "security_activity"
@@ -61,6 +62,7 @@ async def mark_notification_read(notification_id: str) -> bool:
         )
         return r.modified_count > 0
     except Exception:
+        fire_and_forget_log()
         return False
 
 
@@ -77,6 +79,7 @@ async def delete_user_notification(notification_id: str) -> bool:
         r = await database[NOTIFICATIONS].delete_one({"_id": ObjectId(notification_id)})
         return r.deleted_count > 0
     except Exception:
+        fire_and_forget_log()
         return False
 
 
@@ -129,6 +132,7 @@ async def get_user_email(user_id: str) -> Optional[str]:
         user = await database.users.find_one({"_id": ObjectId(user_id)})
         return user.get("email") if user else None
     except Exception:
+        fire_and_forget_log()
         return None
 
 

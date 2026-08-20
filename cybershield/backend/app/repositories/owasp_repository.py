@@ -8,6 +8,7 @@ from bson import ObjectId
 from pymongo.collection import Collection
 
 from app.core.database import get_collection
+from app.services.error_log_service import fire_and_forget_log
 
 
 class OWASPSimulationRepository:
@@ -35,6 +36,7 @@ class OWASPSimulationRepository:
         try:
             return await collection.find_one({"_id": ObjectId(simulation_id)})
         except Exception:
+            fire_and_forget_log()
             return None
     
     async def get_user_simulations(self, user_id: str, limit: int = 100) -> List[Dict[str, Any]]:
@@ -57,6 +59,7 @@ class OWASPSimulationRepository:
             )
             return result.modified_count > 0
         except Exception:
+            fire_and_forget_log()
             return False
 
     async def get_attempts_by_user(self, user_id: str, limit: int = 100) -> List[Dict[str, Any]]:

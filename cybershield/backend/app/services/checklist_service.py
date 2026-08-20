@@ -22,6 +22,7 @@ from app.models.checklist_model import (
     CHECKLIST_STATUSES,
     get_risk_weight,
 )
+from app.services.error_log_service import fire_and_forget_log
 
 CHECK_COLLECTION = "security_checklists"
 USER_CHECK_COLLECTION = "user_checklists"
@@ -56,6 +57,7 @@ async def _get_checklist_by_id(checklist_id: str) -> Optional[dict]:
         from bson import ObjectId
         oid = ObjectId(checklist_id)
     except Exception:
+        fire_and_forget_log()
         return None
     return await database[CHECK_COLLECTION].find_one({"_id": oid})
 

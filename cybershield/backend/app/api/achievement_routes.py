@@ -34,6 +34,7 @@ from app.services.learning_goal_service import (
 )
 from app.models.gamification import learning_goal_document
 from app.database.db import database
+from app.services.error_log_service import fire_and_forget_log
 
 router = APIRouter(
     prefix="/api/v1/gamification",
@@ -99,6 +100,7 @@ async def download_certificate(certificate_id: str, user=Depends(get_current_use
     try:
         cert = await database["certificates"].find_one({"_id": ObjectId(certificate_id)})
     except Exception:
+        fire_and_forget_log()
         cert = None
     if not cert:
         raise HTTPException(status_code=404, detail="Certificate not found")
@@ -158,4 +160,5 @@ def _fmt(value) -> str:
     try:
         return value.strftime("%Y-%m-%d") if hasattr(value, "strftime") else str(value)
     except Exception:
+        fire_and_forget_log()
         return str(value)

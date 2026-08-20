@@ -13,6 +13,7 @@ from typing import Optional, Dict, Any, Tuple
 from app.database.db import database
 from app.data.attack_scenarios import ATTACK_SCENARIOS, get_attack_scenario
 from app.models.owasp_progress import daily_challenge_document
+from app.services.error_log_service import fire_and_forget_log
 
 CHALLENGES = "daily_challenges"
 DAILY_REWARD = 100
@@ -84,6 +85,7 @@ async def complete_daily(user_id: str) -> Tuple[Dict[str, Any], int]:
         from app.services.progress_service import ProgressService
         ProgressService.add_xp(user_id, "daily_challenge", score=100, perfect_score=True)
     except Exception as e:
+        fire_and_forget_log()
         print(f"Daily challenge XP failed: {e}")
 
     return _public(doc, True), doc.get("reward_xp", DAILY_REWARD)

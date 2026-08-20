@@ -21,6 +21,7 @@ from app.services.streaming_service import StreamingService
 from app.services.gemini_service import generate_ai_response
 from app.services.context_builder import build_context
 from app.services.google_sheets_service import save_chat_to_sheet
+from app.services.error_log_service import fire_and_forget_log
 
 router = APIRouter()
 
@@ -43,6 +44,7 @@ async def create_new_conversation(request: ConversationCreate):
             "created_at": conversation.created_at.isoformat()
         }
     except Exception as e:
+        fire_and_forget_log()
         raise HTTPException(status_code=500, detail=f"Failed to create conversation: {str(e)}")
 
 
@@ -53,6 +55,7 @@ async def list_conversations(project_id: Optional[str] = None):
         conversations = get_all_conversations(project_id)
         return {"conversations": conversations}
     except Exception as e:
+        fire_and_forget_log()
         raise HTTPException(status_code=500, detail=f"Failed to list conversations: {str(e)}")
 
 
@@ -72,8 +75,10 @@ async def get_conversation_history(conversation_id: str):
             "context": conversation.context
         }
     except HTTPException:
+        fire_and_forget_log()
         raise
     except Exception as e:
+        fire_and_forget_log()
         raise HTTPException(status_code=500, detail=f"Failed to get conversation: {str(e)}")
 
 
@@ -86,8 +91,10 @@ async def delete_conversation_endpoint(conversation_id: str):
             raise HTTPException(status_code=404, detail="Conversation not found")
         return {"message": "Conversation deleted successfully"}
     except HTTPException:
+        fire_and_forget_log()
         raise
     except Exception as e:
+        fire_and_forget_log()
         raise HTTPException(status_code=500, detail=f"Failed to delete conversation: {str(e)}")
 
 
@@ -100,8 +107,10 @@ async def clear_conversation_memory(conversation_id: str):
             raise HTTPException(status_code=404, detail="Conversation not found")
         return {"message": "Conversation memory cleared"}
     except HTTPException:
+        fire_and_forget_log()
         raise
     except Exception as e:
+        fire_and_forget_log()
         raise HTTPException(status_code=500, detail=f"Failed to clear memory: {str(e)}")
 
 
@@ -126,6 +135,7 @@ async def upload_report(file: UploadFile = File(...), conversation_id: Optional[
         try:
             content_str = content.decode('utf-8')
         except:
+            fire_and_forget_log()
             content_str = content.decode('latin-1', errors='ignore')
         
         # Analyze file
@@ -162,8 +172,10 @@ async def upload_report(file: UploadFile = File(...), conversation_id: Optional[
         )
     
     except HTTPException:
+        fire_and_forget_log()
         raise
     except Exception as e:
+        fire_and_forget_log()
         raise HTTPException(status_code=500, detail=f"Failed to upload file: {str(e)}")
 
 
@@ -229,8 +241,10 @@ async def ask_copilot(request: ChatRequest):
         )
     
     except HTTPException:
+        fire_and_forget_log()
         raise
     except Exception as e:
+        fire_and_forget_log()
         raise HTTPException(status_code=500, detail=f"Failed to generate response: {str(e)}")
 
 
@@ -257,8 +271,10 @@ async def stream_copilot_response(request: ChatRequest):
         )
     
     except HTTPException:
+        fire_and_forget_log()
         raise
     except Exception as e:
+        fire_and_forget_log()
         raise HTTPException(status_code=500, detail=f"Failed to stream response: {str(e)}")
 
 
@@ -290,6 +306,7 @@ async def compare_reports(request: CompareRequest):
         )
     
     except Exception as e:
+        fire_and_forget_log()
         raise HTTPException(status_code=500, detail=f"Failed to compare reports: {str(e)}")
 
 
@@ -334,8 +351,10 @@ async def export_conversation(conversation_id: str, format: str = "txt"):
         )
     
     except HTTPException:
+        fire_and_forget_log()
         raise
     except Exception as e:
+        fire_and_forget_log()
         raise HTTPException(status_code=500, detail=f"Failed to export conversation: {str(e)}")
 
 

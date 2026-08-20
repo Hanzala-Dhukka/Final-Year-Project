@@ -14,6 +14,7 @@ from app.services.onboarding_service import (
     complete_onboarding,
     skip_onboarding,
 )
+from app.services.error_log_service import fire_and_forget_log
 
 router = APIRouter()
 
@@ -35,6 +36,7 @@ async def onboarding_status(current_user: dict = Depends(get_current_user)):
     try:
         return await get_onboarding_status(current_user)
     except Exception as e:
+        fire_and_forget_log()
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to load onboarding status: {str(e)}"
@@ -52,6 +54,7 @@ async def complete(
     try:
         return await complete_onboarding(current_user, data.model_dump())
     except Exception as e:
+        fire_and_forget_log()
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to complete onboarding: {str(e)}"
@@ -66,6 +69,7 @@ async def skip(current_user: dict = Depends(get_current_user)):
     try:
         return await skip_onboarding(current_user)
     except Exception as e:
+        fire_and_forget_log()
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to skip onboarding: {str(e)}"

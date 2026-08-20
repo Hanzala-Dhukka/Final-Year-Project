@@ -14,6 +14,7 @@ from typing import Dict, Any, List, Optional
 
 from app.config.settings import settings
 from app.learning import recommendation_service as svc
+from app.services.error_log_service import fire_and_forget_log
 
 router = APIRouter(prefix="/learning", tags=["Learning"])
 
@@ -33,6 +34,7 @@ async def _get_user_id(
         )
         return str(payload.get("user_id") or payload.get("sub") or "anonymous")
     except Exception:
+        fire_and_forget_log()
         return "anonymous"
 
 

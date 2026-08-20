@@ -10,6 +10,8 @@ a reason.
 """
 import json
 
+from app.services.error_log_service import fire_and_forget_log
+
 SYSTEM_PROMPT = """You are a senior Application Security Engineer working for CyberShield.
 
 Your job is to generate a prioritised security hardening checklist that is
@@ -42,6 +44,7 @@ def _fmt(value):
         try:
             return json.dumps(value, indent=2, default=str)
         except Exception:
+            fire_and_forget_log()
             return str(value)
     return str(value)
 

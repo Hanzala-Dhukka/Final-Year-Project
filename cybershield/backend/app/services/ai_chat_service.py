@@ -25,6 +25,7 @@ from app.ai.prompt_builder import (
 )
 from app.ai.gemini_client import generate, is_available
 from app.services import context_service
+from app.services.error_log_service import fire_and_forget_log
 
 
 # ── Collections ──────────────────────────────────────────────────────────────
@@ -257,6 +258,7 @@ async def generate_title(message: str) -> str:
         title = title[:40]
         return title or fallback
     except Exception:
+        fire_and_forget_log()
         return fallback
 
 

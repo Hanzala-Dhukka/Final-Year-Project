@@ -10,6 +10,7 @@ from app.services.threat_analyzer import generate_ai_report
 from app.services.report_generator import generate_security_report
 from app.scanner.state_manager import get_scan_job, update_scan_job
 from app.scanner.progress import update_progress, add_timeline_event, add_log_entry
+from app.services.error_log_service import fire_and_forget_log
 
 # Directories to skip during scanning
 IGNORE_DIRS = {
@@ -67,6 +68,7 @@ async def scan_single_file(file_path: str, repo_name: str, branch: str) -> dict 
             if findings:
                 return {"file": file_path, "issues": findings}
         except Exception:
+            fire_and_forget_log()
             pass
         return None
 
@@ -185,6 +187,7 @@ async def execute_scan(scan_id: str):
             report["sast_findings"] = sast_result.get("total_findings", 0)
             report["sast_summary"] = d6_summary
     except Exception as e:
+        fire_and_forget_log()
         print(f"[D6 SAST] Error: {e}")
 
     # ── Stage 4: Complete ────────────────────────────────────────

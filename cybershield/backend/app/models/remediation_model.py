@@ -10,6 +10,8 @@ import uuid
 from datetime import datetime, timezone
 from typing import Optional
 
+from app.services.error_log_service import fire_and_forget_log
+
 
 def new_id() -> str:
     return str(uuid.uuid4())
@@ -113,4 +115,5 @@ def to_object_id(value: str):
     try:
         return ObjectId(value)
     except Exception:
+        fire_and_forget_log()
         return None

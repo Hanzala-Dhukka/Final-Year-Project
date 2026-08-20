@@ -10,6 +10,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 
 from app.database.db import database
 from app.dependencies.admin_auth import admin_required
+from app.services.error_log_service import fire_and_forget_log
 
 router = APIRouter()
 
@@ -56,6 +57,7 @@ async def get_logs(
             logs.append(_serialize(log))
         return {"total": total, "skip": skip, "limit": limit, "logs": logs}
     except Exception as e:
+        fire_and_forget_log()
         raise HTTPException(status_code=500, detail=f"Failed to fetch logs: {str(e)}")
 
 
@@ -75,6 +77,7 @@ async def get_log_stats(current_user=Depends(admin_required)):
             by_type.append({"type": doc["_id"] or "Unknown", "count": doc["count"]})
         return {"total": total, "by_type": by_type}
     except Exception as e:
+        fire_and_forget_log()
         raise HTTPException(status_code=500, detail=f"Failed to compute log stats: {str(e)}")
 
 
@@ -86,6 +89,7 @@ async def get_log_by_id(log_id: str, current_user=Depends(admin_required)):
     try:
         log = await database[LOG_COLLECTION].find_one({"_id": ObjectId(log_id)})
     except Exception:
+        fire_and_forget_log()
         raise HTTPException(status_code=400, detail="Invalid log id")
     if log is None:
         raise HTTPException(status_code=404, detail="Log entry not found")
@@ -100,6 +104,7 @@ async def delete_log(log_id: str, current_user=Depends(admin_required)):
     try:
         result = await database[LOG_COLLECTION].delete_one({"_id": ObjectId(log_id)})
     except Exception:
+        fire_and_forget_log()
         raise HTTPException(status_code=400, detail="Invalid log id")
     if result.deleted_count == 0:
         raise HTTPException(status_code=404, detail="Log entry not found")

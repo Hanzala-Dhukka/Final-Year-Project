@@ -23,6 +23,7 @@ from bson import ObjectId
 from app.database.db import database
 from app.services import trend_service
 from app.services.compliance_service import get_report as get_compliance
+from app.services.error_log_service import fire_and_forget_log
 
 # Weights (must sum to 1.0)
 WEIGHTS = {
@@ -41,6 +42,7 @@ def _user_filter(user_id: str, field: str = "user_id") -> Dict:
     try:
         oid = ObjectId(value)
     except Exception:
+        fire_and_forget_log()
         return {field: value}
     return {"$or": [{field: value}, {field: oid}]}
 
@@ -85,6 +87,7 @@ async def _github_score(user_id: str, project_id: Optional[str] = None) -> float
             risk = min(100, sev["critical"] * 12 + sev["high"] * 7 + sev["medium"] * 3 + sev["low"] * 1)
         return round(max(0.0, 100.0 - float(risk)), 1)
     except Exception:
+        fire_and_forget_log()
         return 0.0
 
 
@@ -101,6 +104,7 @@ async def _threat_score(user_id: str, project_id: Optional[str] = None) -> float
             return 0.0
         return round(float(s), 1)
     except Exception:
+        fire_and_forget_log()
         return 0.0
 
 
@@ -121,6 +125,7 @@ async def _compliance_score(user_id: str, project_id: Optional[str] = None) -> f
             scores.append(round(float(rep.get("overall_score", 0.0)), 1) if rep else 0.0)
         return round(sum(scores) / len(scores), 1) if scores else 0.0
     except Exception:
+        fire_and_forget_log()
         return 0.0
 
 
@@ -144,6 +149,7 @@ async def _checklist_score(user_id: str, project_id: Optional[str] = None) -> fl
             completed += int(score_doc.get("completed_tasks", 0) or 0)
         return round((completed / total) * 100, 1) if total else 0.0
     except Exception:
+        fire_and_forget_log()
         return 0.0
 
 
@@ -156,6 +162,7 @@ async def _owasp_score(user_id: str, project_id: Optional[str] = None) -> float:
         )
         return round(min(100.0, (completed / total) * 100), 1)
     except Exception:
+        fire_and_forget_log()
         return 0.0
 
 
@@ -173,6 +180,7 @@ async def _quiz_score(user_id: str) -> float:
             return 0.0
         return round(sum(scores) / len(scores), 1)
     except Exception:
+        fire_and_forget_log()
         return 0.0
 
 
@@ -203,6 +211,7 @@ async def aggregate_vulnerabilities(user_id: str, project_id: Optional[str] = No
             for k in counts:
                 counts[k] += sev[k]
     except Exception:
+        fire_and_forget_log()
         pass
     return counts
 
@@ -218,6 +227,7 @@ async def last_scan_date(user_id: str, project_id: Optional[str] = None) -> Opti
         created = doc.get("created_at")
         return created.strftime("%Y-%m-%d") if isinstance(created, datetime) else None
     except Exception:
+        fire_and_forget_log()
         return None
 
 
@@ -225,6 +235,7 @@ async def count_projects(user_id: str) -> int:
     try:
         return len(await _user_project_ids(user_id))
     except Exception:
+        fire_and_forget_log()
         return 0
 
 
@@ -251,6 +262,7 @@ async def compare_projects(user_id: str, sort_by: str = "security_score") -> Lis
                 "last_scan": last,
             })
     except Exception as e:
+        fire_and_forget_log()
         print(f"Analytics: compare_projects error: {e}")
     risk_order = {"Critical": 0, "High": 1, "Medium": 2, "Low": 3, "Unknown": 4}
     if sort_by == "risk_level":
@@ -292,6 +304,7 @@ async def generate_executive_summary(user_id: str, kpis: Dict, trends: List[Dict
             raw = await gemini_generate(prompt)
             return _parse_exec(raw, kpis, improvement)
     except Exception as e:
+        fire_and_forget_log()
         print(f"Analytics: AI summary failed, fallback: {e}")
     return _fallback_exec(kpis, trends)
 
@@ -312,6 +325,7 @@ def _parse_exec(raw: str, kpis: Dict, improvement: float) -> Dict:
             "security_outlook": data.get("security_outlook") or fb["security_outlook"],
         }
     except Exception:
+        fire_and_forget_log()
         return _fallback_exec(kpis, [])
 
 
@@ -393,6 +407,7 @@ async def build_dashboard(user_id: str, sort_by: str = "security_score") -> Dict
                 sev_override=sev,
             )
     except Exception as e:  # pragma: no cover - defensive
+        fire_and_forget_log()
         print(f"Analytics: snapshot recording failed: {e}")
 
     kpis = {

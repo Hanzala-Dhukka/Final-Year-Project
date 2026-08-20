@@ -8,6 +8,7 @@ from bson import ObjectId
 from pymongo.collection import Collection
 
 from app.core.database import get_collection
+from app.services.error_log_service import fire_and_forget_log
 
 
 class MonitoringTargetRepository:
@@ -36,6 +37,7 @@ class MonitoringTargetRepository:
         try:
             return await collection.find_one({"_id": ObjectId(target_id)})
         except Exception:
+            fire_and_forget_log()
             return None
     
     async def get_user_targets(self, user_id: str, limit: int = 100) -> List[Dict[str, Any]]:
@@ -59,6 +61,7 @@ class MonitoringTargetRepository:
             )
             return result.modified_count > 0
         except Exception:
+            fire_and_forget_log()
             return False
     
     async def delete_target(self, target_id: str) -> bool:
@@ -68,6 +71,7 @@ class MonitoringTargetRepository:
             result = await collection.delete_one({"_id": ObjectId(target_id)})
             return result.deleted_count > 0
         except Exception:
+            fire_and_forget_log()
             return False
 
 

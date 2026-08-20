@@ -6,6 +6,7 @@ with vulnerability highlights for the VS Code-style code viewer.
 from pathlib import Path
 import requests
 from typing import List, Dict, Any, Optional
+from app.services.error_log_service import fire_and_forget_log
 
 
 # Monaco-editor compatible language IDs
@@ -84,6 +85,7 @@ def fetch_file_content(
             return None
         return resp.text.splitlines()
     except Exception:
+        fire_and_forget_log()
         return None
 
 

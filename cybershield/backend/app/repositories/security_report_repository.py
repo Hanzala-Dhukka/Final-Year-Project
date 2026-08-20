@@ -8,6 +8,7 @@ from bson import ObjectId
 from pymongo.collection import Collection
 
 from app.core.database import get_collection
+from app.services.error_log_service import fire_and_forget_log
 
 
 class SecurityReportRepository:
@@ -54,6 +55,7 @@ class SecurityReportRepository:
         try:
             return await collection.find_one({"_id": ObjectId(report_id)})
         except Exception:
+            fire_and_forget_log()
             return None
     
     async def get_user_reports(self, user_id: str, limit: int = 100) -> List[Dict[str, Any]]:
@@ -117,6 +119,7 @@ class SecurityReportRepository:
             result = await collection.delete_one({"_id": ObjectId(report_id)})
             return result.deleted_count > 0
         except Exception:
+            fire_and_forget_log()
             return False
 
     async def get_reports_by_user(self, user_id: str, limit: int = 100):

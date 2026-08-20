@@ -19,6 +19,7 @@ from app.database.db import database
 from app.services import notification_service as notif
 from app.services import email_service
 from app.services import ai_checklist_service
+from app.services.error_log_service import fire_and_forget_log
 
 SCHEDULED = "scheduled_scans"
 RULES = "automation_rules"
@@ -277,6 +278,7 @@ async def _fire_actions(user_id: str, project_id: Optional[str], rule: Dict[str,
                 await notif.log_activity(user_id, "checklist_updated", "AI checklist refreshed",
                                    "Auto-refreshed after automation rule.", project_id=project_id)
             except Exception:
+                fire_and_forget_log()
                 pass
 
     if "full_scan" in actions:
@@ -293,6 +295,7 @@ def _oid(value: str):
     try:
         return ObjectId(value)
     except Exception:
+        fire_and_forget_log()
         return None
 
 

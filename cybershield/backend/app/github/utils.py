@@ -3,6 +3,8 @@ Utility functions for GitHub repository analysis.
 """
 import re
 
+from app.services.error_log_service import fire_and_forget_log
+
 
 def extract_repo_name(repo_url: str) -> str:
     """Extract owner/repo from a GitHub URL or owner/repo string."""
@@ -40,6 +42,7 @@ def bytes_to_percentage(languages: dict) -> dict:
             if n > 0:
                 clean[lang] = n
         except (TypeError, ValueError):
+            fire_and_forget_log()
             continue
     total = sum(clean.values())
     if total == 0:

@@ -5,6 +5,7 @@ from bson import ObjectId
 from app.database.db import database
 from app.dependencies.auth import get_current_user
 from app.services.header_analyzer import analyze_security_headers
+from app.services.error_log_service import fire_and_forget_log
 
 router = APIRouter()
 scans_collection = database["scans"]
@@ -63,6 +64,7 @@ async def analyze_headers(
         }
 
     except Exception as e:
+        fire_and_forget_log()
         raise HTTPException(
             status_code=500,
             detail=str(e)
@@ -86,6 +88,7 @@ async def get_history(current_user: dict = Depends(get_current_user)):
         
         return history
     except Exception as e:
+        fire_and_forget_log()
         raise HTTPException(
             status_code=500,
             detail=str(e)

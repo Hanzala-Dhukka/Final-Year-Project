@@ -9,6 +9,7 @@ import os
 from app.services.mongo_service import save_certificate, get_user_certificate
 from app.services.progress_service import ProgressService
 from app.services.analytics_service import AnalyticsService
+from app.services.error_log_service import fire_and_forget_log
 
 
 class CertificateService:
@@ -115,6 +116,7 @@ class CertificateService:
                 file_path=pdf_path
             )
         except Exception as e:
+            fire_and_forget_log()
             print(f"Error saving certificate to MongoDB: {e}")
         
         return {
@@ -239,9 +241,11 @@ class CertificateService:
             
         except ImportError:
             # Fallback if reportlab not installed
+            fire_and_forget_log()
             print("Warning: reportlab not installed. Certificate not generated.")
             return f"certificates/{certificate_data['certificate_id']}.pdf"
         except Exception as e:
+            fire_and_forget_log()
             print(f"Error generating PDF: {e}")
             return f"certificates/{certificate_data['certificate_id']}.pdf"
     
@@ -252,6 +256,7 @@ class CertificateService:
             try:
                 cls.certificates[user_id] = get_user_certificate(user_id)
             except Exception:
+                fire_and_forget_log()
                 return None
         return cls.certificates.get(user_id)
 

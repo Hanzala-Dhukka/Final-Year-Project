@@ -7,10 +7,13 @@ about blocking SDK calls. Falls back gracefully when no API key is configured.
 """
 from typing import Optional, Any
 
+from app.services.error_log_service import fire_and_forget_log
+
 try:
     from groq import AsyncGroq
     GROQ_AVAILABLE = True
 except ImportError:
+    fire_and_forget_log()
     AsyncGroq = None  # type: ignore
     GROQ_AVAILABLE = False
 
@@ -43,6 +46,7 @@ class AIService:
             self.client = AsyncGroq(api_key=key)
             print(f"Groq AI service ready (model: {settings.AI_MODEL})")
         except Exception as e:
+            fire_and_forget_log()
             print(f"Error initialising Groq client: {e}")
             self.client = None
 

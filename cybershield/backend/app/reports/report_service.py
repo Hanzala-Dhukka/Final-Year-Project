@@ -13,6 +13,7 @@ from bson import ObjectId
 
 from app.database.db import database
 from app.ai.gemini_client import generate
+from app.services.error_log_service import fire_and_forget_log
 
 REPORTS_COLLECTION = "reports"
 SCORE_HISTORY_COLLECTION = "security_score_history"
@@ -245,6 +246,7 @@ Return ONLY the summary text, no JSON, no formatting."""
         result = await generate(prompt)
         return result.strip()
     except Exception as e:
+        fire_and_forget_log()
         return f"Executive Summary: {report_data.get('total_findings', 0)} vulnerabilities found. Score: {report_data.get('security_score', 0)}/100. Risk level: {report_data.get('risk_level', 'Unknown')}."
 
 
@@ -271,4 +273,5 @@ async def delete_report(report_id: str) -> bool:
         result = await database["threat_reports"].delete_one({"report_id": report_id})
         return result.deleted_count > 0
     except Exception:
+        fire_and_forget_log()
         return False

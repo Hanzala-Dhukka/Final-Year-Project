@@ -18,6 +18,7 @@ from app.services.achievement_service import AchievementService
 from app.services.certificate_service import CertificateService
 from app.services.leaderboard_service import get_leaderboard
 from app.models.gamification import activity_document, utcnow
+from app.services.error_log_service import fire_and_forget_log
 
 PROGRESS = "user_progress"
 ACTIVITY = "activity_log"
@@ -41,6 +42,7 @@ async def _load_progress(user_id: str) -> Dict[str, Any]:
         if doc:
             return doc
     except Exception:
+        fire_and_forget_log()
         pass
     # Fallback to ProgressService in-memory
     return ProgressService.get_user_progress(user_id)
@@ -56,6 +58,7 @@ def _progress_snapshot(user_id: str) -> Dict[str, Any]:
             "average_score": data.get("average_score", 0) or 0,
         }
     except Exception:
+        fire_and_forget_log()
         return {"xp": 0, "level": 1, "average_score": 0}
 
 
@@ -75,12 +78,14 @@ async def get_progress(user_id: str) -> Dict[str, Any]:
     try:
         await _unlock_all(user_id)
     except Exception as e:
+        fire_and_forget_log()
         print(f"Achievement evaluation failed: {e}")
     unlocked_keys = await _unlocked_keys(user_id)
 
     try:
         certs = await _cert_count(user_id)
     except Exception:
+        fire_and_forget_log()
         certs = 0
 
     return {
@@ -106,6 +111,7 @@ async def _cert_count(user_id: str) -> int:
     try:
         return await database["certificates"].count_documents({"user_id": user_id})
     except Exception:
+        fire_and_forget_log()
         return 0
 
 
@@ -155,6 +161,7 @@ async def _collect_stats(user_id: str) -> Dict[str, Any]:
             elif atype in _AI_TYPES:
                 stats["ai_uses"] += 1
     except Exception as e:
+        fire_and_forget_log()
         print(f"Failed to collect stats for {user_id}: {e}")
 
     # Composite security score (0–100) so the counter reflects real activity
@@ -182,6 +189,7 @@ def _as_date(value) -> Any:
         try:
             dt = datetime.fromisoformat(value.replace("Z", "+00:00"))
         except Exception:
+            fire_and_forget_log()
             return None
     else:
         return None
@@ -200,6 +208,7 @@ async def _compute_streak(user_id: str) -> Dict[str, int]:
             if d is not None:
                 days.add(d)
     except Exception:
+        fire_and_forget_log()
         return {"current": 0, "longest": 0}
 
     if not days:
@@ -291,6 +300,7 @@ async def _unlocked_keys(user_id: str) -> Set[str]:
                         if defn.get("name") == stored:
                             keys.add(key)
     except Exception as e:
+        fire_and_forget_log()
         print(f"Failed to load unlocked achievements: {e}")
     return keys
 
@@ -309,6 +319,7 @@ async def _is_unlocked(user_id: str, key: str, name: str) -> bool:
         )
         return n > 0
     except Exception:
+        fire_and_forget_log()
         return False
 
 
@@ -329,6 +340,7 @@ async def _unlock(user_id: str, key: str, defn: Dict[str, Any]) -> bool:
             }
         )
     except Exception as e:
+        fire_and_forget_log()
         print(f"Failed to save achievement {key}: {e}")
         return False
     return True
@@ -351,8 +363,10 @@ async def _unlock_all(user_id: str) -> None:
                             {"achievement": key},
                         )
                     except Exception:
+                        fire_and_forget_log()
                         pass
         except Exception as e:
+            fire_and_forget_log()
             print(f"Reward check failed for {key}: {e}")
 
 
@@ -360,6 +374,7 @@ async def get_achievements(user_id: str) -> List[Dict[str, Any]]:
     try:
         await _unlock_all(user_id)
     except Exception:
+        fire_and_forget_log()
         pass
     unlocked_map: Dict[str, str] = {}
     try:
@@ -368,6 +383,7 @@ async def get_achievements(user_id: str) -> List[Dict[str, Any]]:
             if k:
                 unlocked_map[k] = doc.get("date") or doc.get("created_at") or ""
     except Exception:
+        fire_and_forget_log()
         pass
 
     out = []
@@ -429,12 +445,14 @@ async def log_activity(
             activity_document(user_id, activity_type, description, xp, meta)
         )
     except Exception as e:
+        fire_and_forget_log()
         print(f"Activity log failed: {e}")
         return
     # Every learning event can unlock achievements (idempotent)
     try:
         await _unlock_all(user_id)
     except Exception as e:
+        fire_and_forget_log()
         print(f"Achievement evaluation failed: {e}")
 
 

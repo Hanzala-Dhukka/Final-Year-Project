@@ -6,6 +6,7 @@ from app.schemas.lab_schema import (
 )
 from app.services.attack_lab_service import attack_lab_service
 from app.dependencies.auth import get_current_user
+from app.services.error_log_service import fire_and_forget_log
 
 router = APIRouter()
 
@@ -20,6 +21,7 @@ async def get_optional_user(credentials: HTTPAuthorizationCredentials = Depends(
     try:
         return await get_current_user(credentials)
     except HTTPException:
+        fire_and_forget_log()
         return None
 
 
@@ -40,6 +42,7 @@ async def get_all_labs():
             "total": len(labs)
         }
     except Exception as e:
+        fire_and_forget_log()
         raise HTTPException(status_code=500, detail=f"Failed to get labs: {str(e)}")
 
 
@@ -54,6 +57,7 @@ async def get_labs_by_category(category: str):
             "total": len(labs)
         }
     except Exception as e:
+        fire_and_forget_log()
         raise HTTPException(status_code=500, detail=f"Failed to get labs: {str(e)}")
 
 
@@ -66,8 +70,10 @@ async def get_lab(lab_id: str):
             raise HTTPException(status_code=404, detail="Lab not found")
         return lab
     except HTTPException:
+        fire_and_forget_log()
         raise
     except Exception as e:
+        fire_and_forget_log()
         raise HTTPException(status_code=500, detail=f"Failed to get lab: {str(e)}")
 
 
@@ -83,8 +89,10 @@ async def start_lab(
         result = await attack_lab_service.start_lab(lab_id, uid)
         return result
     except ValueError as e:
+        fire_and_forget_log()
         raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:
+        fire_and_forget_log()
         raise HTTPException(status_code=500, detail=f"Failed to start lab: {str(e)}")
 
 
@@ -116,8 +124,10 @@ async def submit_attack(
             modified_query=result.get("modified_query")
         )
     except ValueError as e:
+        fire_and_forget_log()
         raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:
+        fire_and_forget_log()
         raise HTTPException(status_code=500, detail=f"Failed to submit attack: {str(e)}")
 
 
@@ -143,8 +153,10 @@ async def submit_defense(
 
         return result
     except ValueError as e:
+        fire_and_forget_log()
         raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:
+        fire_and_forget_log()
         raise HTTPException(status_code=500, detail=f"Failed to submit defense: {str(e)}")
 
 
@@ -155,8 +167,10 @@ async def get_hint(session_id: str, attempt_number: int = 1):
         result = await attack_lab_service.get_hint(session_id, attempt_number)
         return result
     except ValueError as e:
+        fire_and_forget_log()
         raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:
+        fire_and_forget_log()
         raise HTTPException(status_code=500, detail=f"Failed to get hint: {str(e)}")
 
 
@@ -171,6 +185,7 @@ async def get_user_progress(
         progress = await attack_lab_service.get_user_progress(uid)
         return UserProgress(**progress)
     except Exception as e:
+        fire_and_forget_log()
         raise HTTPException(status_code=500, detail=f"Failed to get progress: {str(e)}")
 
 
@@ -213,6 +228,7 @@ async def get_lab_history(
         attempts.sort(key=lambda x: x.get("timestamp") or "", reverse=True)
         return {"attempts": attempts, "total": len(attempts)}
     except Exception as e:
+        fire_and_forget_log()
         raise HTTPException(status_code=500, detail=f"Failed to get lab history: {str(e)}")
 
 
@@ -223,6 +239,7 @@ async def get_leaderboard(limit: int = 10):
         result = await attack_lab_service.get_leaderboard(limit)
         return result
     except Exception as e:
+        fire_and_forget_log()
         raise HTTPException(status_code=500, detail=f"Failed to get leaderboard: {str(e)}")
 
 
@@ -274,6 +291,7 @@ async def get_stats():
             popular_labs=popular_labs_list
         )
     except Exception as e:
+        fire_and_forget_log()
         raise HTTPException(status_code=500, detail=f"Failed to get stats: {str(e)}")
 
 
@@ -285,6 +303,7 @@ async def get_categories():
         categories = get_all_categories()
         return {"categories": categories}
     except Exception as e:
+        fire_and_forget_log()
         raise HTTPException(status_code=500, detail=f"Failed to get categories: {str(e)}")
 
 
@@ -299,4 +318,5 @@ async def health_check():
             "categories": list(set(lab["category"] for lab in labs))
         }
     except Exception as e:
+        fire_and_forget_log()
         raise HTTPException(status_code=500, detail=f"Health check failed: {str(e)}")

@@ -5,6 +5,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from app.dependencies.auth import get_current_user
 from app.schemas.workspace_schema import ShareCreate
 from app.services import collaboration_service as svc
+from app.services.error_log_service import fire_and_forget_log
 
 router = APIRouter()
 
@@ -15,8 +16,10 @@ async def compare(project_id: str, version_a: int, version_b: int,
     try:
         return await svc.compare_versions(user, project_id, version_a, version_b)
     except ValueError as e:
+        fire_and_forget_log()
         raise HTTPException(status_code=404, detail=str(e))
     except PermissionError as e:
+        fire_and_forget_log()
         raise HTTPException(status_code=403, detail=str(e))
 
 
@@ -28,8 +31,10 @@ async def create_share(project_id: str, report_id: str, payload: ShareCreate,
             user, report_id, payload.expires_in_days, payload.password
         )
     except ValueError as e:
+        fire_and_forget_log()
         raise HTTPException(status_code=400, detail=str(e))
     except PermissionError as e:
+        fire_and_forget_log()
         raise HTTPException(status_code=403, detail=str(e))
 
 
@@ -38,6 +43,7 @@ async def shared_report(token: str, password: str = Query(None)):
     try:
         return await svc.get_shared_report(token, password)
     except ValueError as e:
+        fire_and_forget_log()
         raise HTTPException(status_code=404, detail=str(e))
 
 
@@ -46,6 +52,8 @@ async def revoke(token: str, user=Depends(get_current_user)):
     try:
         await svc.revoke_share(user, token)
     except ValueError as e:
+        fire_and_forget_log()
         raise HTTPException(status_code=404, detail=str(e))
     except PermissionError as e:
+        fire_and_forget_log()
         raise HTTPException(status_code=403, detail=str(e))

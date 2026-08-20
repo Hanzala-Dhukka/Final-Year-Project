@@ -6,6 +6,7 @@ from typing import Optional, List, Dict, Any
 from bson import ObjectId
 from app.core.database import get_collection
 from app.models.user_model import UserCreate, UserUpdate
+from app.services.error_log_service import fire_and_forget_log
 
 
 class UserRepository:
@@ -34,6 +35,7 @@ class UserRepository:
             result = await collection.insert_one(user_data)
             return str(result.inserted_id)
         except Exception as e:
+            fire_and_forget_log()
             print(f"Error creating user: {e}")
             return None
     
@@ -52,6 +54,7 @@ class UserRepository:
             user = await collection.find_one({"email": email})
             return user
         except Exception as e:
+            fire_and_forget_log()
             print(f"Error getting user by email: {e}")
             return None
     
@@ -70,6 +73,7 @@ class UserRepository:
             user = await collection.find_one({"verification_token": token})
             return user
         except Exception as e:
+            fire_and_forget_log()
             print(f"Error getting user by verification token: {e}")
             return None
     
@@ -86,6 +90,7 @@ class UserRepository:
         try:
             object_id = ObjectId(user_id)
         except Exception:
+            fire_and_forget_log()
             print("Invalid ObjectId:", user_id)
             return None
 
@@ -94,6 +99,7 @@ class UserRepository:
             user = await collection.find_one({"_id": object_id})
             return user
         except Exception as e:
+            fire_and_forget_log()
             print(f"Error getting user by ID: {e}")
             return None
     
@@ -121,6 +127,7 @@ class UserRepository:
             
             return result.modified_count > 0
         except Exception as e:
+            fire_and_forget_log()
             print(f"Error updating user: {e}")
             return False
     
@@ -139,6 +146,7 @@ class UserRepository:
             result = await collection.delete_one({"_id": ObjectId(user_id)})
             return result.deleted_count > 0
         except Exception as e:
+            fire_and_forget_log()
             print(f"Error deleting user: {e}")
             return False
     
@@ -163,6 +171,7 @@ class UserRepository:
             
             return users
         except Exception as e:
+            fire_and_forget_log()
             print(f"Error getting all users: {e}")
             return []
     
@@ -178,6 +187,7 @@ class UserRepository:
             count = await collection.count_documents({})
             return count
         except Exception as e:
+            fire_and_forget_log()
             print(f"Error counting users: {e}")
             return 0
     
@@ -193,6 +203,7 @@ class UserRepository:
             count = await collection.count_documents({"account_status": "active"})
             return count
         except Exception as e:
+            fire_and_forget_log()
             print(f"Error counting active users: {e}")
             return 0
     
@@ -225,6 +236,7 @@ class UserRepository:
             
             return users
         except Exception as e:
+            fire_and_forget_log()
             print(f"Error searching users: {e}")
             return []
     
@@ -249,6 +261,7 @@ class UserRepository:
             
             return result.modified_count > 0
         except Exception as e:
+            fire_and_forget_log()
             print(f"Error updating user role: {e}")
             return False
     
@@ -273,6 +286,7 @@ class UserRepository:
             
             return result.modified_count > 0
         except Exception as e:
+            fire_and_forget_log()
             print(f"Error updating user status: {e}")
             return False
     
@@ -311,6 +325,7 @@ class UserRepository:
                 "total_activities": github_scans + security_scans + quiz_attempts + owasp_attempts
             }
         except Exception as e:
+            fire_and_forget_log()
             print(f"Error getting user activity: {e}")
             return {
                 "github_scans": 0,

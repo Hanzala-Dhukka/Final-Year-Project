@@ -18,6 +18,7 @@ from app.models.owasp_progress import (
 from app.services.ai_coach_service import coach_explain
 from app.services.progress_service import ProgressService
 from app.services import defense_validator  # existing DefenseValidator
+from app.services.error_log_service import fire_and_forget_log
 from app.data.defense_scenarios import get_all_categories  # existing scenarios
 
 # XP rewards (spec Step 11)
@@ -144,6 +145,7 @@ async def submit_attack(
                 },
             )
         except Exception:
+            fire_and_forget_log()
             pass
 
     # AI coach
@@ -241,6 +243,7 @@ async def submit_defense(
                 },
             )
         except Exception:
+            fire_and_forget_log()
             pass
 
     coach_text, _ = await coach_explain(
@@ -293,6 +296,7 @@ async def get_progress(user_id: str) -> Dict[str, Any]:
     try:
         shared = ProgressService.get_user_progress(user_id)
     except Exception:
+        fire_and_forget_log()
         shared = {}
     xp = shared.get("xp", 0) or 0
     level = shared.get("level", 1) or 1
@@ -337,6 +341,7 @@ def _award_xp(user_id: str, action: str, score: int = 100, perfect: bool = False
     try:
         ProgressService.add_xp(user_id, action, score=score, perfect_score=perfect)
     except Exception as e:
+        fire_and_forget_log()
         print(f"OWASP XP award failed ({action}): {e}")
 
 
@@ -393,6 +398,7 @@ async def _mirror_attempt(
                 upsert=True,
             )
     except Exception as e:
+        fire_and_forget_log()
         print(f"OWASP mirror failed: {e}")
 
 

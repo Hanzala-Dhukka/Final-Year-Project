@@ -11,6 +11,7 @@ import requests as http_requests
 
 from app.data.risky_packages import RISKY_PACKAGES
 from app.data.latest_versions import LATEST_VERSIONS
+from app.services.error_log_service import fire_and_forget_log
 
 # ── Supported dependency file names (case-insensitive) ────────────────────────
 DEPENDENCY_FILES = {
@@ -33,6 +34,7 @@ def _fetch_raw(repo_full_name: str, branch: str, path: str) -> str | None:
         if resp.status_code == 200:
             return resp.text
     except Exception:
+        fire_and_forget_log()
         pass
     return None
 
@@ -69,6 +71,7 @@ def _parse_package_json(content: str) -> list[dict]:
     try:
         data = json.loads(content)
     except json.JSONDecodeError:
+        fire_and_forget_log()
         return packages
     for section in ("dependencies", "devDependencies", "peerDependencies"):
         for name, ver in data.get(section, {}).items():
@@ -150,6 +153,7 @@ def _parse_composer_json(content: str) -> list[dict]:
     try:
         data = json.loads(content)
     except json.JSONDecodeError:
+        fire_and_forget_log()
         return packages
     for section in ("require", "require-dev"):
         for name, ver in data.get(section, {}).items():
@@ -192,6 +196,7 @@ def _compare_versions(repo_ver: str, latest_ver: str) -> bool:
         l = tuple(int(x) for x in re.sub(r"[^\d.]", "", latest_ver).split(".") if x)
         return r < l
     except Exception:
+        fire_and_forget_log()
         return False
 
 

@@ -23,6 +23,7 @@ from app.schemas.checklist_schema import (
     SecurityPostureOut,
     PostureHistoryOut,
 )
+from app.services.error_log_service import fire_and_forget_log
 
 router = APIRouter(prefix="/api/v1/checklist", tags=["Security Checklist"])
 
@@ -81,6 +82,7 @@ async def update_checklist_status(
             str(current_user["_id"]), project_id, checklist_id, payload.status
         )
     except ValueError as e:
+        fire_and_forget_log()
         raise HTTPException(status_code=400, detail=str(e))
     return {"status": payload.status, **result}
 
@@ -130,6 +132,7 @@ async def add_scan_recommendation(
             status=payload.status,
         )
     except ValueError as e:
+        fire_and_forget_log()
         raise HTTPException(status_code=400, detail=str(e))
     return ScanRecommendationOut(
         checklist_id=payload.checklist_id,

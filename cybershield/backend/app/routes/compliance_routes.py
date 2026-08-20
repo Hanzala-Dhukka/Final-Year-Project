@@ -18,6 +18,7 @@ from fastapi.responses import FileResponse, StreamingResponse
 from app.dependencies.auth import get_current_user
 from app.services import compliance_service as svc
 from app.schemas.compliance_schema import GenerateComplianceIn, ComplianceReportOut
+from app.services.error_log_service import fire_and_forget_log
 
 router = APIRouter(prefix="/api/v1/compliance", tags=["Compliance Center"])
 
@@ -41,6 +42,7 @@ async def generate(
             "history": history,
         }
     except Exception as e:
+        fire_and_forget_log()
         raise HTTPException(
             status_code=500, detail=f"Failed to generate compliance report: {str(e)}"
         )
@@ -81,6 +83,7 @@ async def get_report(
             await svc.save_report(generated)
             report = await svc.get_report(project_id)
         except Exception as e:
+            fire_and_forget_log()
             print(f"[compliance] on-the-fly generation failed: {e}")
             report = None
     if not report:
@@ -118,6 +121,7 @@ async def export_pdf(
             headers={"Content-Disposition": f"attachment; filename={filename}"},
         )
     except Exception:
+        fire_and_forget_log()
         # Fallback: serve the HTML directly.
         return StreamingResponse(
             io.StringIO(html),

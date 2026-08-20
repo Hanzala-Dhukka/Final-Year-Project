@@ -10,6 +10,7 @@ import re
 from typing import Dict, List, Optional
 
 from app.schemas.ai_checklist_schema import ChecklistTask
+from app.services.error_log_service import fire_and_forget_log
 
 PRIORITY_ORDER = {"Critical": 0, "High": 1, "Medium": 2, "Low": 3}
 DIFFICULTY_LEVELS = {"Easy", "Medium", "Hard"}
@@ -48,6 +49,7 @@ def extract_json(text: str) -> Optional[dict]:
         try:
             return json.loads(cand)
         except Exception:
+            fire_and_forget_log()
             continue
     return None
 

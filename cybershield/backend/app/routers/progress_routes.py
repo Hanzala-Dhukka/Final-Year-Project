@@ -12,6 +12,7 @@ from app.services.achievement_service import AchievementService, check_achieveme
 from app.services.analytics_service import AnalyticsService, get_analytics, get_category_mastery
 from app.services.certificate_service import CertificateService, check_certificate_eligibility, generate_certificate
 from app.services.roadmap_service import RoadmapService, get_learning_roadmap
+from app.services.error_log_service import fire_and_forget_log
 
 router = APIRouter()
 
@@ -65,6 +66,7 @@ async def get_dashboard(user_id: str):
             }
         }
     except Exception as e:
+        fire_and_forget_log()
         raise HTTPException(status_code=500, detail=f"Error getting dashboard: {str(e)}")
 
 
@@ -95,6 +97,7 @@ async def add_xp_endpoint(user_id: str, action: str, score: int = 100,
             }
         }
     except Exception as e:
+        fire_and_forget_log()
         raise HTTPException(status_code=500, detail=f"Error adding XP: {str(e)}")
 
 
@@ -116,6 +119,7 @@ async def get_achievements_endpoint(user_id: str):
             }
         }
     except Exception as e:
+        fire_and_forget_log()
         raise HTTPException(status_code=500, detail=f"Error getting achievements: {str(e)}")
 
 
@@ -142,6 +146,7 @@ async def get_analytics_endpoint(user_id: str):
             }
         }
     except Exception as e:
+        fire_and_forget_log()
         raise HTTPException(status_code=500, detail=f"Error getting analytics: {str(e)}")
 
 
@@ -175,6 +180,7 @@ async def get_certificate_endpoint(user_id: str, user_name: str = "User"):
             "data": result
         }
     except Exception as e:
+        fire_and_forget_log()
         raise HTTPException(status_code=500, detail=f"Error with certificate: {str(e)}")
 
 
@@ -193,6 +199,7 @@ async def get_roadmap_endpoint(user_id: str):
             "data": roadmap
         }
     except Exception as e:
+        fire_and_forget_log()
         raise HTTPException(status_code=500, detail=f"Error getting roadmap: {str(e)}")
 
 
@@ -214,6 +221,7 @@ async def get_leaderboard_endpoint(limit: int = 10):
             }
         }
     except Exception as e:
+        fire_and_forget_log()
         raise HTTPException(status_code=500, detail=f"Error getting leaderboard: {str(e)}")
 
 
@@ -238,6 +246,7 @@ async def get_level_endpoint(user_id: str):
             }
         }
     except Exception as e:
+        fire_and_forget_log()
         raise HTTPException(status_code=500, detail=f"Error getting level: {str(e)}")
 
 

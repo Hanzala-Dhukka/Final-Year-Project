@@ -8,6 +8,7 @@ from app.services.scan_progress import (
     update_scan,
     complete_scan,
 )
+from app.services.error_log_service import fire_and_forget_log
 
 
 async def run_repository_scan(scan_id: str, repo_url: str, user_id: str):
@@ -36,6 +37,7 @@ async def run_repository_scan(scan_id: str, repo_url: str, user_id: str):
         print(f"[ScanRunner] Scan {scan_id} completed. Score: {result.get('risk_score')}")
 
     except Exception as e:
+        fire_and_forget_log()
         error_msg = str(e)
         traceback.print_exc()
         print(f"[ScanRunner] Scan {scan_id} failed: {error_msg}")

@@ -9,6 +9,7 @@ from app.repositories.user_repository import user_repository
 from app.models.refresh_token_model import SessionInDB, SessionResponse
 from app.utils.security import create_access_token
 from app.config.settings import settings
+from app.services.error_log_service import fire_and_forget_log
 
 
 class SessionService:
@@ -44,6 +45,7 @@ class SessionService:
             
             return await self.session_repo.create_session(session_data)
         except Exception as e:
+            fire_and_forget_log()
             print(f"Error creating session: {e}")
             return None
     
@@ -74,6 +76,7 @@ class SessionService:
             
             return session_responses
         except Exception as e:
+            fire_and_forget_log()
             print(f"Error getting user sessions: {e}")
             return []
     
@@ -107,6 +110,7 @@ class SessionService:
             
             return success
         except Exception as e:
+            fire_and_forget_log()
             print(f"Error closing session: {e}")
             return False
     
@@ -123,6 +127,7 @@ class SessionService:
         try:
             return await self.session_repo.close_all_user_sessions(user_id)
         except Exception as e:
+            fire_and_forget_log()
             print(f"Error closing all user sessions: {e}")
             return False
     
@@ -150,6 +155,7 @@ class SessionService:
             
             return True
         except Exception as e:
+            fire_and_forget_log()
             print(f"Error logging out user: {e}")
             return False
     
@@ -166,6 +172,7 @@ class SessionService:
         try:
             return await self.session_repo.cleanup_inactive_sessions(timeout_minutes)
         except Exception as e:
+            fire_and_forget_log()
             print(f"Error cleaning up inactive sessions: {e}")
             return 0
     
@@ -187,6 +194,7 @@ class SessionService:
             )
             return True
         except Exception as e:
+            fire_and_forget_log()
             print(f"Error updating user activity: {e}")
             return False
     
@@ -218,6 +226,7 @@ class SessionService:
                 "devices": devices
             }
         except Exception as e:
+            fire_and_forget_log()
             print(f"Error getting session stats: {e}")
             return {
                 "total_sessions": 0,

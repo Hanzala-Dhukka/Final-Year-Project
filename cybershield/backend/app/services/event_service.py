@@ -24,6 +24,7 @@ from typing import Any, Dict, List, Optional
 
 from app.database.db import database
 from app.websocket.manager import manager
+from app.services.error_log_service import fire_and_forget_log
 
 COLLECTION = "security_events"
 
@@ -65,6 +66,7 @@ class EventService:
             result = await database[COLLECTION].insert_one(doc)
             inserted_id = str(result.inserted_id)
         except Exception as exc:
+            fire_and_forget_log()
             print(f"[EventService] MongoDB insert warning: {exc}")
 
         # Build broadcast payload
@@ -83,6 +85,7 @@ class EventService:
         try:
             await manager.broadcast(payload)
         except Exception as exc:
+            fire_and_forget_log()
             print(f"[EventService] Broadcast warning: {exc}")
 
         # Also send targeted message to the specific user if user_id is known
@@ -90,6 +93,7 @@ class EventService:
             try:
                 await manager.send_to_user(user_id, {**payload, "targeted": True})
             except Exception as exc:
+                fire_and_forget_log()
                 print(f"[EventService] Targeted send warning: {exc}")
 
         return {**doc, "id": inserted_id or ""}
@@ -131,6 +135,7 @@ class EventService:
                     doc["created_at"] = doc["created_at"].isoformat()
                 events.append(doc)
         except Exception as exc:
+            fire_and_forget_log()
             print(f"[EventService] Fetch warning: {exc}")
 
         # Fall back to demo data so the UI always has something
@@ -150,6 +155,7 @@ class EventService:
             mem    = psutil.virtual_memory().percent
             disk   = psutil.disk_usage("/").percent
         except Exception:
+            fire_and_forget_log()
             cpu, mem, disk = 42, 63, 58  # sensible demo values
 
         # Simple uptime from process start (approximate)

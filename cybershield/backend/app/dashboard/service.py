@@ -9,6 +9,7 @@ from typing import Dict, Any, Optional, List
 from datetime import datetime, timezone
 
 from app.database.db import database
+from app.services.error_log_service import fire_and_forget_log
 
 
 async def get_personalised_data(user_id: str) -> Dict[str, Any]:
@@ -50,6 +51,7 @@ async def _get_user(user_id: str) -> Dict[str, Any]:
                 "level": doc.get("level", "Beginner"),
             }
     except Exception:
+        fire_and_forget_log()
         pass
     return {"name": "User", "level": "Beginner"}
 
@@ -73,6 +75,7 @@ async def _get_recent_scans(user_id: str, limit: int = 5) -> List[Dict[str, Any]
                 "created_at": doc.get("created_at", "").isoformat() if isinstance(doc.get("created_at"), datetime) else str(doc.get("created_at", "")),
             })
     except Exception:
+        fire_and_forget_log()
         pass
     return scans
 
@@ -108,6 +111,7 @@ async def _get_learning_progress(user_id: str) -> Dict[str, Any]:
             rec_completed = rec_doc.get("recommendations_completed", 0)
             progress["recommendations_completed"] = min(rec_completed, 15)
     except Exception:
+        fire_and_forget_log()
         pass
 
     return progress
@@ -129,6 +133,7 @@ async def _get_recommendations(user_id: str) -> List[Dict[str, Any]]:
                     "priority": r.get("priority", "Medium"),
                 })
     except Exception:
+        fire_and_forget_log()
         pass
     return recs
 
@@ -178,6 +183,7 @@ async def _get_activity(user_id: str) -> Dict[str, Any]:
             else:
                 activity["last_ai_chat"] = "Recently"
     except Exception:
+        fire_and_forget_log()
         pass
 
     return activity

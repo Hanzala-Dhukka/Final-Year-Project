@@ -10,6 +10,7 @@ from app.services.mongo_service import (
     get_all_users_progress
 )
 from app.services.google_sheets_service import get_user_progress_from_sheet
+from app.services.error_log_service import fire_and_forget_log
 
 
 class ProgressService:
@@ -191,6 +192,7 @@ class ProgressService:
                 last_login=user_data["last_login"]
             )
         except Exception as e:
+            fire_and_forget_log()
             print(f"Error saving progress to MongoDB: {e}")
         
         return {
@@ -230,6 +232,7 @@ class ProgressService:
                         "last_login": datetime.now().isoformat()
                     }
             except Exception as e:
+                fire_and_forget_log()
                 print(f"Error loading progress from sheet: {e}")
                 cls.user_progress[user_id] = {
                     "total_xp": 0,

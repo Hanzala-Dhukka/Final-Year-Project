@@ -5,6 +5,7 @@ from fastapi_mail import FastMail, MessageSchema, ConnectionConfig
 from pydantic import EmailStr
 import httpx
 from app.core.config import settings as core_settings
+from app.services.error_log_service import fire_and_forget_log
 
 
 # Email configuration.
@@ -68,6 +69,7 @@ async def _send_via_brevo(to_email: str, subject: str, body: str,
         print(f"[Brevo] {category} email FAILED ({resp.status_code}): {resp.text[:200]}")
         return False
     except Exception as e:
+        fire_and_forget_log()
         await _log_email(to_email, subject, False, error=f"Brevo: {e}", category=category)
         print(f"[Brevo] {category} email error: {e}")
         return False
@@ -101,6 +103,7 @@ async def _send_via_resend(to_email: str, subject: str, body: str,
         print(f"[Resend] {category} email FAILED ({resp.status_code}): {resp.text[:200]}")
         return False
     except Exception as e:
+        fire_and_forget_log()
         await _log_email(to_email, subject, False, error=f"Resend: {e}", category=category)
         print(f"[Resend] {category} email error: {e}")
         return False
@@ -177,6 +180,7 @@ class EmailService:
             return True
 
         except Exception as e:
+            fire_and_forget_log()
             await _log_email(str(email), subject, False, error=str(e), category="verification")
             print(f"Error sending verification email: {e}")
             return False
@@ -246,6 +250,7 @@ class EmailService:
             return True
 
         except Exception as e:
+            fire_and_forget_log()
             await _log_email(str(email), subject, False, error=str(e), category="reset")
             print(f"Error sending password reset email: {e}")
             return False
@@ -303,6 +308,7 @@ class EmailService:
             return True
 
         except Exception as e:
+            fire_and_forget_log()
             await _log_email(str(email), subject, False, error=str(e), category="welcome")
             print(f"Error sending welcome email: {e}")
             return False
@@ -342,6 +348,7 @@ async def _log_email(to_email: str, subject: str, ok: bool, error: Optional[str]
             "created_at": datetime.utcnow(),
         })
     except Exception:
+        fire_and_forget_log()
         pass
 
 
@@ -415,5 +422,6 @@ async def _send_smtp(to_email: str, subject: str, body: str, category: str = "al
         await _log_email(to_email, subject, True, category=category)
         return True
     except Exception as e:
+        fire_and_forget_log()
         await _log_email(to_email, subject, False, error=str(e), category=category)
         return False

@@ -13,6 +13,8 @@ from typing import Dict, List, Any
 
 from fastapi import WebSocket
 
+from app.services.error_log_service import fire_and_forget_log
+
 
 class ConnectionManager:
     def __init__(self) -> None:
@@ -52,6 +54,7 @@ class ConnectionManager:
             try:
                 await ws.send_json(data)
             except Exception:
+                fire_and_forget_log()
                 stale.append(ws)
         for ws in stale:
             await self.disconnect(ws)
@@ -64,6 +67,7 @@ class ConnectionManager:
             try:
                 await ws.send_json(data)
             except Exception:
+                fire_and_forget_log()
                 stale.append(ws)
         for ws in stale:
             await self.disconnect(ws, user_id)

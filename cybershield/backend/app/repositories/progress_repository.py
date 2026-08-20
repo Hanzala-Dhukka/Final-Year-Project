@@ -5,6 +5,7 @@ from datetime import datetime, timezone
 from typing import Optional, List, Dict, Any
 from bson import ObjectId
 from app.core.database import get_collection
+from app.services.error_log_service import fire_and_forget_log
 
 
 class ProgressRepository:
@@ -33,6 +34,7 @@ class ProgressRepository:
             result = await collection.insert_one(progress_data)
             return str(result.inserted_id)
         except Exception as e:
+            fire_and_forget_log()
             print(f"Error creating progress: {e}")
             return None
     
@@ -51,6 +53,7 @@ class ProgressRepository:
             progress = await collection.find_one({"user_id": user_id})
             return progress
         except Exception as e:
+            fire_and_forget_log()
             print(f"Error getting progress by user: {e}")
             return None
     
@@ -78,6 +81,7 @@ class ProgressRepository:
             
             return result.modified_count > 0
         except Exception as e:
+            fire_and_forget_log()
             print(f"Error updating progress: {e}")
             return False
     
@@ -105,6 +109,7 @@ class ProgressRepository:
             
             return result.modified_count > 0
         except Exception as e:
+            fire_and_forget_log()
             print(f"Error adding XP: {e}")
             return False
     
@@ -127,6 +132,7 @@ class ProgressRepository:
             result = await collection.insert_one(attempt_data)
             return str(result.inserted_id)
         except Exception as e:
+            fire_and_forget_log()
             print(f"Error creating quiz attempt: {e}")
             return None
     
@@ -151,6 +157,7 @@ class ProgressRepository:
             
             return attempts
         except Exception as e:
+            fire_and_forget_log()
             print(f"Error getting quiz attempts: {e}")
             return []
     
@@ -173,6 +180,7 @@ class ProgressRepository:
             result = await collection.insert_one(attempt_data)
             return str(result.inserted_id)
         except Exception as e:
+            fire_and_forget_log()
             print(f"Error creating lab attempt: {e}")
             return None
     
@@ -197,6 +205,7 @@ class ProgressRepository:
             
             return result.modified_count > 0
         except Exception as e:
+            fire_and_forget_log()
             print(f"Error updating lab attempt: {e}")
             return False
     
@@ -221,6 +230,7 @@ class ProgressRepository:
             
             return attempts
         except Exception as e:
+            fire_and_forget_log()
             print(f"Error getting lab attempts: {e}")
             return []
 

@@ -1,6 +1,7 @@
 from typing import Dict, Any, List
 from datetime import datetime, timedelta
 from app.database.db import database
+from app.services.error_log_service import fire_and_forget_log
 
 COMPLETIONS_COLLECTION = "challenge_completions"
 
@@ -26,6 +27,7 @@ class StreakService:
             )
             return doc is not None
         except Exception as e:
+            fire_and_forget_log()
             print(f"Error checking completion: {e}")
             return False
 
@@ -40,6 +42,7 @@ class StreakService:
                 if doc.get("date"):
                     dates.append(str(doc["date"]).strip())
         except Exception as e:
+            fire_and_forget_log()
             print(f"Error fetching completion dates: {e}")
         return sorted(set(dates))
 
@@ -69,6 +72,7 @@ class StreakService:
                 "last_completed_date": dates[-1],
             }
         except Exception as e:
+            fire_and_forget_log()
             print(f"Error fetching streak: {e}")
             return self._get_default_streak(user_id)
 
@@ -118,6 +122,7 @@ class StreakService:
                 upsert=True,
             )
         except Exception as e:
+            fire_and_forget_log()
             print(f"Error recording challenge: {e}")
 
         return await self.get_user_streak(user_id)
@@ -176,4 +181,5 @@ class StreakService:
             db = datetime.strptime(b, "%Y-%m-%d").date()
             return (db - da).days == 1
         except Exception:
+            fire_and_forget_log()
             return False

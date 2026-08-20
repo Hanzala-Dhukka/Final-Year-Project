@@ -15,6 +15,7 @@ from typing import Any, Dict, Optional
 
 from app.config.settings import settings
 from app.ai.gemini_client import generate as _ai_generate, is_available, get_model
+from app.services.error_log_service import fire_and_forget_log
 
 
 # ── Compatibility shims used by various routes ────────────────────────────────
@@ -40,6 +41,7 @@ async def _generate_content(prompt: str, retries: int = 2) -> Optional[str]:
     try:
         return await _ai_generate(prompt)
     except Exception as e:
+        fire_and_forget_log()
         print(f"[gemini_service] AI generate failed: {e}")
         return None
 
@@ -61,6 +63,7 @@ def call_groq_sync(prompt: str, max_tokens: int = None, retries: int = 2) -> Opt
         else:
             return loop.run_until_complete(_ai_generate(prompt))
     except Exception as e:
+        fire_and_forget_log()
         print(f"[gemini_service] sync generate failed: {e}")
         return None
 
@@ -101,6 +104,7 @@ async def generate_ai_response(
         try:
             answer_data = json.loads(response_text)
         except json.JSONDecodeError:
+            fire_and_forget_log()
             answer_data = {
                 "title": "AI Response",
                 "summary": response_text,
@@ -118,6 +122,7 @@ async def generate_ai_response(
         }
 
     except Exception as e:
+        fire_and_forget_log()
         print(f"[gemini_service] generate_ai_response failed: {e}")
         return _rule_based_fallback(question, project_context, error=str(e))
 
@@ -132,6 +137,7 @@ def _rule_based_fallback(
         fallback = fallback_answer(question, project_context.get("project_id"))
         answer_text = fallback["answer"]
     except Exception:
+        fire_and_forget_log()
         answer_text = "Please configure GROQ_API_KEY in backend/.env for AI-powered responses."
 
     return {
@@ -176,6 +182,7 @@ Keep it educational, clear, and actionable. Use bullet points and code examples 
     try:
         return (await _ai_generate(prompt)).strip()
     except Exception as e:
+        fire_and_forget_log()
         print(f"[gemini_service] generate_daily_explanation failed: {e}")
         return _daily_fallback(category)
 

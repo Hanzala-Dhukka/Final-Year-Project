@@ -33,6 +33,7 @@ from app.services.threat_analyzer import (
 from app.services.repository_info import get_repository_info
 from app.services.technology_detector import detect_technologies
 from app.services.dependency_scanner import scan_dependencies
+from app.services.error_log_service import fire_and_forget_log
 from app.services.scan_progress import update_scan, complete_scan
 from app.services.history_service import save_scan
 
@@ -85,6 +86,7 @@ def _scan_single_file(repo_full_name, branch, file_path):
         if result:
             return {"file": file_path, "issues": result, "raw_content": decoded_content}
     except Exception:
+        fire_and_forget_log()
         pass
     return None
 
@@ -126,6 +128,7 @@ async def run_github_scan(repo_url: str, user_id: Optional[str] = None,
     try:
         repo_info = get_repository_info(repo_url)
     except ValueError as e:
+        fire_and_forget_log()
         msg = str(e)
         if "not found" in msg.lower():
             raise ValueError("Repository not found.")
@@ -144,10 +147,13 @@ async def run_github_scan(repo_url: str, user_id: Optional[str] = None,
         if rate_limit.remaining < 5:
             raise ValueError("GitHub API rate limit exceeded.")
     except (BadCredentialsException, GithubException):
+        fire_and_forget_log()
         github_client = Github()
     except ValueError:
+        fire_and_forget_log()
         raise
     except Exception:
+        fire_and_forget_log()
         pass
 
     # Progress: Getting repository tree
@@ -157,9 +163,11 @@ async def run_github_scan(repo_url: str, user_id: Optional[str] = None,
     try:
         repo = github_client.get_repo(repo_name)
     except BadCredentialsException:
+        fire_and_forget_log()
         github_client = Github()
         repo = github_client.get_repo(repo_name)
     except GithubException as ge:
+        fire_and_forget_log()
         if ge.status == 404:
             raise ValueError("Repository not found.")
         if ge.status in (403, 429):
@@ -362,6 +370,7 @@ async def run_github_scan(repo_url: str, user_id: Optional[str] = None,
         final_result["scan_id"] = scan_id
         await save_scan(final_result)
     except Exception as e:
+        fire_and_forget_log()
         print(f"[ScanRunner] Warning: Failed to save scan to history: {e}")
 
     # Module E3: Generate and save AI scan summary
@@ -389,6 +398,7 @@ async def run_github_scan(repo_url: str, user_id: Optional[str] = None,
             summary_data=summary_data,
         )
     except Exception as e:
+        fire_and_forget_log()
         print(f"[ScanRunner] Warning: Failed to generate AI scan summary: {e}")
 
     # Module E5, Part 1: Store scan context for AI Assistant personalisation
@@ -408,6 +418,7 @@ async def run_github_scan(repo_url: str, user_id: Optional[str] = None,
                 risk_level=risk_level,
             )
         except Exception as e:
+            fire_and_forget_log()
             print(f"[ScanRunner] Warning: Failed to store AI context: {e}")
 
     return {

@@ -33,6 +33,7 @@ from app.ai.prompts import (
     EXECUTIVE_REPORT_PROMPT,
     ASSISTANT_PROMPT,
 )
+from app.services.error_log_service import fire_and_forget_log
 
 
 # ── JSON extraction helper ────────────────────────────────────────────────────
@@ -56,6 +57,7 @@ def _compact(data: Any) -> str:
     try:
         return json.dumps(data, default=str)
     except Exception:
+        fire_and_forget_log()
         return str(data)
 
 
@@ -151,6 +153,7 @@ class DashboardAIService:
             raw = await generate(prompt)
             return _extract_json(raw)
         except Exception as exc:
+            fire_and_forget_log()
             print(f"[DashboardAIService] Groq call failed: {exc}")
             return fallback
 
@@ -198,6 +201,7 @@ class DashboardAIService:
         try:
             return await generate(prompt)
         except Exception as exc:
+            fire_and_forget_log()
             print(f"[DashboardAIService] Assistant chat failed: {exc}")
             # Surface quota/timeout messages to the UI so users understand what happened
             msg = str(exc)

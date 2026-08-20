@@ -10,6 +10,7 @@ from typing import List, Dict, Optional, Tuple
 from app.scanner.engine.location_engine import find_pattern_locations, find_all_pattern_locations
 from app.scanner.engine.snippet_engine import extract_snippet, get_file_lines
 from app.scanner.engine.confidence_engine import calculate_confidence
+from app.services.error_log_service import fire_and_forget_log
 
 
 def match_rules(
@@ -42,6 +43,7 @@ def match_rules(
             try:
                 locations = find_pattern_locations(content, pattern_str, file_path)
             except re.error:
+                fire_and_forget_log()
                 continue  # Skip invalid regex
 
             for loc in locations:

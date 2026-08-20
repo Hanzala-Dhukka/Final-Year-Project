@@ -19,6 +19,7 @@ from typing import Optional
 
 from app.database.db import database
 from app.services import context_service
+from app.services.error_log_service import fire_and_forget_log
 
 SEVERITY_DEDUCTION = {"Critical": 20, "High": 10, "Medium": 5, "Low": 2}
 SEVERITY_ORDER = {"Critical": 0, "High": 1, "Medium": 2, "Low": 3}
@@ -149,6 +150,7 @@ async def build_security_context(user_id: str, project_id: Optional[str] = None)
             s = float(score)
             owasp_block = {"passed": round(s), "failed": max(0, 100 - round(s))}
         except (TypeError, ValueError):
+            fire_and_forget_log()
             owasp_block = {"passed": None, "failed": None}
 
     context = {

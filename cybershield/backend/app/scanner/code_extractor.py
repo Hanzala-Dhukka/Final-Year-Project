@@ -4,6 +4,8 @@ Works with in-memory content (list of lines), not file paths,
 because files are downloaded from GitHub as strings.
 """
 
+from app.services.error_log_service import fire_and_forget_log
+
 CONTEXT_LINES = 2  # lines before and after the vulnerable line
 
 
@@ -46,4 +48,5 @@ def get_snippet(lines: list[str], line_number: int) -> str:
     try:
         return lines[line_number - 1].strip()
     except IndexError:
+        fire_and_forget_log()
         return ""

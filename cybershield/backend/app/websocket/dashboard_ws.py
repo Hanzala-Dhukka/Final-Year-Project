@@ -25,6 +25,7 @@ from jose import jwt, JWTError
 
 from app.config.settings import settings
 from app.websocket.manager import manager
+from app.services.error_log_service import fire_and_forget_log
 
 router = APIRouter(tags=["WebSocket"])
 
@@ -35,6 +36,7 @@ def _extract_user_id(token: str) -> Optional[str]:
         payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
         return str(payload.get("user_id") or payload.get("sub") or "")
     except JWTError:
+        fire_and_forget_log()
         return None
 
 
@@ -73,6 +75,8 @@ async def dashboard_websocket(websocket: WebSocket) -> None:
             })
 
     except WebSocketDisconnect:
+        fire_and_forget_log()
         await manager.disconnect(websocket, user_id=user_id)
     except Exception:
+        fire_and_forget_log()
         await manager.disconnect(websocket, user_id=user_id)

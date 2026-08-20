@@ -2,6 +2,7 @@ import requests
 import os
 import re
 from app.config.settings import settings
+from app.services.error_log_service import fire_and_forget_log
 
 def extract_repo_name(repo_url: str) -> str:
     url_or_path = repo_url.strip().rstrip("/")
@@ -27,6 +28,7 @@ def get_repository_info(repo_url: str) -> dict:
     try:
         repo_name = extract_repo_name(repo_url)
     except ValueError:
+        fire_and_forget_log()
         raise ValueError("Invalid GitHub repository URL.")
         
     parts = repo_name.split("/")
@@ -46,6 +48,7 @@ def get_repository_info(repo_url: str) -> dict:
     try:
         response = requests.get(url, headers=headers, timeout=10)
     except Exception as e:
+        fire_and_forget_log()
         raise ValueError(f"Could not connect to GitHub API: {str(e)}")
     
     # Fallback to unauthorized request if GITHUB_TOKEN is faulty / expired (401/403)
@@ -56,6 +59,7 @@ def get_repository_info(repo_url: str) -> dict:
                 if int(response.headers["x-ratelimit-remaining"]) == 0:
                     is_rate_limit = True
             except Exception:
+                fire_and_forget_log()
                 pass
         if "rate limit exceeded" in response.text.lower():
             is_rate_limit = True
@@ -67,6 +71,7 @@ def get_repository_info(repo_url: str) -> dict:
         try:
             response = requests.get(url, headers=headers, timeout=10)
         except Exception as e:
+            fire_and_forget_log()
             raise ValueError(f"Could not connect to GitHub API: {str(e)}")
 
     if response.status_code == 404:
@@ -89,6 +94,7 @@ def get_repository_info(repo_url: str) -> dict:
             if commits and len(commits) > 0:
                 last_commit_date = commits[0].get("commit", {}).get("committer", {}).get("date", "")
     except Exception:
+        fire_and_forget_log()
         pass
 
     license_data = data.get("license") or {}

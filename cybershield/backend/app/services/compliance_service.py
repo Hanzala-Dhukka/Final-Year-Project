@@ -19,6 +19,7 @@ from app.services.compliance_mapper import (
     framework_all,
     framework_names,
 )
+from app.services.error_log_service import fire_and_forget_log
 
 COLLECTION = "compliance_reports"
 
@@ -76,6 +77,7 @@ async def load_scan(user_id: str, project_id: Optional[str] = None) -> List[str]
             if "risky" in status or sev in ("critical", "high", "medium"):
                 findings.append("Vulnerable Component")
     except Exception as e:  # pragma: no cover - defensive
+        fire_and_forget_log()
         print(f"Compliance: error loading scan: {e}")
     return findings
 
@@ -106,6 +108,7 @@ async def load_threat_report(user_id: str, project_id: Optional[str] = None) -> 
             if isinstance(v, str):
                 findings.append(v)
     except Exception as e:  # pragma: no cover - defensive
+        fire_and_forget_log()
         print(f"Compliance: error loading threat report: {e}")
     return findings
 
@@ -132,6 +135,7 @@ async def load_checklist(user_id: str, project_id: Optional[str] = None) -> List
                         {"_id": ObjectId(cid)}
                     )
                 except Exception:
+                    fire_and_forget_log()
                     cl = None
             title = (cl or {}).get("title") or row.get("title")
             framework = (cl or {}).get("frameworks") or []
@@ -140,6 +144,7 @@ async def load_checklist(user_id: str, project_id: Optional[str] = None) -> List
             for fw in framework:
                 labels.append(str(fw))
     except Exception as e:  # pragma: no cover - defensive
+        fire_and_forget_log()
         print(f"Compliance: error loading checklist: {e}")
     return labels
 
@@ -162,6 +167,7 @@ async def load_owasp_simulator(user_id: str, project_id: Optional[str] = None) -
             if attack:
                 labels.append(str(attack))
     except Exception as e:  # pragma: no cover - defensive
+        fire_and_forget_log()
         print(f"Compliance: error loading OWASP sessions: {e}")
     return labels
 
@@ -206,6 +212,7 @@ async def generate_ai_recommendation(
             raw = await gemini_generate(prompt)
             return _parse_ai(raw, frameworks, weakest, gap)
     except Exception as e:  # pragma: no cover - defensive
+        fire_and_forget_log()
         print(f"Compliance: AI recommendation failed, using fallback: {e}")
 
     return _fallback_recommendation(project_name, frameworks, gap, weakest)
@@ -220,6 +227,7 @@ def _parse_ai(raw: str, frameworks: Dict[str, float], weakest: Optional[str],
         cleaned = re.sub(r"```(?:json)?", "", raw).strip().strip("`").strip()
         data = json.loads(cleaned)
     except Exception:
+        fire_and_forget_log()
         return _fallback_recommendation("", frameworks, gap or {}, weakest, raw_summary=raw)
 
     # Merge with the deterministic fallback so any field the model omits
@@ -399,6 +407,7 @@ async def save_report(report: Dict) -> str:
             "_id": {"$nin": keep_ids},
         })
     except Exception:
+        fire_and_forget_log()
         pass
     return str(res.inserted_id)
 

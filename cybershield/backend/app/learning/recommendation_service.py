@@ -12,6 +12,7 @@ from app.database.db import database
 from app.learning.learning_mapper import VULNERABILITY_MAP, SEVERITY_PRIORITY
 from app.learning.models import recommendation_document, learning_progress_document
 from app.ai.gemini_client import generate, is_available
+from app.services.error_log_service import fire_and_forget_log
 
 # MongoDB collections
 recommendations_col = database.learning_recommendations
@@ -131,6 +132,7 @@ async def generate_ai_learning_path(
             cleaned = "\n".join(cleaned.split("\n")[:-1])
         return json.loads(cleaned)
     except Exception as e:
+        fire_and_forget_log()
         print(f"[Learning] AI learning path generation failed: {e}")
         return None
 
@@ -166,6 +168,7 @@ async def get_full_recommendations(
     try:
         await recommendations_col.insert_one(doc)
     except Exception as e:
+        fire_and_forget_log()
         print(f"[Learning] Failed to save recommendations: {e}")
 
     return {

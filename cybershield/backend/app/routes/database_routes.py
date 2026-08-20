@@ -4,6 +4,7 @@ Database routes for testing MongoDB connection.
 from fastapi import APIRouter, HTTPException
 from app.core.database import get_database, get_client
 from app.core.config import settings
+from app.services.error_log_service import fire_and_forget_log
 
 router = APIRouter()
 
@@ -30,6 +31,7 @@ def test_database_connection():
             "status": "Connected"
         }
     except Exception as e:
+        fire_and_forget_log()
         raise HTTPException(
             status_code=500,
             detail=f"Database connection failed: {str(e)}"

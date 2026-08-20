@@ -12,6 +12,7 @@ from typing import Dict, Any, List
 
 from app.ai.gemini_client import generate, is_available
 from app.ai.prompt_builder import SYSTEM_PROMPT
+from app.services.error_log_service import fire_and_forget_log
 
 # Each rule: (id, regex, severity, owasp, cwe, title, recommendation)
 # Severity order used for scoring: Critical > High > Medium > Low
@@ -211,6 +212,7 @@ async def ai_review(code: str, language: str, findings: List[Dict[str, Any]]) ->
             secure_code = match[1].strip()
         return {"ai_explanation": explanation, "secure_code": secure_code}
     except Exception as e:
+        fire_and_forget_log()
         return {
             "ai_explanation": f"AI review failed: {e}",
             "secure_code": "",

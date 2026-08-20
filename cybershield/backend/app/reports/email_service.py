@@ -17,6 +17,7 @@ from typing import Optional
 
 from app.config.settings import settings
 from app.database.db import database
+from app.services.error_log_service import fire_and_forget_log
 
 EMAIL_LOGS = "email_logs"
 
@@ -181,6 +182,7 @@ async def _log_email(to_email: str, subject: str, success: bool,
             "created_at": datetime.now(timezone.utc),
         })
     except Exception:
+        fire_and_forget_log()
         pass
 
 
@@ -244,6 +246,7 @@ async def send_report_email(
             )
             msg.attach(part)
         except Exception:
+            fire_and_forget_log()
             pass  # Attach best-effort; still send the email body
 
     # Send
@@ -255,5 +258,6 @@ async def send_report_email(
         await _log_email(to_email, subject, True, category="report")
         return True
     except Exception as e:
+        fire_and_forget_log()
         await _log_email(to_email, subject, False, error=str(e), category="report")
         return False

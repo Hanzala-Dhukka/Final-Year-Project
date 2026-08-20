@@ -7,6 +7,7 @@ from typing import Optional
 from app.models.reset_token_model import PasswordResetToken
 from app.repositories.reset_token_repository import reset_token_repository
 from app.repositories.user_repository import user_repository
+from app.services.error_log_service import fire_and_forget_log
 
 
 class TokenService:
@@ -56,6 +57,7 @@ class TokenService:
             return None
             
         except Exception as e:
+            fire_and_forget_log()
             print(f"Error creating password reset token: {e}")
             return None
     
@@ -80,6 +82,7 @@ class TokenService:
             return reset_token
             
         except Exception as e:
+            fire_and_forget_log()
             print(f"Error verifying reset token: {e}")
             return None
     
@@ -106,6 +109,7 @@ class TokenService:
             return await reset_token_repository.mark_token_as_used(token_id)
             
         except Exception as e:
+            fire_and_forget_log()
             print(f"Error using reset token: {e}")
             return False
     
@@ -120,6 +124,7 @@ class TokenService:
         try:
             return await reset_token_repository.cleanup_expired_tokens()
         except Exception as e:
+            fire_and_forget_log()
             print(f"Error cleaning up expired tokens: {e}")
             return 0
 

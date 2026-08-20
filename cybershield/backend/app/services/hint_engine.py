@@ -3,6 +3,7 @@ import re
 from typing import Dict, Any, List, Optional
 from app.services.gemini_service import generate_ai_response
 from app.services.prompt_builder import build_hint_prompt
+from app.services.error_log_service import fire_and_forget_log
 
 
 async def generate_hint(
@@ -89,6 +90,7 @@ async def generate_hint(
         }
     
     except Exception as e:
+        fire_and_forget_log()
         print(f"Error generating hint: {e}")
         return _get_fallback_hint(topic, payload, hint_number, skill_level)
 

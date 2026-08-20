@@ -17,6 +17,7 @@ from app.scanner.engine.scanner import (
     update_finding_status,
     delete_findings_for_scan,
 )
+from app.services.error_log_service import fire_and_forget_log
 
 router = APIRouter()
 
@@ -170,8 +171,10 @@ async def get_file_content(
         async with httpx.AsyncClient(timeout=15.0) as client:
             resp = await client.get(raw_url)
     except httpx.TimeoutException:
+        fire_and_forget_log()
         raise HTTPException(status_code=504, detail="GitHub request timed out")
     except httpx.RequestError as exc:
+        fire_and_forget_log()
         raise HTTPException(status_code=502, detail=f"Failed to reach GitHub: {exc}")
 
     if resp.status_code == 404:

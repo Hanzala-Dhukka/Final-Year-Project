@@ -10,6 +10,7 @@ from bson.errors import InvalidId
 
 from app.core.config import settings
 from app.database.db import database
+from app.services.error_log_service import fire_and_forget_log
 
 security = HTTPBearer()
 SESSION_TIMEOUT_MINUTES = 120  # 2 hours — longer than the access token lifetime (30 min)
@@ -43,6 +44,7 @@ async def get_current_user(
         try:
             user_object_id = ObjectId(user_id)
         except (InvalidId, TypeError):
+            fire_and_forget_log()
             raise HTTPException(status_code=401, detail="Invalid user identifier")
 
         user = await database.users.find_one({"_id": user_object_id})
@@ -67,6 +69,7 @@ async def get_current_user(
             if session and session.get("last_activity"):
                 last_activity = session["last_activity"]
         except Exception:
+            fire_and_forget_log()
             last_activity = None
         if last_activity is None:
             last_activity = user.get("last_activity")
@@ -95,6 +98,7 @@ async def get_current_user(
                 sort=[("last_activity", -1)],
             )
         except Exception:
+            fire_and_forget_log()
             pass
 
         # Return _id as a string so downstream responses are JSON-serializable
@@ -103,6 +107,7 @@ async def get_current_user(
         user["_id"] = str(user["_id"])
         return user
     except JWTError:
+        fire_and_forget_log()
         raise HTTPException(
             status_code=401,
             detail="Invalid or expired token"

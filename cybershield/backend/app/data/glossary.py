@@ -6,6 +6,8 @@ spec categories. On first run, glossary_service seeds these into the
 `glossary_terms` MongoDB collection. Each term follows the Glossary Term Model
 (spec Step 3).
 """
+from app.services.error_log_service import fire_and_forget_log
+
 GLOSSARY = [
     # ── OWASP Top 10 ───────────────────────────────────────────────────────
     {

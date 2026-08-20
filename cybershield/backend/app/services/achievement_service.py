@@ -7,6 +7,7 @@ from typing import Dict, Any, List, Optional
 from datetime import datetime
 from app.services.mongo_service import save_achievement, get_user_achievements
 from app.services.progress_service import ProgressService
+from app.services.error_log_service import fire_and_forget_log
 
 
 class AchievementService:
@@ -113,6 +114,7 @@ class AchievementService:
             try:
                 cls.user_achievements[user_id] = get_user_achievements(user_id)
             except Exception:
+                fire_and_forget_log()
                 cls.user_achievements[user_id] = []
         
         if user_id not in cls.user_stats:
@@ -219,6 +221,7 @@ class AchievementService:
                 date=datetime.now().isoformat()
             )
         except Exception as e:
+            fire_and_forget_log()
             print(f"Error saving achievement to MongoDB: {e}")
         
         # Add XP reward
@@ -239,6 +242,7 @@ class AchievementService:
             try:
                 cls.user_achievements[user_id] = get_user_achievements(user_id)
             except Exception:
+                fire_and_forget_log()
                 cls.user_achievements[user_id] = []
         return cls.user_achievements.get(user_id, [])
     
