@@ -193,4 +193,20 @@ export const adminGetSecurityMonitoring = () =>
 export const adminGetRecentActivities = (limit = 50) =>
   ADMIN_API.get(`/admin/activities?limit=${limit}`);
 
+// =====================
+// ERROR LOG APIs (under /api/v1/logs)
+// =====================
+
+export const adminGetLogs = (skip = 0, limit = 50) =>
+  API.get(`/logs?skip=${skip}&limit=${limit}`);
+
+export const adminResolveLog = (logId, note = "") =>
+  API.post(`/logs/${logId}/resolve`, null, { params: { note } });
+
+export const adminGetOldLogs = (skip = 0, limit = 50, status = "") =>
+  API.get(`/logs/old?skip=${skip}&limit=${limit}${status ? `&status=${status}` : ""}`);
+
+export const adminDeleteOldLog = (logId) =>
+  API.delete(`/logs/old/${logId}`);
+
 export default API;

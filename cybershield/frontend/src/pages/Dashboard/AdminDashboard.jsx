@@ -66,6 +66,10 @@ import {
   adminGetUserActivity,
   adminGetSecurityMonitoring,
   adminGetRecentActivities,
+  adminGetLogs,
+  adminResolveLog,
+  adminGetOldLogs,
+  adminDeleteOldLog,
 } from "../../api/api";
 
 const ROLES = ["student", "instructor", "admin"];
@@ -140,6 +144,34 @@ function moduleColor(module) {
     default:
       return { color: "var(--neutral)", soft: "var(--neutralSoft)" };
   }
+}
+
+function errorColor(type) {
+  const t = (type || "").toLowerCase();
+  if (t.includes("notfound") || t.includes("404")) return { color: "var(--warning)", soft: "var(--warningSoft)" };
+  if (t.includes("auth") || t.includes("permission") || t.includes("401") || t.includes("403")) return { color: "var(--danger)", soft: "var(--dangerSoft)" };
+  if (t.includes("timeout") || t.includes("quota") || t.includes("ratelimit") || t.includes("429")) return { color: "var(--warning)", soft: "var(--warningSoft)" };
+  if (t.includes("error") || t.includes("exception")) return { color: "var(--danger)", soft: "var(--dangerSoft)" };
+  return { color: "var(--accentCyan)", soft: "var(--infoSoft)" };
+}
+
+function logStatusColor(status) {
+  switch (status) {
+    case "resolved":
+      return { color: "var(--success)", soft: "var(--successSoft)" };
+    case "auto_resolved":
+      return { color: "var(--accentCyan)", soft: "var(--infoSoft)" };
+    case "archived":
+      return { color: "var(--warning)", soft: "var(--warningSoft)" };
+    default:
+      return { color: "var(--neutral)", soft: "var(--neutralSoft)" };
+  }
+}
+
+function truncate(text, n = 90) {
+  if (!text) return "—";
+  const s = String(text);
+  return s.length > n ? `${s.slice(0, n)}…` : s;
 }
 
 function StatCard({ icon: Icon, label, value, accent, caption, loading }) {
@@ -237,6 +269,7 @@ const TAB_META = {
   users: { label: "Users", icon: Users },
   security: { label: "Security", icon: ShieldCheck },
   activity: { label: "Activity Log", icon: Activity },
+  logs: { label: "Error Logs", icon: Database },
 };
 
 function AdminDashboard() {
@@ -262,6 +295,15 @@ function AdminDashboard() {
   const [confirm, setConfirm] = useState(null);
   const [activityView, setActivityView] = useState(null);
   const [activityLoading, setActivityLoading] = useState(false);
+
+  const [logsView, setLogsView] = useState("live");
+  const [logs, setLogs] = useState([]);
+  const [logsTotal, setLogsTotal] = useState(0);
+  const [oldLogs, setOldLogs] = useState([]);
+  const [oldLogsTotal, setOldLogsTotal] = useState(0);
+  const [logsLoading, setLogsLoading] = useState(false);
+  const [logsError, setLogsError] = useState("");
+  const [traceView, setTraceView] = useState(null);
 
   const loadDashboard = useCallback(async () => {
     setLoading(true);
@@ -391,6 +433,39 @@ function AdminDashboard() {
       },
     });
 
+  const resolveLogEntry = (log) =>
+    confirmAction({
+      title: "Mark as resolved",
+      message: `Move "${log.Error_Type}: ${log.Error_Message}" to old_logs and remove it from the live log?`,
+      confirmLabel: "Mark Resolved",
+      async onConfirm() {
+        try {
+          await adminResolveLog(log._id);
+          toast.success("Moved to old_logs");
+          loadLogs();
+        } catch (err) {
+          toast.error(err.response?.data?.detail || "Failed to resolve log entry.");
+        }
+      },
+    });
+
+  const removeOldLog = (log) =>
+    confirmAction({
+      title: "Delete resolved log",
+      message: "Permanently delete this entry from old_logs? This cannot be undone.",
+      confirmLabel: "Delete",
+      danger: true,
+      async onConfirm() {
+        try {
+          await adminDeleteOldLog(log._id);
+          toast.success("Deleted from old_logs");
+          loadLogs();
+        } catch (err) {
+          toast.error(err.response?.data?.detail || "Failed to delete old log entry.");
+        }
+      },
+    });
+
   useEffect(() => {
     loadDashboard();
   }, [loadDashboard]);
@@ -425,10 +500,30 @@ function AdminDashboard() {
     }
   };
 
+  const loadLogs = useCallback(async () => {
+    setLogsLoading(true);
+    setLogsError("");
+    try {
+      const [live, old] = await Promise.all([
+        adminGetLogs(0, 100),
+        adminGetOldLogs(0, 100),
+      ]);
+      setLogs(live.data.logs || []);
+      setLogsTotal(live.data.total || 0);
+      setOldLogs(old.data.logs || []);
+      setOldLogsTotal(old.data.total || 0);
+    } catch (err) {
+      setLogsError(err.response?.data?.detail || "Failed to load error logs.");
+    } finally {
+      setLogsLoading(false);
+    }
+  }, []);
+
   const openTab = (next) => {
     setTab(next);
     if (next === "security") loadSecurity();
     if (next === "activity") loadActivities();
+    if (next === "logs") loadLogs();
   };
 
   const kpis = useMemo(() => statistics || {}, [statistics]);
@@ -473,6 +568,7 @@ function AdminDashboard() {
                 if (tab === "users") loadUsers();
                 else if (tab === "security") loadSecurity();
                 else if (tab === "activity") loadActivities();
+                else if (tab === "logs") loadLogs();
                 else loadDashboard();
               }}
               sx={{ color: "var(--textSecondary)", border: "1px solid var(--borderColor)", borderRadius: 2 }}
@@ -1063,6 +1159,255 @@ function AdminDashboard() {
           )}
         </Paper>
       )}
+
+      {/* =================================================================
+          ERROR LOGS
+      ================================================================= */}
+      {tab === "logs" && (
+        <Stack spacing={2.5}>
+          <Paper elevation={0} sx={{ p: 2.5, bgcolor: "var(--cardBg)", border: "1px solid var(--borderColor)", borderRadius: 3 }}>
+            <PanelHeader
+              icon={Database}
+              title="Server Error Logs"
+              sub="Live errors are stored in `log`; resolved/old issues move to `old_logs`"
+              action={
+                <Box sx={{ display: "flex", gap: 1 }}>
+                  {[
+                    { key: "live", label: `Live (${logsTotal})` },
+                    { key: "old", label: `Resolved (${oldLogsTotal})` },
+                  ].map((v) => {
+                    const active = logsView === v.key;
+                    return (
+                      <Button
+                        key={v.key}
+                        onClick={() => setLogsView(v.key)}
+                        sx={{
+                          px: 1.75,
+                          py: 0.75,
+                          borderRadius: 2,
+                          color: active ? "var(--textInverse)" : "var(--textSecondary)",
+                          bgcolor: active ? "var(--primary)" : "transparent",
+                          fontWeight: 600,
+                          fontSize: 12,
+                          textTransform: "none",
+                          border: active ? "none" : "1px solid var(--borderColor)",
+                          "&:hover": { bgcolor: active ? "var(--primary)" : "var(--neutralSoft)" },
+                        }}
+                      >
+                        {v.label}
+                      </Button>
+                    );
+                  })}
+                </Box>
+              }
+            />
+
+            {logsError && (
+              <Alert severity="error" sx={{ mb: 2, borderRadius: 2.5, bgcolor: "var(--dangerSoft)", color: "var(--danger)", border: "1px solid var(--borderColor)" }}>
+                {logsError}
+              </Alert>
+            )}
+
+            {logsLoading ? (
+              <Stack spacing={1}>
+                {[0, 1, 2, 3, 4].map((i) => <Skeleton key={i} height={56} sx={{ borderRadius: 2 }} />)}
+              </Stack>
+            ) : logsView === "live" ? (
+              logs.length === 0 ? (
+                <EmptyState icon={CheckCircle2} title="No errors recorded" sub="Every server error will appear here in real time." />
+              ) : (
+                <TableContainer sx={{ border: "1px solid var(--borderColor)", borderRadius: 2.5 }}>
+                  <Table size="small" sx={{ "& .MuiTableCell-root": { borderColor: "var(--borderColor)", py: 1.3 } }}>
+                    <TableHead>
+                      <TableRow sx={{ bgcolor: "var(--surfaceHover)" }}>
+                        <TableCell sx={{ color: "var(--textMuted)", fontWeight: 700, fontSize: 11.5, textTransform: "uppercase" }}>Time</TableCell>
+                        <TableCell sx={{ color: "var(--textMuted)", fontWeight: 700, fontSize: 11.5, textTransform: "uppercase" }}>Error</TableCell>
+                        <TableCell sx={{ color: "var(--textMuted)", fontWeight: 700, fontSize: 11.5, textTransform: "uppercase" }}>Location</TableCell>
+                        <TableCell sx={{ color: "var(--textMuted)", fontWeight: 700, fontSize: 11.5, textTransform: "uppercase" }}>Message</TableCell>
+                        <TableCell align="right" sx={{ color: "var(--textMuted)", fontWeight: 700, fontSize: 11.5, textTransform: "uppercase" }}>Actions</TableCell>
+                      </TableRow>
+                    </TableHead>
+                    <TableBody>
+                      {logs.map((log) => {
+                        const ec = errorColor(log.Error_Type);
+                        return (
+                          <TableRow key={log._id} sx={{ "&:hover": { bgcolor: "var(--surfaceHover)" } }}>
+                            <TableCell sx={{ whiteSpace: "nowrap" }}>
+                              <Typography sx={{ fontSize: 12, color: "var(--textMuted)" }}>{formatDate(log.DateTime)}</Typography>
+                            </TableCell>
+                            <TableCell>
+                              <Chip size="small" label={log.Error_Type || "Error"} sx={{ color: ec.color, bgcolor: ec.soft, fontWeight: 700, fontSize: 11 }} />
+                            </TableCell>
+                            <TableCell>
+                              <Typography sx={{ fontSize: 12, color: "var(--textSecondary)", fontFamily: "monospace" }}>
+                                {log.File_Name || "?"}:{log.Function || "?"}
+                                {log.Line ? `:${log.Line}` : ""}
+                              </Typography>
+                            </TableCell>
+                            <TableCell>
+                              <Tooltip title={log.Error_Message || ""} placement="top">
+                                <Typography sx={{ fontSize: 12, color: "var(--textPrimary)", maxWidth: 420 }}>{truncate(log.Error_Message)}</Typography>
+                              </Tooltip>
+                            </TableCell>
+                            <TableCell align="right">
+                              <Stack direction="row" spacing={0.5} justifyContent="flex-end">
+                                <Tooltip title="View traceback">
+                                  <IconButton size="small" onClick={() => setTraceView(log)} sx={{ color: "var(--textSecondary)", border: "1px solid var(--borderColor)", borderRadius: 1.5 }}>
+                                    <Eye size={14} />
+                                  </IconButton>
+                                </Tooltip>
+                                <Tooltip title="Mark resolved → move to old_logs">
+                                  <IconButton size="small" onClick={() => resolveLogEntry(log)} sx={{ color: "var(--success)", border: "1px solid var(--borderColor)", borderRadius: 1.5 }}>
+                                    <CheckCircle2 size={14} />
+                                  </IconButton>
+                                </Tooltip>
+                              </Stack>
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
+                    </TableBody>
+                  </Table>
+                </TableContainer>
+              )
+            ) : oldLogs.length === 0 ? (
+              <EmptyState icon={Database} title="old_logs is empty" sub="Resolved errors will land here with their resolution details." />
+            ) : (
+              <TableContainer sx={{ border: "1px solid var(--borderColor)", borderRadius: 2.5 }}>
+                <Table size="small" sx={{ "& .MuiTableCell-root": { borderColor: "var(--borderColor)", py: 1.3 } }}>
+                  <TableHead>
+                    <TableRow sx={{ bgcolor: "var(--surfaceHover)" }}>
+                      <TableCell sx={{ color: "var(--textMuted)", fontWeight: 700, fontSize: 11.5, textTransform: "uppercase" }}>Time</TableCell>
+                      <TableCell sx={{ color: "var(--textMuted)", fontWeight: 700, fontSize: 11.5, textTransform: "uppercase" }}>Error</TableCell>
+                      <TableCell sx={{ color: "var(--textMuted)", fontWeight: 700, fontSize: 11.5, textTransform: "uppercase" }}>Status</TableCell>
+                      <TableCell sx={{ color: "var(--textMuted)", fontWeight: 700, fontSize: 11.5, textTransform: "uppercase" }}>Resolved By</TableCell>
+                      <TableCell align="right" sx={{ color: "var(--textMuted)", fontWeight: 700, fontSize: 11.5, textTransform: "uppercase" }}>Actions</TableCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {oldLogs.map((log) => {
+                      const ec = errorColor(log.Error_Type);
+                      const sc = logStatusColor(log.Status);
+                      return (
+                        <TableRow key={log._id} sx={{ "&:hover": { bgcolor: "var(--surfaceHover)" } }}>
+                          <TableCell sx={{ whiteSpace: "nowrap" }}>
+                            <Typography sx={{ fontSize: 12, color: "var(--textMuted)" }}>{formatDate(log.Archived_At || log.DateTime)}</Typography>
+                          </TableCell>
+                          <TableCell>
+                            <Chip size="small" label={log.Error_Type || "Error"} sx={{ color: ec.color, bgcolor: ec.soft, fontWeight: 700, fontSize: 11 }} />
+                            <Typography sx={{ fontSize: 11.5, color: "var(--textSecondary)", mt: 0.5, fontFamily: "monospace" }}>
+                              {log.File_Name || "?"}:{log.Function || "?"}
+                            </Typography>
+                          </TableCell>
+                          <TableCell>
+                            <Chip size="small" label={(log.Status || "archived").toUpperCase()} sx={{ color: sc.color, bgcolor: sc.soft, fontWeight: 700, fontSize: 11 }} />
+                          </TableCell>
+                          <TableCell>
+                            <Typography sx={{ fontSize: 12, color: "var(--textSecondary)" }}>{log.Resolved_By || "—"}</Typography>
+                          </TableCell>
+                          <TableCell align="right">
+                            <Stack direction="row" spacing={0.5} justifyContent="flex-end">
+                              <Tooltip title="View traceback">
+                                <IconButton size="small" onClick={() => setTraceView(log)} sx={{ color: "var(--textSecondary)", border: "1px solid var(--borderColor)", borderRadius: 1.5 }}>
+                                  <Eye size={14} />
+                                </IconButton>
+                              </Tooltip>
+                              <Tooltip title="Delete permanently">
+                                <IconButton size="small" onClick={() => removeOldLog(log)} sx={{ color: "var(--danger)", border: "1px solid var(--borderColor)", borderRadius: 1.5 }}>
+                                  <Trash2 size={14} />
+                                </IconButton>
+                              </Tooltip>
+                            </Stack>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
+              </TableContainer>
+            )}
+          </Paper>
+        </Stack>
+      )}
+
+      {/* ===== Traceback dialog ===== */}
+      <Dialog
+        open={Boolean(traceView)}
+        onClose={() => setTraceView(null)}
+        maxWidth="md"
+        fullWidth
+        PaperProps={{ sx: { bgcolor: "var(--cardBg)", color: "var(--textPrimary)", borderRadius: 3, border: "1px solid var(--borderColor)" } }}
+      >
+        {traceView && (
+          <>
+            <DialogTitle sx={{ fontWeight: 700, fontSize: 18 }}>
+              <Box sx={{ display: "flex", alignItems: "center", gap: 1.25 }}>
+                <AlertTriangle size={20} style={{ color: "var(--danger)" }} />
+                {traceView.Error_Type || "Error"} — {traceView.File_Name || "?"}:{traceView.Function || "?"}
+              </Box>
+            </DialogTitle>
+            <DialogContent>
+              <Stack spacing={1.5}>
+                <Typography sx={{ fontSize: 13, color: "var(--textSecondary)" }}>
+                  <b style={{ color: "var(--textPrimary)" }}>Message:</b> {traceView.Error_Message || "—"}
+                </Typography>
+                {traceView.Line && (
+                  <Typography sx={{ fontSize: 13, color: "var(--textSecondary)" }}>
+                    <b style={{ color: "var(--textPrimary)" }}>Line:</b> {traceView.Line}
+                  </Typography>
+                )}
+                {traceView.System_Info && typeof traceView.System_Info === "object" && (
+                  <Typography sx={{ fontSize: 13, color: "var(--textSecondary)" }}>
+                    <b style={{ color: "var(--textPrimary)" }}>Host:</b> {traceView.System_Info.Host || "—"} ·{" "}
+                    <b style={{ color: "var(--textPrimary)" }}>Python:</b> {traceView.System_Info.Python_Version || "—"}
+                  </Typography>
+                )}
+                <Box
+                  component="pre"
+                  sx={{
+                    bgcolor: "var(--surfaceHover)",
+                    border: "1px solid var(--borderColor)",
+                    borderRadius: 2,
+                    p: 2,
+                    fontSize: 11.5,
+                    lineHeight: 1.55,
+                    color: "var(--textSecondary)",
+                    overflow: "auto",
+                    maxHeight: 340,
+                    whiteSpace: "pre-wrap",
+                    wordBreak: "break-word",
+                    m: 0,
+                  }}
+                >
+                  {traceView.Traceback || "No traceback available."}
+                </Box>
+              </Stack>
+            </DialogContent>
+            <DialogActions sx={{ px: 3, pb: 2.5 }}>
+              <Button onClick={() => setTraceView(null)} sx={{ color: "var(--textSecondary)", borderRadius: 2, textTransform: "none", fontWeight: 600 }}>
+                Close
+              </Button>
+              {traceView.Status ? (
+                <Button
+                  variant="contained"
+                  onClick={() => { setTraceView(null); removeOldLog(traceView); }}
+                  sx={{ bgcolor: "var(--danger)", borderRadius: 2, textTransform: "none", fontWeight: 600, "&:hover": { bgcolor: "#dc2626" } }}
+                >
+                  Delete
+                </Button>
+              ) : (
+                <Button
+                  variant="contained"
+                  onClick={() => { setTraceView(null); resolveLogEntry(traceView); }}
+                  sx={{ bgcolor: "var(--success)", borderRadius: 2, textTransform: "none", fontWeight: 600, "&:hover": { bgcolor: "#16a34a" } }}
+                >
+                  Mark Resolved
+                </Button>
+              )}
+            </DialogActions>
+          </>
+        )}
+      </Dialog>
 
       {/* ===== Confirm dialog ===== */}
       <Dialog
