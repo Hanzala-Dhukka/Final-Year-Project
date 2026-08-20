@@ -36,13 +36,34 @@ from functools import wraps
 from typing import Any, Callable, Dict, Optional
 
 from app.database.db import database
-from app.websocket.manager import ConnectionManager
 
 LOG_COLLECTION = "log"
 
 # Dedicated WebSocket manager so real-time log events never leak into the
 # dashboard stream (and vice versa).
-log_manager = ConnectionManager()
+#
+# NOTE: intentionally created lazily (not at import time) to avoid a circular
+# import — app.websocket.manager imports this module too.
+_log_manager = None
+
+
+def _get_log_manager():
+    """Lazily build and return the shared real-time log WebSocket manager."""
+    global _log_manager
+    if _log_manager is None:
+        try:
+            from app.websocket.manager import ConnectionManager
+            _log_manager = ConnectionManager()
+        except Exception:
+            _log_manager = None
+    return _log_manager
+
+
+def __getattr__(name):
+    """Support ``from app.services.error_log_service import log_manager``."""
+    if name == "log_manager":
+        return _get_log_manager()
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 
 
 def get_current_datetime() -> str:
@@ -74,7 +95,9 @@ def _capture_system_info() -> Dict[str, Any]:
 async def _broadcast_log(data: Dict[str, Any]) -> None:
     """Push the log entry to every connected /ws/logs client (best-effort)."""
     try:
-        await log_manager.broadcast({"event": "log", "data": data})
+        manager = _get_log_manager()
+        if manager is not None:
+            await manager.broadcast({"event": "log", "data": data})
     except Exception:
         pass
 
