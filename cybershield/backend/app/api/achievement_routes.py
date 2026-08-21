@@ -12,6 +12,7 @@ Spec Step 11 endpoints:
   GET   /goals                          Learning goals
   POST  /goals                          Create a learning goal
 """
+import os
 from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi.responses import Response
 
@@ -94,21 +95,43 @@ async def delete_goal_route(goal_id: str, user=Depends(get_current_user)):
 
 @router.get("/certificate/{certificate_id}/download")
 async def download_certificate(certificate_id: str, user=Depends(get_current_user)):
-    """Generate and stream a certificate PDF (spec Step 10/11)."""
+    """Download a certificate PDF by its certificate_id (stored in file_path)."""
     from bson import ObjectId
 
+    # Try MongoDB lookup first
     try:
         cert = await database["certificates"].find_one({"_id": ObjectId(certificate_id)})
     except Exception:
         fire_and_forget_log()
         cert = None
+
+    # Fallback: try by certificate_id field
+    if not cert:
+        try:
+            cert = await database["certificates"].find_one({"certificate_id": certificate_id})
+        except Exception:
+            fire_and_forget_log()
+            cert = None
+
     if not cert:
         raise HTTPException(status_code=404, detail="Certificate not found")
 
-    # Ensure the cert belongs to the user
     if str(cert.get("user_id")) != str(user["_id"]):
         raise HTTPException(status_code=403, detail="Forbidden")
 
+    # Serve the PDF file from file_path
+    file_path = cert.get("file_path", "")
+    if file_path and os.path.exists(file_path):
+        with open(file_path, "rb") as f:
+            pdf_bytes = f.read()
+        filename = f"certificate_{certificate_id}.pdf"
+        return Response(
+            content=pdf_bytes,
+            media_type="application/pdf",
+            headers={"Content-Disposition": f"attachment; filename={filename}"},
+        )
+
+    # Fallback: generate PDF on-the-fly from stored data
     pdf = _build_cert_pdf(cert)
     filename = f"certificate_{certificate_id}.pdf"
     return Response(
@@ -118,7 +141,86 @@ async def download_certificate(certificate_id: str, user=Depends(get_current_use
     )
 
 
-# ── Certificate PDF builder (reportlab) ─────────────────────────────────────
+@router.get("/certificates/all")
+async def all_certificates(user=Depends(get_current_user)):
+    """Get all certificates for the current user (category + professional)."""
+    from app.services.certificate_service import CertificateService
+    certs = CertificateService.get_user_certificates(str(user["_id"]))
+    return {"certificates": certs}
+
+
+@router.get("/certificate/category/{vulnerability_type}/check")
+async def check_category_cert(vulnerability_type: str, user=Depends(get_current_user)):
+    """Check if user has completed all labs for a vulnerability category."""
+    from app.services.certificate_service import CertificateService
+    result = CertificateService.check_category_completion(
+        str(user["_id"]), vulnerability_type
+    )
+    return result
+
+
+@router.post("/certificate/category/{vulnerability_type}/generate")
+async def generate_category_cert(vulnerability_type: str, user=Depends(get_current_user)):
+    """Generate a certificate for completing all labs of a category."""
+    from app.services.certificate_service import CertificateService
+
+    user_id = str(user["_id"])
+    user_name = user.get("name") or user.get("username") or "CyberShield User"
+
+    # Check completion first
+    completion = CertificateService.check_category_completion(user_id, vulnerability_type)
+    if not completion["completed"]:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Not all labs for {vulnerability_type} are completed yet.",
+        )
+
+    cert = CertificateService.generate_category_certificate(
+        user_id=user_id,
+        user_name=user_name,
+        vulnerability_type=vulnerability_type,
+        difficulty="Intermediate",
+        score=completion["average_score"],
+        labs_completed=completion["labs_done"],
+        total_labs=completion["total_labs"],
+    )
+    return {"certificate": cert, "status": "Generated"}
+
+
+@router.get("/certificate/professional/check")
+async def check_professional_cert(user=Depends(get_current_user)):
+    """Check if user qualifies for the professional certificate."""
+    from app.services.certificate_service import CertificateService
+    return CertificateService.check_professional_eligibility(str(user["_id"]))
+
+
+@router.post("/certificate/professional/generate")
+async def generate_professional_cert(user=Depends(get_current_user)):
+    """Generate the professional certificate (all 15 categories completed)."""
+    from app.services.certificate_service import CertificateService
+
+    user_id = str(user["_id"])
+    user_name = user.get("name") or user.get("username") or "CyberShield User"
+
+    eligibility = CertificateService.check_professional_eligibility(user_id)
+    if not eligibility["eligible"]:
+        raise HTTPException(
+            status_code=400,
+            detail="Not all 15 OWASP categories are completed yet.",
+        )
+
+    cert = CertificateService.generate_professional_certificate(
+        user_id=user_id,
+        user_name=user_name,
+        labs_completed=sum(
+            1 for _ in range(15)
+        ),
+        average_score=0,
+    )
+    return {"certificate": cert, "status": "Generated"}
+
+
+# ── Certificate PDF builder (reportlab fallback) ─────────────────────────────
 def _build_cert_pdf(cert: dict) -> bytes:
     from io import BytesIO
     from reportlab.lib.pagesizes import A4
@@ -148,7 +250,7 @@ def _build_cert_pdf(cert: dict) -> bytes:
         Spacer(1, 30),
         Paragraph(f"Completed: <b>{cert.get('course', 'CyberShield Learning Path')}</b>", body),
         Paragraph(f"Score: <b>{cert.get('score', 0)}%</b>", body),
-        Paragraph(f"Issued: <b>{_fmt(cert.get('issued_at'))}</b>", body),
+        Paragraph(f"Issued: <b>{_fmt(cert.get('issued_at') or cert.get('date', ''))}</b>", body),
     ]
     doc.build(story)
     return buf.getvalue()

@@ -96,6 +96,38 @@ class Certificate(BaseModel):
     file_path: str
 
 
+class CategoryCertificate(BaseModel):
+    """Per-category OWASP certificate"""
+    certificate_id: str
+    user_id: str
+    user_name: str
+    vulnerability_type: str
+    difficulty: str
+    score: float
+    labs_completed: int
+    total_labs: int
+    owasp_category: str
+    date_issued: str
+    file_path: str
+    type: str = "category"
+
+
+class ProfessionalCertificate(BaseModel):
+    """Professional certificate (all 15 categories completed)"""
+    certificate_id: str
+    user_id: str
+    user_name: str
+    vulnerability_type: str = "All OWASP Categories"
+    difficulty: str = "Expert"
+    score: float
+    labs_completed: int
+    total_labs: int = 15
+    owasp_category: str = "OWASP Top 10 (2021) - Complete"
+    date_issued: str
+    file_path: str
+    type: str = "professional"
+
+
 class CertificateEligibility(BaseModel):
     """Certificate eligibility check"""
     eligible: bool
@@ -104,6 +136,22 @@ class CertificateEligibility(BaseModel):
     average_score: float
     required_completion: float = 80.0
     required_average: float = 75.0
+
+
+class CategoryCompletionCheck(BaseModel):
+    """Check if a vulnerability category is completed"""
+    completed: bool
+    labs_done: int
+    total_labs: int
+    average_score: float
+
+
+class ProfessionalEligibility(BaseModel):
+    """Check if user qualifies for professional certificate"""
+    eligible: bool
+    completed_categories: List[str]
+    total_categories: int
+    remaining: List[str]
 
 
 # Progress Dashboard

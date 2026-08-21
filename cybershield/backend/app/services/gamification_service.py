@@ -455,6 +455,89 @@ async def log_activity(
         fire_and_forget_log()
         print(f"Achievement evaluation failed: {e}")
 
+    # Auto-generate category certificate when all labs of a type are done
+    if activity_type == ACT_OWASP and meta:
+        vuln = meta.get("vulnerability")
+        if vuln:
+            try:
+                await _try_generate_category_cert(user_id, vuln)
+            except Exception as e:
+                fire_and_forget_log()
+                print(f"Auto category cert generation failed: {e}")
+            try:
+                await _try_generate_professional_cert(user_id)
+            except Exception as e:
+                fire_and_forget_log()
+                print(f"Auto professional cert generation failed: {e}")
+
+
+async def _try_generate_category_cert(user_id: str, vulnerability_type: str) -> None:
+    """Check if all labs for a category are done; if so, generate cert if not already issued."""
+    from app.services.certificate_service import CertificateService
+
+    # Check if cert already exists for this category
+    existing = await database["certificates"].count_documents(
+        {
+            "user_id": user_id,
+            "course": {"$regex": vulnerability_type, "$options": "i"},
+        }
+    )
+    if existing > 0:
+        return
+
+    completion = CertificateService.check_category_completion(user_id, vulnerability_type)
+    if not completion["completed"] or completion["labs_done"] < 2:
+        return
+
+    # Fetch user name from DB
+    user_doc = await database["users"].find_one({"_id": __import__("bson").ObjectId(user_id)})
+    user_name = "CyberShield User"
+    if user_doc:
+        user_name = user_doc.get("name") or user_doc.get("username") or "CyberShield User"
+
+    CertificateService.generate_category_certificate(
+        user_id=user_id,
+        user_name=user_name,
+        vulnerability_type=vulnerability_type,
+        difficulty="Mixed",
+        score=completion["average_score"],
+        labs_completed=completion["labs_done"],
+        total_labs=completion["total_labs"],
+    )
+    print(f"Auto-generated certificate for {user_id}: {vulnerability_type}")
+
+
+async def _try_generate_professional_cert(user_id: str) -> None:
+    """Check if all 15 categories are done; if so, generate professional cert."""
+    from app.services.certificate_service import CertificateService
+
+    # Check if professional cert already exists
+    existing = await database["certificates"].count_documents(
+        {
+            "user_id": user_id,
+            "course": {"$regex": "Professional", "$options": "i"},
+        }
+    )
+    if existing > 0:
+        return
+
+    eligibility = CertificateService.check_professional_eligibility(user_id)
+    if not eligibility["eligible"]:
+        return
+
+    user_doc = await database["users"].find_one({"_id": __import__("bson").ObjectId(user_id)})
+    user_name = "CyberShield User"
+    if user_doc:
+        user_name = user_doc.get("name") or user_doc.get("username") or "CyberShield User"
+
+    CertificateService.generate_professional_certificate(
+        user_id=user_id,
+        user_name=user_name,
+        labs_completed=15,
+        average_score=0,
+    )
+    print(f"Auto-generated professional certificate for {user_id}")
+
 
 async def get_activity(user_id: str, limit: int = 30) -> List[Dict[str, Any]]:
     cursor = (
