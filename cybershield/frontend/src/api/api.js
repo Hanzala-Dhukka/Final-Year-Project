@@ -126,6 +126,12 @@ API.interceptors.response.use(
         return Promise.reject(error);
       }
 
+      // A 401 from /auth/refresh means the refresh token is also dead — just redirect
+      if ((originalRequest.url || "").includes("/auth/refresh")) {
+        clearSessionAndRedirect();
+        return Promise.reject(error);
+      }
+
       originalRequest._retry = true;
 
       const refreshToken = localStorage.getItem("refresh_token");
@@ -133,15 +139,19 @@ API.interceptors.response.use(
       if (refreshToken) {
         try {
           // Try to refresh the access token
-          // Backend route is /auth/refresh (mounted router exposes /refresh)
           const response = await API.post("/auth/refresh", {
             refresh_token: refreshToken
           });
 
-          const { access_token } = response.data;
+          const { access_token, refresh_token: newRefreshToken } = response.data;
 
           // Save new access token
           localStorage.setItem("token", access_token);
+
+          // Save new refresh token if provided (rotation)
+          if (newRefreshToken) {
+            localStorage.setItem("refresh_token", newRefreshToken);
+          }
 
           // Retry original request with new token
           originalRequest.headers.Authorization = `Bearer ${access_token}`;

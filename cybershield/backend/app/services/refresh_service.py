@@ -4,7 +4,7 @@ Refresh token service for token management.
 from datetime import datetime, timezone, timedelta
 from typing import Optional, Dict, Any
 from jose import jwt as _jwt
-from app.utils.security import create_refresh_token
+from app.utils.security import create_access_token, create_refresh_token
 from app.repositories.refresh_token_repository import refresh_token_repository
 from app.repositories.session_repository import session_repository
 from app.repositories.user_repository import user_repository
@@ -219,9 +219,7 @@ class RefreshService:
                 "user_id": user_id,
                 "role": user.get("role", "student")
             }
-            new_access_token = create_refresh_token(access_token_data,
-                expires_delta=timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
-            )
+            new_access_token = create_access_token(access_token_data)
 
             # Update last_used timestamp
             await self.refresh_repo.update_last_used(str(token_doc["_id"]))
