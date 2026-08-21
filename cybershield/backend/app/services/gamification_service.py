@@ -485,13 +485,17 @@ async def _try_generate_category_cert(user_id: str, vulnerability_type: str) -> 
     if existing > 0:
         return
 
-    completion = CertificateService.check_category_completion(user_id, vulnerability_type)
+    completion = await CertificateService.async_check_category_completion(user_id, vulnerability_type)
     if not completion["completed"] or completion["labs_done"] < 2:
         return
 
-    # Fetch user name from DB
-    user_doc = await database["users"].find_one({"_id": __import__("bson").ObjectId(user_id)})
+    # Fetch user name from DB (handle both ObjectId and string _id)
     user_name = "CyberShield User"
+    try:
+        from bson import ObjectId
+        user_doc = await database["users"].find_one({"_id": ObjectId(user_id)})
+    except Exception:
+        user_doc = await database["users"].find_one({"_id": user_id})
     if user_doc:
         user_name = user_doc.get("name") or user_doc.get("username") or "CyberShield User"
 
@@ -521,12 +525,17 @@ async def _try_generate_professional_cert(user_id: str) -> None:
     if existing > 0:
         return
 
-    eligibility = CertificateService.check_professional_eligibility(user_id)
+    eligibility = await CertificateService.async_check_professional_eligibility(user_id)
     if not eligibility["eligible"]:
         return
 
-    user_doc = await database["users"].find_one({"_id": __import__("bson").ObjectId(user_id)})
+    # Fetch user name from DB (handle both ObjectId and string _id)
     user_name = "CyberShield User"
+    try:
+        from bson import ObjectId
+        user_doc = await database["users"].find_one({"_id": ObjectId(user_id)})
+    except Exception:
+        user_doc = await database["users"].find_one({"_id": user_id})
     if user_doc:
         user_name = user_doc.get("name") or user_doc.get("username") or "CyberShield User"
 

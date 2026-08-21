@@ -145,7 +145,7 @@ async def download_certificate(certificate_id: str, user=Depends(get_current_use
 async def all_certificates(user=Depends(get_current_user)):
     """Get all certificates for the current user (category + professional)."""
     from app.services.certificate_service import CertificateService
-    certs = CertificateService.get_user_certificates(str(user["_id"]))
+    certs = await CertificateService.async_get_user_certificates(str(user["_id"]))
     return {"certificates": certs}
 
 
@@ -153,7 +153,7 @@ async def all_certificates(user=Depends(get_current_user)):
 async def check_category_cert(vulnerability_type: str, user=Depends(get_current_user)):
     """Check if user has completed all labs for a vulnerability category."""
     from app.services.certificate_service import CertificateService
-    result = CertificateService.check_category_completion(
+    result = await CertificateService.async_check_category_completion(
         str(user["_id"]), vulnerability_type
     )
     return result
@@ -167,8 +167,7 @@ async def generate_category_cert(vulnerability_type: str, user=Depends(get_curre
     user_id = str(user["_id"])
     user_name = user.get("name") or user.get("username") or "CyberShield User"
 
-    # Check completion first
-    completion = CertificateService.check_category_completion(user_id, vulnerability_type)
+    completion = await CertificateService.async_check_category_completion(user_id, vulnerability_type)
     if not completion["completed"]:
         raise HTTPException(
             status_code=400,
@@ -191,7 +190,7 @@ async def generate_category_cert(vulnerability_type: str, user=Depends(get_curre
 async def check_professional_cert(user=Depends(get_current_user)):
     """Check if user qualifies for the professional certificate."""
     from app.services.certificate_service import CertificateService
-    return CertificateService.check_professional_eligibility(str(user["_id"]))
+    return await CertificateService.async_check_professional_eligibility(str(user["_id"]))
 
 
 @router.post("/certificate/professional/generate")
@@ -202,7 +201,7 @@ async def generate_professional_cert(user=Depends(get_current_user)):
     user_id = str(user["_id"])
     user_name = user.get("name") or user.get("username") or "CyberShield User"
 
-    eligibility = CertificateService.check_professional_eligibility(user_id)
+    eligibility = await CertificateService.async_check_professional_eligibility(user_id)
     if not eligibility["eligible"]:
         raise HTTPException(
             status_code=400,
@@ -212,9 +211,7 @@ async def generate_professional_cert(user=Depends(get_current_user)):
     cert = CertificateService.generate_professional_certificate(
         user_id=user_id,
         user_name=user_name,
-        labs_completed=sum(
-            1 for _ in range(15)
-        ),
+        labs_completed=15,
         average_score=0,
     )
     return {"certificate": cert, "status": "Generated"}

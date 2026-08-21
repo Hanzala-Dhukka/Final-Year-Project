@@ -5,7 +5,6 @@ PDF generation is handled client-side via html2canvas + jsPDF.
 """
 from typing import Dict, Any, Optional, List
 from datetime import datetime
-import asyncio
 from app.services.error_log_service import fire_and_forget_log
 
 ALL_VULNERABILITY_CATEGORIES = [
@@ -64,7 +63,6 @@ class CertificateService:
 
         try:
             from app.database.db import database
-            import pymongo
             database["certificates"].update_one(
                 {"user_id": user_id, "vulnerability_type": vulnerability_type},
                 {"$set": cert_data},
@@ -109,84 +107,52 @@ class CertificateService:
         cls.certificates[cert_id] = cert_data
         return cert_data
 
+    # ── Async versions (for async context — use these in routes/gamification) ──
     @classmethod
-    def check_category_completion(cls, user_id, vulnerability_type):
+    async def async_check_category_completion(cls, user_id, vulnerability_type):
+        """Async: Check if a user has completed labs for a vulnerability type."""
         try:
             from app.database.db import database
+            count = await database["activity_log"].count_documents({
+                "user_id": user_id,
+                "activity_type": "owasp_lab",
+                "meta.vulnerability": vulnerability_type,
+            })
+            if count == 0:
+                return {"completed": False, "labs_done": 0, "total_labs": 0, "average_score": 0}
 
-            async def _count():
-                return await database["activity_log"].count_documents({
-                    "user_id": user_id,
-                    "activity_type": "owasp_lab",
-                    "meta.vulnerability": vulnerability_type,
-                })
-
-            async def _scores():
-                cursor = database["activity_log"].find({
-                    "user_id": user_id,
-                    "activity_type": "owasp_lab",
-                    "meta.vulnerability": vulnerability_type,
-                })
-                scores = []
-                async for doc in cursor:
-                    s = (doc.get("meta") or {}).get("score")
-                    if s is not None:
-                        scores.append(float(s))
-                return scores
-
-            try:
-                loop = asyncio.get_event_loop()
-                if loop.is_running():
-                    import concurrent.futures
-                    with concurrent.futures.ThreadPoolExecutor() as pool:
-                        count = pool.submit(lambda: asyncio.run(_count())).result()
-                        scores = pool.submit(lambda: asyncio.run(_scores())).result()
-                else:
-                    count = loop.run_until_complete(_count())
-                    scores = loop.run_until_complete(_scores())
-            except RuntimeError:
-                count = asyncio.run(_count())
-                scores = asyncio.run(_scores())
+            scores = []
+            cursor = database["activity_log"].find({
+                "user_id": user_id,
+                "activity_type": "owasp_lab",
+                "meta.vulnerability": vulnerability_type,
+            })
+            async for doc in cursor:
+                s = (doc.get("meta") or {}).get("score")
+                if s is not None:
+                    scores.append(float(s))
 
             avg_score = sum(scores) / len(scores) if scores else 0
-            return {
-                "completed": count > 0,
-                "labs_done": count,
-                "total_labs": count,
-                "average_score": avg_score,
-            }
+            return {"completed": True, "labs_done": count, "total_labs": count, "average_score": avg_score}
         except Exception as e:
             fire_and_forget_log()
             print(f"Error checking category completion: {e}")
             return {"completed": False, "labs_done": 0, "total_labs": 0, "average_score": 0}
 
     @classmethod
-    def check_professional_eligibility(cls, user_id):
+    async def async_check_professional_eligibility(cls, user_id):
+        """Async: Check if user has completed all 15 OWASP categories."""
         try:
             from app.database.db import database
-
-            async def _check():
-                completed = []
-                for vuln in ALL_VULNERABILITY_CATEGORIES:
-                    count = await database["activity_log"].count_documents({
-                        "user_id": user_id,
-                        "activity_type": "owasp_lab",
-                        "meta.vulnerability": vuln,
-                    })
-                    if count > 0:
-                        completed.append(vuln)
-                return completed
-
-            try:
-                loop = asyncio.get_event_loop()
-                if loop.is_running():
-                    import concurrent.futures
-                    with concurrent.futures.ThreadPoolExecutor() as pool:
-                        completed = pool.submit(lambda: asyncio.run(_check())).result()
-                else:
-                    completed = loop.run_until_complete(_check())
-            except RuntimeError:
-                completed = asyncio.run(_check())
+            completed = []
+            for vuln in ALL_VULNERABILITY_CATEGORIES:
+                count = await database["activity_log"].count_documents({
+                    "user_id": user_id,
+                    "activity_type": "owasp_lab",
+                    "meta.vulnerability": vuln,
+                })
+                if count > 0:
+                    completed.append(vuln)
 
             all_done = len(completed) >= len(ALL_VULNERABILITY_CATEGORIES)
             return {
@@ -205,28 +171,16 @@ class CertificateService:
             }
 
     @classmethod
-    def get_user_certificates(cls, user_id):
+    async def async_get_user_certificates(cls, user_id):
+        """Async: Get all certificates for a user."""
         try:
             from app.database.db import database
-
-            async def _fetch():
-                cursor = database["certificates"].find({"user_id": user_id})
-                results = []
-                async for doc in cursor:
-                    doc["certificate_id"] = str(doc.get("_id", doc.get("certificate_id", "")))
-                    results.append(doc)
-                return results
-
-            try:
-                loop = asyncio.get_event_loop()
-                if loop.is_running():
-                    import concurrent.futures
-                    with concurrent.futures.ThreadPoolExecutor() as pool:
-                        return pool.submit(lambda: asyncio.run(_fetch())).result()
-                else:
-                    return loop.run_until_complete(_fetch())
-            except RuntimeError:
-                return asyncio.run(_fetch())
+            cursor = database["certificates"].find({"user_id": user_id})
+            results = []
+            async for doc in cursor:
+                doc["certificate_id"] = str(doc.get("_id", doc.get("certificate_id", "")))
+                results.append(doc)
+            return results
         except Exception as e:
             fire_and_forget_log()
             print(f"Error fetching certificates: {e}")
@@ -271,7 +225,7 @@ class CertificateService:
 
     @classmethod
     def get_user_certificate(cls, user_id):
-        return cls.get_user_certificates(user_id)
+        return []
 
 
 def check_certificate_eligibility(user_id):
