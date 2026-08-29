@@ -1,6 +1,6 @@
 """
 Certificate Service - Certificate Data Management
-Generates per-category and professional certificate records for OWASP training.
+Generates per-category, per-mode, and professional certificate records for OWASP training.
 PDF generation is handled client-side via html2canvas + jsPDF.
 """
 from typing import Dict, Any, Optional, List
@@ -30,6 +30,16 @@ VULNERABILITY_OWASP_MAP = {
     "Security Misconfiguration": "A05:2021 - Security Misconfiguration",
     "XXE": "A05:2021 - Security Misconfiguration",
     "Insecure Deserialization": "A08:2021 - Software and Data Integrity Failures",
+}
+
+MODE_PROFESSIONAL_MESSAGES = {
+    "attack": "You are now a Professional Penetration Tester",
+    "defense": "You are now a Professional Security Defender",
+}
+
+MODE_CERT_TITLE = {
+    "attack": "Certificate of Achievement - Attack Mastery",
+    "defense": "Certificate of Achievement - Defense Mastery",
 }
 
 
@@ -226,6 +236,136 @@ class CertificateService:
     @classmethod
     def get_user_certificate(cls, user_id):
         return []
+
+    # ── Mode-specific certificates (Attack / Defense) ────────────────────────
+
+    @classmethod
+    def generate_mode_certificate(
+        cls, user_id, user_name, mode, vulnerability_type, difficulty="Intermediate",
+        score=100, labs_completed=1, total_labs=1,
+    ):
+        """Generate a certificate for completing a single vulnerability in a specific mode."""
+        prefix = "ATK" if mode == "attack" else "DEF"
+        cert_id = f"CS-{datetime.now().year}-{prefix}-{vulnerability_type[:3].upper()}-{user_id[:8]}-{datetime.now().strftime('%Y%m%d%H%M%S')}"
+        owasp_category = VULNERABILITY_OWASP_MAP.get(vulnerability_type, "A03:2021 - Injection")
+
+        cert_data = {
+            "certificate_id": cert_id,
+            "user_id": user_id,
+            "user_name": user_name,
+            "vulnerability_type": vulnerability_type,
+            "difficulty": difficulty,
+            "score": round(score, 1),
+            "labs_completed": labs_completed,
+            "total_labs": total_labs,
+            "owasp_category": owasp_category,
+            "date_issued": datetime.now().isoformat(),
+            "type": f"mode_{mode}_vuln",
+            "mode": mode,
+            "title": MODE_CERT_TITLE.get(mode, "Certificate of Achievement"),
+        }
+
+        try:
+            from app.database.db import database
+            database["certificates"].update_one(
+                {"user_id": user_id, "vulnerability_type": vulnerability_type, "mode": mode},
+                {"$set": cert_data},
+                upsert=True,
+            )
+        except Exception as e:
+            fire_and_forget_log()
+            print(f"Error saving mode certificate: {e}")
+
+        cls.certificates[cert_id] = cert_data
+        return cert_data
+
+    @classmethod
+    def generate_mode_professional_certificate(cls, user_id, user_name, mode, average_score=100):
+        """Generate the professional certificate when all 15 vulns are completed in a mode."""
+        prefix = "PRO-ATK" if mode == "attack" else "PRO-DEF"
+        cert_id = f"CS-{datetime.now().year}-{prefix}-{user_id[:8]}-{datetime.now().strftime('%Y%m%d%H%M%S')}"
+
+        cert_data = {
+            "certificate_id": cert_id,
+            "user_id": user_id,
+            "user_name": user_name,
+            "vulnerability_type": "All OWASP Categories",
+            "difficulty": "Expert",
+            "score": round(average_score, 1),
+            "labs_completed": 15,
+            "total_labs": 15,
+            "owasp_category": "OWASP Top 10 (2021) - Complete",
+            "date_issued": datetime.now().isoformat(),
+            "type": f"mode_{mode}_professional",
+            "mode": mode,
+            "title": MODE_PROFESSIONAL_MESSAGES.get(mode, "CyberSecurity Professional"),
+            "professional_message": MODE_PROFESSIONAL_MESSAGES.get(mode, "You are now a CyberSecurity Professional"),
+        }
+
+        try:
+            from app.database.db import database
+            database["certificates"].update_one(
+                {"user_id": user_id, "type": f"mode_{mode}_professional"},
+                {"$set": cert_data},
+                upsert=True,
+            )
+        except Exception as e:
+            fire_and_forget_log()
+            print(f"Error saving mode professional certificate: {e}")
+
+        cls.certificates[cert_id] = cert_data
+        return cert_data
+
+    # ── Async helpers for mode certificates ──────────────────────────────────
+
+    @classmethod
+    async def async_check_mode_completion(cls, user_id, mode):
+        """Check if user has completed all 15 vulnerability categories in a mode (attack or defense)."""
+        field = "completed_attack" if mode == "attack" else "completed_defense"
+        try:
+            from app.database.db import database
+            prog = await database["owasp_progress"].find_one({"user_id": user_id})
+            completed = prog.get(field, []) if prog else []
+            all_done = len(completed) >= len(ALL_VULNERABILITY_CATEGORIES)
+            return {
+                "eligible": all_done,
+                "mode": mode,
+                "completed_categories": completed,
+                "total_categories": len(ALL_VULNERABILITY_CATEGORIES),
+                "remaining": [c for c in ALL_VULNERABILITY_CATEGORIES if c not in completed],
+            }
+        except Exception as e:
+            fire_and_forget_log()
+            print(f"Error checking mode completion: {e}")
+            return {
+                "eligible": False,
+                "mode": mode,
+                "completed_categories": [],
+                "total_categories": len(ALL_VULNERABILITY_CATEGORIES),
+                "remaining": ALL_VULNERABILITY_CATEGORIES,
+            }
+
+    @classmethod
+    async def async_get_mode_certificates(cls, user_id, mode=None):
+        """Get certificates filtered by mode (attack/defense)."""
+        try:
+            from app.database.db import database
+            query = {"user_id": user_id}
+            if mode:
+                query["$or"] = [
+                    {"mode": mode},
+                    {"type": {"$regex": f"mode_{mode}"}},
+                ]
+            cursor = database["certificates"].find(query)
+            results = []
+            async for doc in cursor:
+                doc["certificate_id"] = str(doc.get("_id", doc.get("certificate_id", "")))
+                results.append(doc)
+            return results
+        except Exception as e:
+            fire_and_forget_log()
+            print(f"Error fetching mode certificates: {e}")
+            return []
 
 
 def check_certificate_eligibility(user_id):

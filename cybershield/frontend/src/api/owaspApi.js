@@ -11,6 +11,20 @@ export const owaspApi = {
   completeDaily: () => API.post("/owasp/daily/complete"),
   history: () => API.get("/owasp/history"),
   progress: () => API.get("/owasp/progress"),
+
+  // Mode-specific certificate endpoints
+  checkModeCompletion: (mode) => API.get(`/gamification/certificate/mode/${mode}/check`),
+  listModeCertificates: (mode) => API.get(`/gamification/certificate/mode/${mode}/list`),
+  generateModeVulnCert: (mode, vulnType) =>
+    API.post(`/gamification/certificate/mode/${mode}/${encodeURIComponent(vulnType)}/generate`),
+  generateModeProfessionalCert: (mode) =>
+    API.post(`/gamification/certificate/mode/${mode}/generate`),
+
+  // Legacy certificate endpoints
+  certificates: () => API.get("/gamification/certificates"),
+  allCertificates: () => API.get("/gamification/certificates/all"),
+  checkProfessionalCert: () => API.get("/gamification/certificate/professional/check"),
+  generateProfessionalCert: () => API.post("/gamification/certificate/professional/generate"),
 };
 
 // Spec Step 4 vulnerabilities

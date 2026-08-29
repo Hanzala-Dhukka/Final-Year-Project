@@ -217,6 +217,93 @@ async def generate_professional_cert(user=Depends(get_current_user)):
     return {"certificate": cert, "status": "Generated"}
 
 
+# ── Mode-specific certificate endpoints (Attack / Defense) ──────────────────
+
+
+@router.get("/certificate/mode/{mode}/check")
+async def check_mode_cert(mode: str, user=Depends(get_current_user)):
+    """Check if user has completed all 15 vulns in attack or defense mode."""
+    if mode not in ("attack", "defense"):
+        raise HTTPException(status_code=400, detail="Mode must be 'attack' or 'defense'")
+    from app.services.certificate_service import CertificateService
+    return await CertificateService.async_check_mode_completion(str(user["_id"]), mode)
+
+
+@router.get("/certificate/mode/{mode}/list")
+async def list_mode_certs(mode: str, user=Depends(get_current_user)):
+    """List all certificates for a specific mode (attack or defense)."""
+    if mode not in ("attack", "defense"):
+        raise HTTPException(status_code=400, detail="Mode must be 'attack' or 'defense'")
+    from app.services.certificate_service import CertificateService
+    certs = await CertificateService.async_get_mode_certificates(str(user["_id"]), mode)
+    return {"certificates": certs, "mode": mode}
+
+
+@router.post("/certificate/mode/{mode}/{vulnerability_type}/generate")
+async def generate_mode_vuln_cert(mode: str, vulnerability_type: str, user=Depends(get_current_user)):
+    """Generate a certificate for completing a single vulnerability in a specific mode."""
+    if mode not in ("attack", "defense"):
+        raise HTTPException(status_code=400, detail="Mode must be 'attack' or 'defense'")
+
+    from app.services.certificate_service import CertificateService
+
+    user_id = str(user["_id"])
+    user_name = user.get("name") or user.get("username") or "CyberShield User"
+
+    field = "completed_attack" if mode == "attack" else "completed_defense"
+    try:
+        from app.database.db import database
+        prog = await database["owasp_progress"].find_one({"user_id": user_id})
+        completed = prog.get(field, []) if prog else []
+    except Exception:
+        completed = []
+
+    if vulnerability_type not in completed:
+        raise HTTPException(
+            status_code=400,
+            detail=f"You haven't completed {vulnerability_type} in {mode} mode yet.",
+        )
+
+    cert = CertificateService.generate_mode_certificate(
+        user_id=user_id,
+        user_name=user_name,
+        mode=mode,
+        vulnerability_type=vulnerability_type,
+        difficulty="Intermediate",
+        score=100,
+        labs_completed=1,
+        total_labs=1,
+    )
+    return {"certificate": cert, "status": "Generated"}
+
+
+@router.post("/certificate/mode/{mode}/generate")
+async def generate_mode_professional_cert(mode: str, user=Depends(get_current_user)):
+    """Generate the mode professional certificate (all 15 vulns completed in that mode)."""
+    if mode not in ("attack", "defense"):
+        raise HTTPException(status_code=400, detail="Mode must be 'attack' or 'defense'")
+
+    from app.services.certificate_service import CertificateService
+
+    user_id = str(user["_id"])
+    user_name = user.get("name") or user.get("username") or "CyberShield User"
+
+    eligibility = await CertificateService.async_check_mode_completion(user_id, mode)
+    if not eligibility["eligible"]:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Not all 15 OWASP categories are completed in {mode} mode yet.",
+        )
+
+    cert = CertificateService.generate_mode_professional_certificate(
+        user_id=user_id,
+        user_name=user_name,
+        mode=mode,
+        average_score=100,
+    )
+    return {"certificate": cert, "status": "Generated"}
+
+
 # ── Certificate PDF builder (reportlab fallback) ─────────────────────────────
 def _build_cert_pdf(cert: dict) -> bytes:
     from io import BytesIO

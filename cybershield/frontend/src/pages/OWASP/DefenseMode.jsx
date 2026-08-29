@@ -8,12 +8,14 @@ import {
   XCircle,
   Sparkles,
   Lightbulb,
+  Award,
 } from "lucide-react";
 import owaspApi, { OWASP_VULNERABILITIES, OWASP_DIFFICULTIES } from "../../api/owaspApi";
 import ScenarioCard from "../../components/OWASP/ScenarioCard";
 import HintPanel from "../../components/OWASP/HintPanel";
 import CodeEditor from "../../components/OWASP/CodeEditor";
 import AIExplanation from "../../components/OWASP/AIExplanation";
+import OWASPCertificate from "../../components/OWASP/OWASPCertificate";
 
 function statusMeta(status) {
   if (status === "Passed") {
@@ -38,6 +40,9 @@ export default function DefenseMode({ initialLab, onBack, onComplete }) {
   const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [certificate, setCertificate] = useState(null);
+  const [generatingCert, setGeneratingCert] = useState(false);
+  const [certError, setCertError] = useState("");
   const navigate = useNavigate();
 
   const handleAskAI = () => {
@@ -91,6 +96,21 @@ export default function DefenseMode({ initialLab, onBack, onComplete }) {
     setCode("");
     setError("");
     setHintsUsed(0);
+    setCertificate(null);
+    setCertError("");
+  };
+
+  const generateCertificate = async () => {
+    setGeneratingCert(true);
+    setCertError("");
+    try {
+      const r = await owaspApi.generateModeVulnCert("defense", vuln);
+      setCertificate(r.data.certificate);
+    } catch (e) {
+      setCertError(e.response?.data?.detail || "Could not generate certificate. You may need to complete this vulnerability first.");
+    } finally {
+      setGeneratingCert(false);
+    }
   };
 
   if (!sim) {
@@ -219,6 +239,29 @@ export default function DefenseMode({ initialLab, onBack, onComplete }) {
             bestPractices={result.best_practices || []}
             secureCodeExample={result.secure_code_example}
           />
+
+          {/* Certificate section */}
+          {result.status === "Passed" && (
+            <div className="cs-ow-cert-section">
+              {!certificate ? (
+                <button
+                  className="cs-ow-btn cs-ow-btn--certificate cs-ow-btn--certificate-defense"
+                  onClick={generateCertificate}
+                  disabled={generatingCert}
+                >
+                  {generatingCert ? (
+                    <span className="cs-ow-spin" />
+                  ) : (
+                    <Award size={16} />
+                  )}
+                  {generatingCert ? "Generating Certificate..." : "Generate Certificate"}
+                </button>
+              ) : (
+                <OWASPCertificate certificate={certificate} mode="defense" onClose={() => setCertificate(null)} />
+              )}
+              {certError && <div className="cs-ow-alert cs-ow-alert--error" style={{ marginTop: 8 }}>{certError}</div>}
+            </div>
+          )}
 
           <div className="cs-ow-editor-actions">
             <button className="cs-ow-btn cs-ow-btn--ghost" onClick={reset}>

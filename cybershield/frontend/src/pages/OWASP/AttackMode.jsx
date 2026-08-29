@@ -9,16 +9,19 @@ import {
   CheckCircle2,
   XCircle,
   Lightbulb,
+  Award,
 } from "lucide-react";
 import owaspApi, { OWASP_VULNERABILITIES, OWASP_DIFFICULTIES } from "../../api/owaspApi";
 import ScenarioCard from "../../components/OWASP/ScenarioCard";
 import HintPanel from "../../components/OWASP/HintPanel";
 import PayloadEditor from "../../components/OWASP/PayloadEditor";
 import AIExplanation from "../../components/OWASP/AIExplanation";
+import OWASPCertificate from "../../components/OWASP/OWASPCertificate";
 
 /**
  * Attack Mode (spec Step 15). Pick a vulnerability + difficulty, start a
  * session, submit payloads, use hints, and receive AI coach feedback.
+ * Generates a certificate on successful completion.
  */
 export default function AttackMode({ initialLab, onBack, onComplete }) {
   const [vuln, setVuln] = useState(initialLab || OWASP_VULNERABILITIES[0]);
@@ -28,6 +31,9 @@ export default function AttackMode({ initialLab, onBack, onComplete }) {
   const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [certificate, setCertificate] = useState(null);
+  const [generatingCert, setGeneratingCert] = useState(false);
+  const [certError, setCertError] = useState("");
   const navigate = useNavigate();
 
   const handleAskAI = () => {
@@ -78,6 +84,21 @@ export default function AttackMode({ initialLab, onBack, onComplete }) {
     setResult(null);
     setError("");
     setHintsUsed(0);
+    setCertificate(null);
+    setCertError("");
+  };
+
+  const generateCertificate = async () => {
+    setGeneratingCert(true);
+    setCertError("");
+    try {
+      const r = await owaspApi.generateModeVulnCert("attack", vuln);
+      setCertificate(r.data.certificate);
+    } catch (e) {
+      setCertError(e.response?.data?.detail || "Could not generate certificate. You may need to complete this vulnerability first.");
+    } finally {
+      setGeneratingCert(false);
+    }
   };
 
   if (!sim) {
@@ -182,6 +203,29 @@ export default function AttackMode({ initialLab, onBack, onComplete }) {
           {result.analysis && <p className="cs-ow-para">{result.analysis}</p>}
 
           <AIExplanation explanation={result.coach} provider={result.provider} />
+
+          {/* Certificate section */}
+          {result.success && (
+            <div className="cs-ow-cert-section">
+              {!certificate ? (
+                <button
+                  className="cs-ow-btn cs-ow-btn--certificate"
+                  onClick={generateCertificate}
+                  disabled={generatingCert}
+                >
+                  {generatingCert ? (
+                    <span className="cs-ow-spin" />
+                  ) : (
+                    <Award size={16} />
+                  )}
+                  {generatingCert ? "Generating Certificate..." : "Generate Certificate"}
+                </button>
+              ) : (
+                <OWASPCertificate certificate={certificate} mode="attack" onClose={() => setCertificate(null)} />
+              )}
+              {certError && <div className="cs-ow-alert cs-ow-alert--error" style={{ marginTop: 8 }}>{certError}</div>}
+            </div>
+          )}
 
           <div className="cs-ow-editor-actions">
             <button className="cs-ow-btn cs-ow-btn--ghost" onClick={reset}>

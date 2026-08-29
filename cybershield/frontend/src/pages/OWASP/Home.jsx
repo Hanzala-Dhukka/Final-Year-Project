@@ -7,6 +7,7 @@ import {
   TrendingUp,
   Sparkles,
   BookOpen,
+  Award,
 } from "lucide-react";
 import owaspApi from "../../api/owaspApi";
 
@@ -91,6 +92,14 @@ export default function Home({ onAttack, onDefense, onDaily, onProgress, onLab }
       desc: "Track XP, level, badges & history",
       icon: TrendingUp,
       cls: "cs-ow-tile--progress",
+      onClick: onProgress,
+    },
+    {
+      key: "certificates",
+      title: "Certificates",
+      desc: "Earn certs for each vulnerability mastered",
+      icon: Award,
+      cls: "cs-ow-tile--certificates",
       onClick: onProgress,
     },
   ];
