@@ -46,221 +46,239 @@ def list_labs() -> List[Dict[str, Any]]:
 async def start_simulation(
     user_id: str, vulnerability: str, mode: str, difficulty: str
 ) -> Optional[Dict[str, Any]]:
-    scenario = get_attack_scenario(vulnerability)
-    if not scenario:
+    try:
+        scenario = get_attack_scenario(vulnerability)
+        if not scenario:
+            print(f"[OWASP] No scenario found for: {vulnerability}")
+            return None
+
+        doc = session_document(
+            user_id=user_id, mode=mode, vulnerability=vulnerability, difficulty=difficulty
+        )
+        await database[SESSIONS].insert_one(doc)
+
+        return {
+            "session_id": doc["_id"],
+            "vulnerability": vulnerability,
+            "mode": mode,
+            "difficulty": difficulty,
+            "title": scenario.get("title"),
+            "scenario": scenario.get("scenario"),
+            "field": scenario.get("field"),
+            "example_payload": scenario.get("example_payload"),
+            "hints": scenario.get("hints", []),
+            "learning_path": scenario.get("learning_path", []),
+        }
+    except Exception as e:
+        fire_and_forget_log()
+        print(f"[OWASP] start_simulation error ({vulnerability}, {mode}): {e}")
         return None
-
-    doc = session_document(
-        user_id=user_id, mode=mode, vulnerability=vulnerability, difficulty=difficulty
-    )
-    await database[SESSIONS].insert_one(doc)
-
-    return {
-        "session_id": doc["_id"],
-        "vulnerability": vulnerability,
-        "mode": mode,
-        "difficulty": difficulty,
-        "title": scenario.get("title"),
-        "scenario": scenario.get("scenario"),
-        "field": scenario.get("field"),
-        "example_payload": scenario.get("example_payload"),
-        "hints": scenario.get("hints", []),
-        "learning_path": scenario.get("learning_path", []),
-    }
 
 
 # ── Attack submission ───────────────────────────────────────────────────────
 async def submit_attack(
     user_id: str, session_id: str, payload: str, hints_used: int
 ) -> Optional[Dict[str, Any]]:
-    session = await database[SESSIONS].find_one({"_id": session_id})
-    if not session or session.get("mode") != "attack":
-        return None
+    try:
+        session = await database[SESSIONS].find_one({"_id": session_id})
+        if not session or session.get("mode") != "attack":
+            return None
 
-    vulnerability = session["vulnerability"]
-    scenario = get_attack_scenario(vulnerability)
-    difficulty = session.get("difficulty", "Beginner")
+        vulnerability = session["vulnerability"]
+        scenario = get_attack_scenario(vulnerability)
+        if not scenario:
+            return None
+        difficulty = session.get("difficulty", "Beginner")
 
-    patterns = scenario.get("success_patterns", [])
-    if not payload.strip():
-        success = False
-    else:
-        success = any(re.search(p, payload, re.IGNORECASE) for p in patterns)
+        patterns = scenario.get("success_patterns", [])
+        if not payload.strip():
+            success = False
+        else:
+            success = any(re.search(p, payload, re.IGNORECASE) for p in patterns)
 
-    # XP calculation
-    xp = 0
-    no_hint = False
-    if success:
-        xp = XP_EXPERT if difficulty == "Expert" else XP_ATTACK
-        if hints_used == 0:
-            xp += XP_NO_HINT_BONUS
-            no_hint = True
-        _award_xp(user_id, "owasp_expert" if difficulty == "Expert" else ATTACK, score=100)
-        if no_hint:
-            _award_xp(user_id, NO_HINT, score=100)
-        await _mark_completed(user_id, "completed_attack", vulnerability)
+        # XP calculation
+        xp = 0
+        no_hint = False
+        if success:
+            xp = XP_EXPERT if difficulty == "Expert" else XP_ATTACK
+            if hints_used == 0:
+                xp += XP_NO_HINT_BONUS
+                no_hint = True
+            _award_xp(user_id, "owasp_expert" if difficulty == "Expert" else ATTACK, score=100)
+            if no_hint:
+                _award_xp(user_id, NO_HINT, score=100)
+            await _mark_completed(user_id, "completed_attack", vulnerability)
 
-    # History
-    await database[HISTORY].insert_one(
-        history_document(
+        # History
+        await database[HISTORY].insert_one(
+            history_document(
+                user_id=user_id,
+                mode="attack",
+                vulnerability=vulnerability,
+                difficulty=difficulty,
+                payload=payload,
+                success=success,
+                xp_earned=xp,
+                hints_used=hints_used,
+            )
+        )
+        await database[SESSIONS].update_one(
+            {"_id": session_id}, {"$set": {"status": "completed"}}
+        )
+
+        # Mirror into the legacy collections so dashboards/admin/compliance see it too
+        await _mirror_attempt(
             user_id=user_id,
-            mode="attack",
             vulnerability=vulnerability,
-            difficulty=difficulty,
             payload=payload,
             success=success,
-            xp_earned=xp,
-            hints_used=hints_used,
+            xp=xp,
+            lab_name=scenario.get("title", vulnerability),
+            mode="attack",
+            difficulty=difficulty,
         )
-    )
-    await database[SESSIONS].update_one(
-        {"_id": session_id}, {"$set": {"status": "completed"}}
-    )
 
-    # Mirror into the legacy collections so dashboards/admin/compliance see it too
-    await _mirror_attempt(
-        user_id=user_id,
-        vulnerability=vulnerability,
-        payload=payload,
-        success=success,
-        xp=xp,
-        lab_name=scenario.get("title", vulnerability),
-        mode="attack",
-        difficulty=difficulty,
-    )
+        if success:
+            try:
+                from app.services.gamification_service import log_activity
+                await log_activity(
+                    user_id, "owasp_lab",
+                    f"Completed {vulnerability} attack lab ({difficulty})",
+                    xp,
+                    {
+                        "vulnerability": vulnerability,
+                        "mode": "attack",
+                        "difficulty": difficulty,
+                        "no_hint": no_hint,
+                        "success": True,
+                    },
+                )
+            except Exception:
+                fire_and_forget_log()
+                pass
 
-    if success:
-        try:
-            from app.services.gamification_service import log_activity
-            await log_activity(
-                user_id, "owasp_lab",
-                f"Completed {vulnerability} attack lab ({difficulty})",
-                xp,
-                {
-                    "vulnerability": vulnerability,
-                    "mode": "attack",
-                    "difficulty": difficulty,
-                    "no_hint": no_hint,
-                    "success": True,
-                },
-            )
-        except Exception:
-            fire_and_forget_log()
-            pass
+        # AI coach
+        coach_text, provider = await coach_explain(
+            vulnerability, difficulty, payload, success, fallback=scenario
+        )
 
-    # AI coach
-    coach_text, provider = await coach_explain(
-        vulnerability, difficulty, payload, success, fallback=scenario
-    )
-
-    return {
-        "success": success,
-        "vulnerability": vulnerability,
-        "analysis": scenario.get("explanation"),
-        "xp_earned": xp,
-        "hints_used": hints_used,
-        "no_hint_bonus": no_hint,
-        "coach": coach_text,
-        "provider": provider,
-        "owasp": scenario.get("owasp"),
-        "business_impact": scenario.get("business_impact"),
-        "fix": scenario.get("fix"),
-    }
+        return {
+            "success": success,
+            "vulnerability": vulnerability,
+            "analysis": scenario.get("explanation"),
+            "xp_earned": xp,
+            "hints_used": hints_used,
+            "no_hint_bonus": no_hint,
+            "coach": coach_text,
+            "provider": provider,
+            "owasp": scenario.get("owasp"),
+            "business_impact": scenario.get("business_impact"),
+            "fix": scenario.get("fix"),
+        }
+    except Exception as e:
+        fire_and_forget_log()
+        print(f"[OWASP] submit_attack error ({session_id}): {e}")
+        return None
 
 
 # ── Defense submission (reuses existing DefenseValidator) ───────────────────
 async def submit_defense(
     user_id: str, session_id: str, user_code: str, hints_used: int
 ) -> Optional[Dict[str, Any]]:
-    session = await database[SESSIONS].find_one({"_id": session_id})
-    if not session or session.get("mode") != "defense":
-        return None
+    try:
+        session = await database[SESSIONS].find_one({"_id": session_id})
+        if not session or session.get("mode") != "defense":
+            return None
 
-    vulnerability = session["vulnerability"]
-    difficulty = session.get("difficulty", "Beginner")
+        vulnerability = session["vulnerability"]
+        difficulty = session.get("difficulty", "Beginner")
 
-    # Map our vulnerability names to the existing validator's categories
-    category = _defense_category(vulnerability)
-    validation = defense_validator.DefenseValidator.validate_defense(category, user_code)
-    score = validation.get("score", 0)
-    status = validation.get("status", "Failed")
+        # Map our vulnerability names to the existing validator's categories
+        category = _defense_category(vulnerability)
+        validation = defense_validator.DefenseValidator.validate_defense(category, user_code)
+        score = validation.get("score", 0)
+        status = validation.get("status", "Failed")
 
-    # XP on pass
-    xp = 0
-    no_hint = False
-    if status == "Passed":
-        xp = XP_EXPERT if difficulty == "Expert" else XP_DEFENSE
-        if hints_used == 0:
-            xp += XP_NO_HINT_BONUS
-            no_hint = True
-        _award_xp(user_id, "owasp_expert" if difficulty == "Expert" else DEFENSE, score=100)
-        if no_hint:
-            _award_xp(user_id, NO_HINT, score=100)
-        await _mark_completed(user_id, "completed_defense", vulnerability)
+        # XP on pass
+        xp = 0
+        no_hint = False
+        if status == "Passed":
+            xp = XP_EXPERT if difficulty == "Expert" else XP_DEFENSE
+            if hints_used == 0:
+                xp += XP_NO_HINT_BONUS
+                no_hint = True
+            _award_xp(user_id, "owasp_expert" if difficulty == "Expert" else DEFENSE, score=100)
+            if no_hint:
+                _award_xp(user_id, NO_HINT, score=100)
+            await _mark_completed(user_id, "completed_defense", vulnerability)
 
-    await database[HISTORY].insert_one(
-        history_document(
+        await database[HISTORY].insert_one(
+            history_document(
+                user_id=user_id,
+                mode="defense",
+                vulnerability=vulnerability,
+                difficulty=difficulty,
+                payload=user_code,
+                success=(status == "Passed"),
+                xp_earned=xp,
+                hints_used=hints_used,
+            )
+        )
+        await database[SESSIONS].update_one(
+            {"_id": session_id}, {"$set": {"status": "completed"}}
+        )
+
+        # Mirror into the legacy collections so dashboards/admin/compliance see it too
+        await _mirror_attempt(
             user_id=user_id,
-            mode="defense",
             vulnerability=vulnerability,
-            difficulty=difficulty,
             payload=user_code,
             success=(status == "Passed"),
-            xp_earned=xp,
-            hints_used=hints_used,
+            xp=xp,
+            lab_name=(get_attack_scenario(vulnerability) or {}).get("title", vulnerability),
+            mode="defense",
+            difficulty=difficulty,
         )
-    )
-    await database[SESSIONS].update_one(
-        {"_id": session_id}, {"$set": {"status": "completed"}}
-    )
 
-    # Mirror into the legacy collections so dashboards/admin/compliance see it too
-    await _mirror_attempt(
-        user_id=user_id,
-        vulnerability=vulnerability,
-        payload=user_code,
-        success=(status == "Passed"),
-        xp=xp,
-        lab_name=(get_attack_scenario(vulnerability) or {}).get("title", vulnerability),
-        mode="defense",
-        difficulty=difficulty,
-    )
+        if status == "Passed":
+            try:
+                from app.services.gamification_service import log_activity
+                await log_activity(
+                    user_id, "owasp_lab",
+                    f"Completed {vulnerability} defense lab ({difficulty})",
+                    xp,
+                    {
+                        "vulnerability": vulnerability,
+                        "mode": "defense",
+                        "difficulty": difficulty,
+                        "no_hint": no_hint,
+                        "success": True,
+                        "status": status,
+                    },
+                )
+            except Exception:
+                fire_and_forget_log()
+                pass
 
-    if status == "Passed":
-        try:
-            from app.services.gamification_service import log_activity
-            await log_activity(
-                user_id, "owasp_lab",
-                f"Completed {vulnerability} defense lab ({difficulty})",
-                xp,
-                {
-                    "vulnerability": vulnerability,
-                    "mode": "defense",
-                    "difficulty": difficulty,
-                    "no_hint": no_hint,
-                    "success": True,
-                    "status": status,
-                },
-            )
-        except Exception:
-            fire_and_forget_log()
-            pass
+        coach_text, _ = await coach_explain(
+            vulnerability, difficulty, user_code, (status == "Passed"), fallback=_defense_fallback(vulnerability)
+        )
 
-    coach_text, _ = await coach_explain(
-        vulnerability, difficulty, user_code, (status == "Passed"), fallback=_defense_fallback(vulnerability)
-    )
-
-    return {
-        "status": status,
-        "score": score,
-        "feedback": validation.get("feedback", ""),
-        "recommendation": validation.get("recommendation", ""),
-        "owasp_reference": _defense_fallback(vulnerability).get("owasp"),
-        "best_practices": validation.get("best_practices", []),
-        "secure_code_example": _defense_fallback(vulnerability).get("fix", ""),
-        "xp_earned": xp,
-        "coach": coach_text,
-    }
+        return {
+            "status": status,
+            "score": score,
+            "feedback": validation.get("feedback", ""),
+            "recommendation": validation.get("recommendation", ""),
+            "owasp_reference": _defense_fallback(vulnerability).get("owasp"),
+            "best_practices": validation.get("best_practices", []),
+            "secure_code_example": _defense_fallback(vulnerability).get("fix", ""),
+            "xp_earned": xp,
+            "coach": coach_text,
+        }
+    except Exception as e:
+        fire_and_forget_log()
+        print(f"[OWASP] submit_defense error ({session_id}): {e}")
+        return None
 
 
 def _defense_category(vulnerability: str) -> str:
