@@ -26,12 +26,10 @@ try:
     from groq import AsyncGroq
     GROQ_AVAILABLE = True
 except ImportError:
-    fire_and_forget_log()
     AsyncGroq = None  # type: ignore
     GROQ_AVAILABLE = False
 
 from app.config.settings import settings
-from app.services.error_log_service import fire_and_forget_log
 
 # ── Singleton state ───────────────────────────────────────────────────────────
 _client: Optional[object] = None
