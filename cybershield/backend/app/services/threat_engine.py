@@ -4,8 +4,6 @@ import re
 from typing import List, Dict, Any
 from collections import defaultdict
 
-from app.services.error_log_service import fire_and_forget_log
-
 
 # ── AI-powered threat generation ──────────────────────────────────────────────
 
@@ -84,7 +82,6 @@ def _parse_ai_threats(raw: str) -> List[Dict[str, Any]]:
         if isinstance(parsed, dict) and "threats" in parsed:
             return parsed["threats"]
     except json.JSONDecodeError:
-        fire_and_forget_log()
         pass
 
     # Try extracting JSON array from surrounding text
@@ -96,7 +93,6 @@ def _parse_ai_threats(raw: str) -> List[Dict[str, Any]]:
             if isinstance(parsed, list):
                 return parsed
         except json.JSONDecodeError:
-            fire_and_forget_log()
             pass
 
     # Last resort: fix common JSON issues
@@ -112,8 +108,25 @@ def _parse_ai_threats(raw: str) -> List[Dict[str, Any]]:
             if isinstance(parsed, list):
                 return parsed
         except json.JSONDecodeError:
-            fire_and_forget_log()
             pass
+
+    # Handle truncated JSON: try to salvage complete objects from the array
+    if bracket_start != -1:
+        partial = cleaned[bracket_start:]
+        # Find the last complete } object
+        last_brace = partial.rfind("}")
+        if last_brace != -1:
+            truncated = partial[:last_brace + 1]
+            # Remove trailing comma if present
+            truncated = re.sub(r',\s*$', '', truncated)
+            if not truncated.endswith("]"):
+                truncated += "]"
+            try:
+                parsed = json.loads(truncated)
+                if isinstance(parsed, list):
+                    return parsed
+            except json.JSONDecodeError:
+                pass
 
     return []
 
@@ -211,7 +224,6 @@ async def generate_threats(project: Dict[str, Any]) -> Dict[str, Any]:
             else:
                 print(f"[ThreatEngine] AI returned too few threats ({len(ai_threats)}), using rules")
     except Exception as e:
-        fire_and_forget_log()
         print(f"[ThreatEngine] AI generation failed: {e}, using rules")
 
     # Fallback to rules
