@@ -283,6 +283,15 @@ async def startup():
         fire_and_forget_log()
         print(f"CRITICAL: MongoDB connection failed at startup: {e}")
 
+    # Archive resolved errors from log → old_logs on deploy
+    try:
+        from app.services.log_archiver import auto_archive_resolved_logs
+        result = await auto_archive_resolved_logs()
+        if result.get("moved", 0):
+            print(f"[LogArchiver] {result['moved']} resolved errors archived on startup.")
+    except Exception as e:
+        print(f"[LogArchiver] Startup archive skipped: {e}")
+
     # Seed the default security hardening checklist catalogue (Module 6.1)
     try:
         from app.services.checklist_service import seed_checklists
