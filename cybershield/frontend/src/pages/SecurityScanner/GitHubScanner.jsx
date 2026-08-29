@@ -122,13 +122,13 @@ function GitHubScanner() {
     try {
       const response = await API.post(
         "/github/generate-pdf",
-        { report: result?.scan },
+        { report: result },
         { responseType: "blob" }
       )
       const url = window.URL.createObjectURL(new Blob([response.data]))
       const link = document.createElement("a")
       link.href = url
-      link.setAttribute("download", "CyberShield_Report.pdf")
+      link.setAttribute("download", `CyberShield_Report_${repoUrl?.split("/").pop() || "scan"}.pdf`)
       document.body.appendChild(link)
       link.click()
       window.URL.revokeObjectURL(url)

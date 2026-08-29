@@ -897,10 +897,13 @@
 
 /* ── AI coach block ──────────────────────────────────────── */
 .cs-ow-ai {
-  border: 1px solid rgba(124, 58, 237, 0.28);
+  border: 1px solid rgba(124, 58, 237, 0.2);
   border-radius: 18px;
-  background: rgba(124, 58, 237, 0.08);
-  padding: 18px 20px;
+  background: linear-gradient(135deg, rgba(124, 58, 237, 0.06), rgba(59, 130, 246, 0.04));
+  padding: 20px 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
 }
 
 .cs-ow-ai-head {
@@ -909,26 +912,176 @@
   justify-content: space-between;
   gap: 10px;
   flex-wrap: wrap;
-  margin-bottom: 10px;
+}
+
+.cs-ow-ai-head-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.cs-ow-ai-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #7c3aed, #6d28d9);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  flex-shrink: 0;
 }
 
 .cs-ow-ai-head h4 {
   margin: 0;
-  font-size: 0.9rem;
+  font-size: 0.92rem;
   font-weight: 700;
   color: var(--text-primary, #f1f5f9);
   display: flex;
   align-items: center;
   gap: 7px;
+  line-height: 1.2;
 }
 
 .cs-ow-provider {
-  font-size: 0.72rem;
+  font-size: 0.7rem;
   color: var(--text-secondary, #94a3b8);
+  display: block;
+  margin-top: 1px;
 }
 
 .cs-ow-ai .cs-ow-markdown {
   color: var(--text-primary, #f1f5f9);
+}
+
+/* AI Coach structured sections */
+.cs-ow-ai-sections {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.cs-ow-ai-section {
+  border: 1px solid var(--border-color, rgba(148, 163, 184, 0.08));
+  border-radius: 12px;
+  background: var(--card-bg, rgba(17, 24, 39, 0.5));
+  overflow: hidden;
+  transition: border-color 0.2s ease;
+}
+
+.cs-ow-ai-section:hover {
+  border-color: var(--border-color, rgba(148, 163, 184, 0.15));
+}
+
+.cs-ow-ai-section-toggle {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.15s ease;
+}
+
+.cs-ow-ai-section-toggle:hover {
+  background: var(--surface-hover, rgba(148, 163, 184, 0.05));
+}
+
+.cs-ow-ai-section-icon {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.cs-ow-ai-section-title {
+  flex: 1;
+  font-size: 0.84rem;
+  font-weight: 600;
+  color: var(--text-primary, #f1f5f9);
+}
+
+.cs-ow-ai-section-chevron {
+  color: var(--text-secondary, #94a3b8);
+  flex-shrink: 0;
+}
+
+.cs-ow-ai-section-body {
+  padding: 0 14px 12px 52px;
+}
+
+/* AI Coach info cards (fallback for non-structured content) */
+.cs-ow-ai-info-card {
+  display: flex;
+  gap: 10px;
+  padding: 12px 14px;
+  border-radius: 10px;
+  border: 1px solid var(--border-color, rgba(148, 163, 184, 0.08));
+  background: var(--card-bg, rgba(17, 24, 39, 0.5));
+  font-size: 0.84rem;
+  line-height: 1.6;
+  color: var(--text-primary, #f1f5f9);
+  align-items: flex-start;
+}
+
+.cs-ow-ai-info-card > svg {
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.cs-ow-ai-info-card b {
+  display: block;
+  margin-bottom: 4px;
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.cs-ow-ai-info-card p {
+  margin: 0;
+  color: var(--text-secondary, #94a3b8);
+  font-size: 0.82rem;
+}
+
+.cs-ow-ai-info-card ul {
+  margin: 4px 0 0;
+  padding-left: 16px;
+  color: var(--text-secondary, #94a3b8);
+  font-size: 0.82rem;
+}
+
+.cs-ow-ai-info-card li {
+  margin-bottom: 3px;
+  line-height: 1.5;
+}
+
+.cs-ow-ai-info-card--impact {
+  border-left: 3px solid #ef4444;
+}
+
+.cs-ow-ai-info-card--impact svg {
+  color: #ef4444;
+}
+
+.cs-ow-ai-info-card--practices {
+  border-left: 3px solid #06b6d4;
+}
+
+.cs-ow-ai-info-card--practices svg {
+  color: #06b6d4;
+}
+
+.cs-ow-ai-info-card--fix {
+  border-left: 3px solid #22c55e;
+}
+
+.cs-ow-ai-info-card--fix svg {
+  color: #22c55e;
 }
 
 /* ── Daily challenge ─────────────────────────────────────── */
@@ -1216,47 +1369,138 @@
 /* ── Quiz-style markdown content (AI coach) ──────────────── */
 .cs-ow-markdown p {
   margin: 0 0 10px;
-  font-size: 0.86rem;
-  line-height: 1.65;
+  font-size: 0.84rem;
+  line-height: 1.7;
+  color: var(--text-secondary, #cbd5e1);
+}
+
+.cs-ow-markdown p:last-child {
+  margin-bottom: 0;
+}
+
+.cs-ow-markdown strong {
+  color: var(--text-primary, #f1f5f9);
+  font-weight: 600;
+}
+
+.cs-ow-markdown em {
+  color: var(--text-secondary, #94a3b8);
+  font-style: italic;
 }
 
 .cs-ow-markdown ul,
 .cs-ow-markdown ol {
   margin: 0 0 10px;
-  padding-left: 18px;
-  font-size: 0.86rem;
-  line-height: 1.6;
+  padding-left: 20px;
+  font-size: 0.84rem;
+  line-height: 1.65;
+  color: var(--text-secondary, #cbd5e1);
+}
+
+.cs-ow-markdown li {
+  margin-bottom: 4px;
+}
+
+.cs-ow-markdown li::marker {
+  color: var(--primary, #7c3aed);
 }
 
 .cs-ow-markdown h1,
 .cs-ow-markdown h2,
 .cs-ow-markdown h3,
 .cs-ow-markdown h4 {
-  margin: 12px 0 6px;
+  margin: 14px 0 6px;
   color: var(--text-primary, #f1f5f9);
+  font-weight: 700;
+}
+
+.cs-ow-markdown h2 {
+  font-size: 1rem;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--border-color, rgba(148, 163, 184, 0.08));
+}
+
+.cs-ow-markdown h3 {
+  font-size: 0.9rem;
+}
+
+.cs-ow-markdown h4 {
+  font-size: 0.85rem;
 }
 
 .cs-ow-markdown code {
   background: var(--surface-hover, rgba(26, 36, 56, 0.7));
-  border-radius: 6px;
-  padding: 2px 6px;
+  border: 1px solid var(--border-color, rgba(148, 163, 184, 0.08));
+  border-radius: 5px;
+  padding: 2px 7px;
   font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
   font-size: 0.78rem;
+  color: #e879f9;
 }
 
 .cs-ow-markdown pre {
-  background: var(--surface-hover, rgba(15, 23, 42, 0.9));
+  background: var(--surface-hover, rgba(15, 23, 42, 0.95));
   border: 1px solid var(--border-color, rgba(148, 163, 184, 0.12));
   border-radius: 10px;
-  padding: 12px 14px;
+  padding: 14px 16px;
   overflow-x: auto;
-  margin: 0 0 10px;
+  margin: 8px 0 10px;
 }
 
 .cs-ow-markdown pre code {
   background: none;
+  border: none;
   padding: 0;
   color: var(--text-primary, #f1f5f9);
+  font-size: 0.8rem;
+  line-height: 1.6;
+}
+
+.cs-ow-markdown blockquote {
+  border-left: 3px solid var(--primary, #7c3aed);
+  margin: 8px 0;
+  padding: 8px 14px;
+  background: rgba(124, 58, 237, 0.05);
+  border-radius: 0 8px 8px 0;
+  color: var(--text-secondary, #94a3b8);
+  font-size: 0.84rem;
+}
+
+.cs-ow-markdown a {
+  color: var(--primary, #7c3aed);
+  text-decoration: none;
+}
+
+.cs-ow-markdown a:hover {
+  text-decoration: underline;
+}
+
+.cs-ow-markdown hr {
+  border: none;
+  border-top: 1px solid var(--border-color, rgba(148, 163, 184, 0.08));
+  margin: 12px 0;
+}
+
+.cs-ow-markdown table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 8px 0;
+  font-size: 0.82rem;
+}
+
+.cs-ow-markdown th {
+  background: var(--card-bg, rgba(17, 24, 39, 0.6));
+  padding: 8px 10px;
+  text-align: left;
+  font-weight: 600;
+  color: var(--text-primary, #f1f5f9);
+  border-bottom: 2px solid var(--border-color, rgba(148, 163, 184, 0.12));
+}
+
+.cs-ow-markdown td {
+  padding: 6px 10px;
+  border-bottom: 1px solid var(--border-color, rgba(148, 163, 184, 0.06));
+  color: var(--text-secondary, #cbd5e1);
 }
 
 /* ── Loading ─────────────────────────────────────────────── */

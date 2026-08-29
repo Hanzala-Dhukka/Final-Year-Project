@@ -422,45 +422,294 @@ def get_pdf_path(project_id: str, project_name: str) -> str:
 # Keep the old function name for backward compatibility
 def generate_pdf_report(report_data: Dict[str, Any], output_path: str) -> None:
     """
-    Generate PDF report (legacy function for GitHub scanner compatibility)
+    Generate comprehensive PDF report for GitHub scanner.
+    Converts scanner data format and delegates to the professional reportlab generator.
     
     Args:
-        report_data: Report data dictionary
+        report_data: Report data dictionary (full scan result)
         output_path: Path to save PDF
     """
-    # Create a simple HTML report
-    html_content = f"""
-    <!DOCTYPE html>
+    try:
+        from app.reports.pdf_generator import generate_report_pdf
+
+        # Map GitHub scanner data to the professional PDF generator format
+        scan_summary = report_data.get("scan_summary", {})
+        severity_counts = scan_summary.get("severity_counts", {})
+        ai_report = report_data.get("ai_report", {})
+        repo_info = report_data.get("repository_info", {})
+        file_report = report_data.get("file_report", [])
+        findings = report_data.get("findings", [])
+        dep_findings = report_data.get("dependency_findings", [])
+
+        # Calculate security score from severity counts
+        critical = severity_counts.get("Critical", 0)
+        high = severity_counts.get("High", 0)
+        medium = severity_counts.get("Medium", 0)
+        low = severity_counts.get("Low", 0)
+        security_score = max(0, 100 - (critical * 25) - (high * 15) - (medium * 8) - (low * 2))
+
+        # Build vulnerabilities list from file_report (more detailed than findings)
+        vulnerabilities = []
+        for file_entry in file_report:
+            file_path = file_entry.get("file", "")
+            for issue in file_entry.get("issues", []):
+                vulnerabilities.append({
+                    "type": issue.get("type", "Unknown"),
+                    "severity": issue.get("severity", "Medium"),
+                    "file": file_path,
+                    "line": issue.get("line", "-"),
+                    "column": issue.get("column", "-"),
+                    "owasp": issue.get("owasp", "-"),
+                    "cwe": issue.get("cwe", "-"),
+                    "code": issue.get("locations", [{}])[0].get("snippet", "") if issue.get("locations") else "",
+                    "impact": issue.get("impact", ""),
+                    "recommendation": issue.get("recommendation", "Review and remediate this issue"),
+                    "message": issue.get("message", ""),
+                })
+
+        # If no file_report issues, fall back to top-level findings
+        if not vulnerabilities and findings:
+            for f in findings:
+                vulnerabilities.append({
+                    "type": f.get("type", f.get("rule", "Unknown")),
+                    "severity": f.get("severity", "Medium"),
+                    "file": f.get("file", f.get("path", "")),
+                    "line": f.get("line", "-"),
+                    "column": f.get("column", "-"),
+                    "owasp": f.get("owasp", "-"),
+                    "cwe": f.get("cwe", "-"),
+                    "code": f.get("snippet", f.get("code", "")),
+                    "impact": f.get("impact", ""),
+                    "recommendation": f.get("recommendation", "Review and remediate this issue"),
+                    "message": f.get("message", ""),
+                })
+
+        # Build the professional report data structure
+        professional_data = {
+            "report_id": report_data.get("scan_id", report_data.get("report_id", "N/A")),
+            "repository": repo_info.get("repository", repo_info.get("name", report_data.get("repository", "N/A"))),
+            "branch": repo_info.get("defaultBranch", repo_info.get("default_branch", "main")),
+            "created_at": report_data.get("created_at", datetime.now().isoformat()),
+            "report_version": "1.0",
+            "scanner_version": "CyberShield Scanner v1.0",
+            "security_score": security_score,
+            "risk_level": (scan_summary.get("risk_level", "Unknown") or "Unknown").upper(),
+            "total_findings": len(vulnerabilities),
+            "critical": critical,
+            "high": high,
+            "medium": medium,
+            "low": low,
+            "files_total": scan_summary.get("total_files_with_issues", len(file_report)),
+            "vulnerabilities": vulnerabilities,
+            "ai_report": {
+                "executive_summary": ai_report.get("summary", scan_summary.get("summary", "")),
+                "recommendations": ai_report.get("recommendations", scan_summary.get("recommendations", [])),
+                "risk_level": ai_report.get("risk_level", scan_summary.get("risk_level", "")),
+                "business_impact": ai_report.get("business_impact", []),
+                "dependency_analysis": ai_report.get("dependency_analysis", ""),
+            },
+            # Additional metadata for the appendix
+            "repo_url": repo_info.get("html_url", repo_info.get("url", "")),
+            "scan_config": {
+                "Owner": repo_info.get("owner", "N/A"),
+                "Stars": str(repo_info.get("stars", 0)),
+                "Forks": str(repo_info.get("forks", 0)),
+                "Language": repo_info.get("language", "N/A"),
+                "Visibility": repo_info.get("visibility", "N/A"),
+                "License": repo_info.get("license", "N/A"),
+                "Open Issues": str(repo_info.get("issues", 0)),
+            },
+        }
+
+        generate_report_pdf(professional_data, output_path)
+
+    except Exception as e:
+        fire_and_forget_log()
+        print(f"Professional PDF generation failed, falling back to simple HTML: {e}")
+        # Fallback: simple HTML report
+        _generate_simple_html_report(report_data, output_path)
+
+
+def _generate_simple_html_report(report_data: Dict[str, Any], output_path: str) -> None:
+    """Fallback: generate a comprehensive HTML report and try to convert to PDF."""
+    scan_summary = report_data.get("scan_summary", {})
+    severity_counts = scan_summary.get("severity_counts", {})
+    ai_report = report_data.get("ai_report", {})
+    repo_info = report_data.get("repository_info", {})
+    file_report = report_data.get("file_report", [])
+    dep_findings = report_data.get("dependency_findings", [])
+
+    # Build findings rows
+    findings_html = ""
+    row_idx = 0
+    for file_entry in file_report:
+        for issue in file_entry.get("issues", []):
+            row_idx += 1
+            sev = issue.get("severity", "Medium")
+            sev_class = sev.lower()
+            findings_html += f"""
+            <tr>
+                <td>{row_idx}</td>
+                <td><span class="severity-badge severity-{sev_class}">{sev}</span></td>
+                <td>{issue.get('type', 'N/A')}</td>
+                <td>{file_entry.get('file', 'N/A')}</td>
+                <td>{issue.get('line', '-')}</td>
+                <td>{issue.get('recommendation', 'Review and remediate')}</td>
+            </tr>"""
+
+    # Dependency findings rows
+    dep_html = ""
+    for dep in dep_findings:
+        sev = dep.get("severity", "Low")
+        dep_html += f"""
+        <tr>
+            <td>{dep.get('package', 'N/A')}</td>
+            <td>{dep.get('version', 'N/A')}</td>
+            <td>{dep.get('status', 'N/A')}</td>
+            <td><span class="severity-badge severity-{sev.lower()}">{sev}</span></td>
+        </tr>"""
+
+    # Recommendations
+    recs = ai_report.get("recommendations", scan_summary.get("recommendations", []))
+    recs_html = ""
+    for i, rec in enumerate(recs, 1):
+        if isinstance(rec, dict):
+            recs_html += f"<li><strong>{rec.get('title', f'Recommendation {i}')}:</strong> {rec.get('description', rec.get('detail', ''))}</li>"
+        else:
+            recs_html += f"<li>{rec}</li>"
+
+    critical = severity_counts.get("Critical", 0)
+    high = severity_counts.get("High", 0)
+    medium = severity_counts.get("Medium", 0)
+    low = severity_counts.get("Low", 0)
+    security_score = max(0, 100 - (critical * 25) - (high * 15) - (medium * 8) - (low * 2))
+
+    html_content = f"""<!DOCTYPE html>
     <html>
     <head>
         <meta charset="UTF-8">
-        <title>Security Report</title>
+        <title>CyberShield Security Report</title>
         <style>
-            body {{ font-family: Arial, sans-serif; padding: 20px; }}
-            h1 {{ color: #333; }}
-            .summary {{ background: #f5f5f5; padding: 15px; border-radius: 5px; }}
+            * {{ margin: 0; padding: 0; box-sizing: border-box; }}
+            body {{ font-family: 'Segoe UI', Arial, sans-serif; color: #1f2937; background: #fff; }}
+            .cover {{ background: linear-gradient(135deg, #0f172a, #1e293b); color: white; padding: 60px 40px; text-align: center; min-height: 400px; display: flex; flex-direction: column; justify-content: center; }}
+            .cover h1 {{ font-size: 36px; letter-spacing: 4px; margin-bottom: 8px; }}
+            .cover h2 {{ font-size: 18px; color: #94a3b8; font-weight: 400; margin-bottom: 30px; }}
+            .cover .meta {{ color: #cbd5e1; font-size: 13px; line-height: 2; }}
+            .cover .meta b {{ color: #60a5fa; }}
+            .cover .confidential {{ margin-top: 30px; color: #94a3b8; font-size: 12px; letter-spacing: 2px; text-transform: uppercase; }}
+            .section {{ padding: 30px 40px; page-break-inside: avoid; }}
+            .section h2 {{ font-size: 20px; color: #1e40af; border-bottom: 2px solid #1e40af; padding-bottom: 8px; margin-bottom: 16px; }}
+            .section h3 {{ font-size: 15px; color: #1e40af; margin: 16px 0 8px; }}
+            .summary-grid {{ display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin: 16px 0; }}
+            .summary-card {{ background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px; text-align: center; }}
+            .summary-card .value {{ font-size: 28px; font-weight: 700; }}
+            .summary-card .label {{ font-size: 12px; color: #64748b; margin-top: 4px; }}
+            .score-circle {{ width: 100px; height: 100px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: 28px; font-weight: 700; color: white; margin: 10px 0; }}
+            table {{ width: 100%; border-collapse: collapse; margin: 12px 0; font-size: 12px; }}
+            th {{ background: #1e293b; color: white; padding: 10px 12px; text-align: left; font-weight: 600; }}
+            td {{ padding: 8px 12px; border-bottom: 1px solid #e2e8f0; }}
+            tr:nth-child(even) {{ background: #f8fafc; }}
+            .severity-badge {{ padding: 3px 10px; border-radius: 12px; font-size: 11px; font-weight: 600; color: white; }}
+            .severity-critical {{ background: #dc2626; }}
+            .severity-high {{ background: #f97316; }}
+            .severity-medium {{ background: #eab308; color: #1f2937; }}
+            .severity-low {{ background: #22c55e; }}
+            .rec-list {{ margin: 10px 0; padding-left: 20px; }}
+            .rec-list li {{ margin: 6px 0; line-height: 1.6; }}
+            .footer {{ text-align: center; padding: 20px; color: #94a3b8; font-size: 11px; border-top: 1px solid #e2e8f0; margin-top: 20px; }}
         </style>
     </head>
     <body>
-        <h1>Security Report</h1>
-        <div class="summary">
-            <p><strong>Summary:</strong> {report_data.get('summary', 'No summary available')}</p>
-            <p><strong>Risk Level:</strong> {report_data.get('risk_level', 'Unknown')}</p>
+        <div class="cover">
+            <h1>CYBERSHIELD</h1>
+            <h2>Security Scan Report</h2>
+            <div class="meta">
+                <b>Repository:</b> {repo_info.get('repository', 'N/A')}<br>
+                <b>Branch:</b> {repo_info.get('defaultBranch', 'main')}<br>
+                <b>Owner:</b> {repo_info.get('owner', 'N/A')}<br>
+                <b>Language:</b> {repo_info.get('language', 'N/A')}<br>
+                <b>Risk Level:</b> {scan_summary.get('risk_level', 'Unknown')}<br>
+                <b>Generated:</b> {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
+            </div>
+            <div class="confidential">Confidential &mdash; For Authorized Personnel Only</div>
+        </div>
+
+        <div class="section">
+            <h2>1. Executive Summary</h2>
+            <div class="summary-grid">
+                <div class="summary-card">
+                    <div class="value" style="color: {'#22c55e' if security_score >= 80 else '#eab308' if security_score >= 60 else '#ef4444'}">{security_score}</div>
+                    <div class="label">Security Score</div>
+                </div>
+                <div class="summary-card">
+                    <div class="value" style="color: #dc2626">{critical}</div>
+                    <div class="label">Critical</div>
+                </div>
+                <div class="summary-card">
+                    <div class="value" style="color: #f97316">{high}</div>
+                    <div class="label">High</div>
+                </div>
+                <div class="summary-card">
+                    <div class="value" style="color: #eab308">{medium}</div>
+                    <div class="label">Medium</div>
+                </div>
+            </div>
+            <p><strong>Summary:</strong> {scan_summary.get('summary', 'No summary available')}</p>
+            <p style="margin-top:8px"><strong>Risk Level:</strong> <span class="severity-badge severity-{scan_summary.get('risk_level', 'low').lower()}">{scan_summary.get('risk_level', 'Unknown')}</span></p>
+            {f'<p style="margin-top:8px"><strong>AI Analysis:</strong> {ai_report.get("summary", "")}</p>' if ai_report.get('summary') else ''}
+        </div>
+
+        <div class="section">
+            <h2>2. Repository Information</h2>
+            <table>
+                <tr><td><strong>Repository</strong></td><td>{repo_info.get('repository', 'N/A')}</td></tr>
+                <tr><td><strong>Owner</strong></td><td>{repo_info.get('owner', 'N/A')}</td></tr>
+                <tr><td><strong>Description</strong></td><td>{repo_info.get('description', 'N/A')}</td></tr>
+                <tr><td><strong>Language</strong></td><td>{repo_info.get('language', 'N/A')}</td></tr>
+                <tr><td><strong>Stars</strong></td><td>{repo_info.get('stars', 0)}</td></tr>
+                <tr><td><strong>Forks</strong></td><td>{repo_info.get('forks', 0)}</td></tr>
+                <tr><td><strong>Visibility</strong></td><td>{repo_info.get('visibility', 'N/A')}</td></tr>
+                <tr><td><strong>License</strong></td><td>{repo_info.get('license', 'N/A')}</td></tr>
+            </table>
+        </div>
+
+        <div class="section">
+            <h2>3. Severity Breakdown</h2>
+            <table>
+                <thead><tr><th>Severity</th><th>Count</th></tr></thead>
+                <tbody>
+                    <tr><td><span class="severity-badge severity-critical">Critical</span></td><td>{critical}</td></tr>
+                    <tr><td><span class="severity-badge severity-high">High</span></td><td>{high}</td></tr>
+                    <tr><td><span class="severity-badge severity-medium">Medium</span></td><td>{medium}</td></tr>
+                    <tr><td><span class="severity-badge severity-low">Low</span></td><td>{low}</td></tr>
+                    <tr><td><strong>Total</strong></td><td><strong>{critical + high + medium + low}</strong></td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="section">
+            <h2>4. Detailed Findings</h2>
+            {'<table><thead><tr><th>#</th><th>Severity</th><th>Type</th><th>File</th><th>Line</th><th>Recommendation</th></tr></thead><tbody>' + findings_html + '</tbody></table>' if findings_html else '<p>No vulnerabilities found.</p>'}
+        </div>
+
+        {"<div class='section'><h2>5. Dependency Analysis</h2><table><thead><tr><th>Package</th><th>Version</th><th>Status</th><th>Severity</th></tr></thead><tbody>" + dep_html + "</tbody></table></div>" if dep_html else ""}
+
+        {"<div class='section'><h2>6. Recommendations</h2><ol class='rec-list'>" + recs_html + "</ol></div>" if recs_html else ""}
+
+        <div class="footer">
+            CyberShield Security Report &bull; Generated {datetime.now().strftime('%Y-%m-%d %H:%M:%S')} &bull; Confidential
         </div>
     </body>
-    </html>
-    """
-    
+    </html>"""
+
     try:
         from weasyprint import HTML
-        
         html = HTML(string=html_content)
         pdf_bytes = html.write_pdf()
-        
         with open(output_path, 'wb') as f:
             f.write(pdf_bytes)
     except (ImportError, OSError):
         fire_and_forget_log()
-        # Fallback: save as HTML
-        with open(output_path.replace('.pdf', '.html'), 'w') as f:
+        with open(output_path.replace('.pdf', '.html'), 'w', encoding='utf-8') as f:
             f.write(html_content)
