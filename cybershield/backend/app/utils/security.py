@@ -8,7 +8,6 @@ from fastapi import Depends, HTTPException
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from app.config.settings import settings
 from app.repositories.user_repository import user_repository
-from app.services.error_log_service import fire_and_forget_log
 
 security = HTTPBearer()
 
@@ -37,27 +36,22 @@ async def get_current_user(
         )
         user_id = payload.get("user_id")
         if not user_id:
-            print(f"ERROR: No user_id in token payload")
             raise HTTPException(status_code=401, detail="Invalid token payload")
 
         user = await user_repository.get_user_by_id(user_id)
         if not user:
-            print(f"ERROR: User not found for user_id: {user_id}")
             raise HTTPException(status_code=401, detail="User not found")
 
         return user
-    except JWTError as e:
-        fire_and_forget_log()
-        print(f"ERROR: JWT decode failed: {e}")
+    except HTTPException:
+        raise
+    except JWTError:
         raise HTTPException(
             status_code=401,
             detail="Invalid or expired token"
         )
     except Exception as e:
-        fire_and_forget_log()
         print(f"ERROR: Unexpected error in get_current_user: {e}")
-        import traceback
-        traceback.print_exc()
         raise HTTPException(
             status_code=500,
             detail=f"Authentication error: {str(e)}"

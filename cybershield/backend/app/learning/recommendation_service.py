@@ -130,10 +130,10 @@ async def generate_ai_learning_path(
             cleaned = "\n".join(cleaned.split("\n")[1:])
         if cleaned.endswith("```"):
             cleaned = "\n".join(cleaned.split("\n")[:-1])
+        if not cleaned:
+            return None
         return json.loads(cleaned)
-    except Exception as e:
-        fire_and_forget_log()
-        print(f"[Learning] AI learning path generation failed: {e}")
+    except Exception:
         return None
 
 

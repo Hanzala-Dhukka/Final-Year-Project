@@ -20,7 +20,6 @@ def _decode_refresh(refresh_token: str):
             refresh_token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM]
         )
     except Exception:
-        fire_and_forget_log()
         return None
     if payload.get("type") != "refresh":
         return None

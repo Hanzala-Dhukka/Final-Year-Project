@@ -162,30 +162,18 @@ async def generate(prompt: str) -> str:
 
         for attempt in range(1, MAX_RETRIES + 1):
             try:
-                response = await asyncio.wait_for(
-                    client.chat.completions.create(
-                        model=model,
-                        messages=[{"role": "user", "content": prompt}],
-                        temperature=float(getattr(settings, "AI_TEMPERATURE", 0.2)),
-                        max_tokens=int(getattr(settings, "AI_MAX_TOKENS", 2048)),
-                    ),
-                    timeout=TIMEOUT_SECS,
+                response = await client.chat.completions.create(
+                    model=model,
+                    messages=[{"role": "user", "content": prompt}],
+                    temperature=float(getattr(settings, "AI_TEMPERATURE", 0.2)),
+                    max_tokens=int(getattr(settings, "AI_MAX_TOKENS", 2048)),
                 )
                 text = (response.choices[0].message.content or "").strip()
                 if model != candidates[0]:
                     print(f"[Groq] Success with fallback model: {model}")
                 return text
 
-            except asyncio.TimeoutError:
-                fire_and_forget_log()
-                last_exc = RuntimeError(
-                    f"Groq request timed out after {TIMEOUT_SECS}s "
-                    f"(model={model}, attempt {attempt}/{MAX_RETRIES})."
-                )
-                print(f"[Groq] Timeout — model={model}, attempt {attempt}/{MAX_RETRIES}")
-
             except Exception as e:
-                fire_and_forget_log()
                 if _is_quota(e):
                     print(f"[Groq] Rate limit hit on model={model}: {e}")
                     # Back off 60 s on first quota hit, then move to next model

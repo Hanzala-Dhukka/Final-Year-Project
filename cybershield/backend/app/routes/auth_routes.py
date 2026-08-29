@@ -359,10 +359,8 @@ async def refresh_token(request: RefreshTokenRequest):
         )
         
     except HTTPException:
-        fire_and_forget_log()
         raise
     except Exception as e:
-        fire_and_forget_log()
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Token refresh failed: {str(e)}"
