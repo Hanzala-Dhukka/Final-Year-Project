@@ -1,8 +1,12 @@
 """
-Confidence Engine — Module D6
+Confidence Engine — Module D6 (Enhanced)
 
-Calculates confidence scores (0-100) for each finding based on
-rule specificity, match context, and pattern certainty.
+Calculates confidence scores (0-100) for each finding based on:
+  1. Rule specificity
+  2. Match context
+  3. Pattern certainty
+  4. File type (test files get reduced confidence)
+  5. Context classification (string/comment matches get heavy penalty)
 """
 
 from typing import Dict, Optional
@@ -53,6 +57,7 @@ def calculate_confidence(
     2. Match specificity boost: longer match = more certain
     3. Context indicators: presence of comments reduces confidence
     4. Test file detection: findings in test files get reduced confidence
+    5. String literal detection: findings that look like data reduce confidence
     """
     # Start with base confidence from rule
     base = RULE_CONFIDENCE.get(rule_id, DEFAULT_CONFIDENCE)
@@ -65,7 +70,7 @@ def calculate_confidence(
     if matched_text:
         specific_indicators = [
             "api_key", "secret_key", "password", "aws_secret",
-            "github_token", "private_key",
+            "github_token", "private_key", "mongodb+srv://",
         ]
         if any(ind in matched_text.lower() for ind in specific_indicators):
             confidence = min(confidence + 2, 109)  # cap at 99 later
@@ -77,14 +82,21 @@ def calculate_confidence(
     if line_content:
         stripped = line_content.strip()
         if stripped.startswith("#") or stripped.startswith("//") or stripped.startswith("*"):
-            confidence = max(confidence - 15, 20)
-        # Reduce for test files
-        if "test" in line_content.lower() and "assert" in line_content.lower():
+            confidence = max(confidence - 20, 20)
+        # Reduce for test assertion lines
+        if "assert" in stripped.lower() or "test" in stripped.lower():
             confidence = max(confidence - 10, 30)
+        # Reduce for TODO/FIXME/HACK comments
+        if any(kw in stripped.upper() for kw in ["TODO", "FIXME", "HACK", "XXX"]):
+            confidence = max(confidence - 5, 30)
 
-    # Reduce for TODO/FIXME/HACK comments near the match
-    if line_content and any(kw in line_content.upper() for kw in ["TODO", "FIXME", "HACK", "XXX"]):
-        confidence = max(confidence - 5, 30)
+    # Detect if the match looks like it's inside a string/data
+    # by checking for surrounding quote patterns
+    if line_content:
+        # If the line is predominantly string content (e.g., educational data)
+        quote_count = line_content.count('"') + line_content.count("'")
+        if quote_count >= 4:
+            confidence = max(confidence - 15, 30)
 
     return min(confidence, 99)  # Cap at 99
 

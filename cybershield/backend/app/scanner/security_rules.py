@@ -1,11 +1,20 @@
+"""
+Security Rules — Legacy Format
+
+These rules are used by the file_scanner.py for the legacy scanning path.
+Kept in sync with the patterns in github_scanner.py.
+"""
+
 from dataclasses import dataclass
 import re
+
 
 @dataclass
 class SecurityRule:
     name: str
     severity: str
     pattern: str
+
 
 RULES = [
     SecurityRule(
@@ -16,41 +25,36 @@ RULES = [
     SecurityRule(
         name="Google API Key",
         severity="Critical",
-        pattern=r"AIza[0-9A-Za-z-_]{35}"
+        pattern=r"AIza[0-9A-Za-z\-_]{35}"
     ),
     SecurityRule(
         name="MongoDB URI",
         severity="Critical",
-        pattern=r"mongodb\+srv://"
+        pattern=r"mongodb\+srv://[^:\s]+:[^@\s]+@"
     ),
     SecurityRule(
-        name="Private Key",
+        name="Private Key Block",
         severity="Critical",
-        pattern=r"BEGIN PRIVATE KEY"
+        pattern=r"-----BEGIN (?:RSA |EC |DSA )?PRIVATE KEY-----"
     ),
     SecurityRule(
-        name="Hardcoded API Key",
+        name="GitHub Personal Access Token",
+        severity="Critical",
+        pattern=r"ghp_[A-Za-z0-9]{36}|github_pat_[A-Za-z0-9_]{82}"
+    ),
+    SecurityRule(
+        name="Hardcoded Password",
         severity="High",
-        pattern=r"(api[_-]?key|secret[_-]?key|apikey|client[_-]?secret|access[_-]?key)\s*=\s*['\"][^'\"]+['\"]"
+        pattern=r'''(?:password|passwd|pwd)\s*=\s*['"][^'"]{8,}['"]'''
     ),
     SecurityRule(
-        name="Password Variable",
+        name="Hardcoded API Key Assignment",
         severity="High",
-        pattern=r"password\s*[:=]\s*['\"][^'\"]+['\"]"
+        pattern=r'''(?:api[_-]?key|secret[_-]?key|apikey|client[_-]?secret|access[_-]?key)\s*=\s*['"][A-Za-z0-9_\-]{16,}['"]'''
     ),
     SecurityRule(
-        name="JWT Secret",
+        name="JWT Secret Assignment",
         severity="High",
-        pattern=r"jwt[_-]?secret"
-    ),
-    SecurityRule(
-        name="JavaScript eval()",
-        severity="High",
-        pattern=r"\beval\s*\("
-    ),
-    SecurityRule(
-        name="Hardcoded Token",
-        severity="Medium",
-        pattern=r"(api[_-]?key|token)\s*[:=]\s*['\"][^'\"]+['\"]"
+        pattern=r'''(?:JWT_SECRET|jwt_secret)\s*=\s*['"][^'"]+['"]'''
     ),
 ]

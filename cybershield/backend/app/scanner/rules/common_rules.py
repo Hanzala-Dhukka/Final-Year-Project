@@ -90,7 +90,6 @@ COMMON_RULES = [
             r"os\.popen\(",
             r"subprocess\.call\(.*shell\s*=\s*True",
             r"subprocess\.Popen\(.*shell\s*=\s*True",
-            r"exec\(",
             r"child_process\.exec\(",
             r"Runtime\.getRuntime\(\)\.exec\(",
         ],

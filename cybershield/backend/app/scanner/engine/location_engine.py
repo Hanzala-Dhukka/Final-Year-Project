@@ -1,13 +1,21 @@
 """
-Location Engine — Module D6
+Location Engine — Module D6 (Context-Aware)
 
 Provides precise file, line, column, end_line, end_column detection
 for every pattern match in source code.
+
+Skips matches inside string literals, comments, and regex pattern
+definitions to eliminate false positives.
 """
 
 import re
 from typing import List, Dict, Optional, Tuple
 
+from app.scanner.context_analyzer import (
+    classify_match_context,
+    detect_language_from_path,
+    is_excluded_file,
+)
 from app.services.error_log_service import fire_and_forget_log
 
 
@@ -25,6 +33,7 @@ def find_pattern_locations(
 ) -> List[Dict]:
     """
     Find all locations where a regex pattern matches in the file content.
+    Skips matches inside string literals, comments, and regex patterns.
 
     Returns a list of dicts, each with:
     - line: int (1-based)
@@ -34,8 +43,14 @@ def find_pattern_locations(
     - matched_text: str
     - line_content: str (the full line)
     """
+    # Skip excluded files entirely
+    if is_excluded_file(file_path):
+        return []
+
     locations = []
     lines = content.splitlines(keepends=True)
+    plain_lines = content.splitlines()
+    language = detect_language_from_path(file_path)
 
     try:
         compiled = re.compile(pattern, re.IGNORECASE)
@@ -53,6 +68,13 @@ def find_pattern_locations(
         line_content = ""
         if 1 <= line <= len(lines):
             line_content = lines[line - 1]
+
+        # Context analysis: skip false positives
+        line_idx = line - 1
+        col_idx = col - 1  # convert to 0-based
+        ctx = classify_match_context(plain_lines, line_idx, col_idx, file_path, language)
+        if ctx["is_false_positive"]:
+            continue
 
         locations.append({
             "line": line,

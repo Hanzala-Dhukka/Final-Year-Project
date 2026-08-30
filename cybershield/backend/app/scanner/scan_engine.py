@@ -19,6 +19,22 @@ IGNORE_DIRS = {
     "target", ".gradle", ".maven", "egg-info",
 }
 
+# File paths to exclude from scanning (scanner own rules, educational data, env files)
+EXCLUDE_FILE_PREFIXES = (
+    "app/scanner/rules/",
+    "app/scanner/security_rules.py",
+    "app/services/github_scanner.py",
+    "app/data/defense_scenarios.py",
+    "app/data/attack_labs.py",
+    "app/data/glossary.py",
+    "app/data/risky_packages.py",
+    "app/data/daily_templates.py",
+    "app/data/cwe_mapping.py",
+    "app/data/nist_mapping.py",
+    "app/data/mitre_mapping.py",
+    "app/data/owasp_mapping.py",
+)
+
 # Max files to scan in one batch
 BATCH_SIZE = 200
 
@@ -28,11 +44,22 @@ semaphore = asyncio.Semaphore(MAX_CONCURRENT)
 
 
 def should_ignore_file(file_path: str) -> bool:
-    """Check if a file should be ignored based on directory rules."""
+    """Check if a file should be ignored based on directory and path rules."""
     parts = file_path.split("/")
     for part in parts[:-1]:
         if part in IGNORE_DIRS:
             return True
+    # Exclude scanner's own files, educational data, and env files
+    normalized = file_path.replace("\\", "/")
+    for prefix in EXCLUDE_FILE_PREFIXES:
+        if prefix in normalized:
+            return True
+    # Exclude .env files (contain real secrets, not vulnerabilities)
+    if normalized.endswith(".env") or normalized.endswith(".env.local") or normalized.endswith(".env.production"):
+        return True
+    # Exclude documentation files
+    if normalized.endswith((".md", ".txt", ".rst")):
+        return True
     return False
 
 
