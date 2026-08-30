@@ -1,0 +1,325 @@
+CYBERSHIELD
+Professional Security Report
+Report ID: dff2a556-fa0c-45f4-b6ee-8dd6e08280ec
+Repository: Hanzala-Dhukka/Final-Year-Project
+Branch: main
+Date: 2026-08-30T18:33:07.768000
+Report Version: 1.0
+Scanner Version: CyberShield Scanner v1.0
+Confidential — For Authorized Personnel Only
+CyberShield Professional Security Report
+CyberShield Security Reporting System Page 2 2026-08-30 19:22 UTC
+1. Executive Summary
+Security Score 0/100
+Risk Level CRITICAL
+Total Findings 21
+Critical 13
+High 8
+Medium 0
+Low 0
+AI-Generated Executive Summary
+Scan completed. Found 50 security issues across 536 files.
+2. Repository Information
+Repository Hanzala-Dhukka/Final-Year-Project
+URL
+Branch main
+Files Scanned 11
+Owner Hanzala-Dhukka
+Stars 0
+Forks 0
+Language JavaScript
+Visibility public
+License Unknown
+Open Issues 0
+3. Security Score
+CyberShield Professional Security Report
+CyberShield Security Reporting System Page 3 2026-08-30 19:22 UTC
+0
+out of 100
+Risk Level: CRITICAL
+Scoring formula: 100 - (Critical × 10) - (High × 5) - (Medium × 2) - (Low × 1) = 0
+CyberShield Professional Security Report
+CyberShield Security Reporting System Page 4 2026-08-30 19:22 UTC
+4. Vulnerability Breakdown
+Severity Count Percentage
+● Critical 13 61.9%
+● High 8 38.1%
+● Medium 0 0.0%
+● Low 0 0.0%
+Total 21 100%
+All Vulnerability Findings
+# Severity Type File Line OWASP
+1 Critical AWS Access Key cybershield/backend/app/data/glos
+sary.py
+405 -
+2 High Hardcoded API Key
+Assignment
+cybershield/backend/app/data/glos
+sary.py
+405 -
+3 Critical Python eval() cybershield/backend/app/routes/git
+hub... 373 -
+4 High Hardcoded Password cybershield/backend/app/routes/sc
+an_r...
+362 -
+5 Critical Python eval() cybershield/backend/app/routes/sc
+an_r...
+384 -
+6 Critical Python eval() cybershield/backend/app/scanner/
+engin... 26 -
+7 Critical Python exec() cybershield/backend/app/scanner/
+engin... 27 -
+8 Critical Shell Execution cybershield/backend/app/services/
+ai_f... 245 -
+9 Critical Shell Execution cybershield/backend/app/services/
+defe... 173 -
+10 Critical Python eval() cybershield/backend/app/services/
+secu...
+28 -
+11 High Hardcoded Password cybershield/backend/create_test_u
+ser.py
+17 -
+12 Critical AWS Access Key cybershield/backend/test_all_mod
+ules.py 17 -
+13 High Hardcoded Password cybershield/backend/test_all_mod
+ules.py 21 -
+14 Critical Private Key Block cybershield/backend/test_all_mod
+ules.py 23 -
+CyberShield Professional Security Report
+CyberShield Security Reporting System Page 5 2026-08-30 19:22 UTC
+# Severity Type File Line OWASP
+15 Critical AWS Access Key cybershield/backend/test_context_
+scan...
+124 -
+16 High Hardcoded API Key
+Assignment
+cybershield/backend/test_context_
+scan...
+124 -
+17 Critical MongoDB URI cybershield/backend/test_context_
+scan...
+125 -
+18 High JWT Secret Assignment cybershield/backend/test_context_
+scan...
+126 -
+19 Critical Shell Execution cybershield/backend/test_context_
+scan...
+37 -
+20 High Subprocess Shell cybershield/backend/test_context_
+scan...
+113 -
+21 High Hardcoded Password cybershield/backend/test_scanner
+_end2... 14 -
+CyberShield Professional Security Report
+CyberShield Security Reporting System Page 6 2026-08-30 19:22 UTC
+5. AI Recommendations
+1. Update outdated dependencies to reduce known vulnerability exposure.
+2. Review and replace risky packages where safer alternatives exist.
+3. Rotate the token immediately.
+4. Avoid using os.system() and use safer alternatives like subprocess.
+5. Manual review required.
+6. Rotate AWS credentials immediately.
+7. Remove exec() usage.
+8. Avoid eval() usage.
+9. Use environment variables.
+10. Move passwords to environment variables.
+11. Replace eval() with safer alternatives.
+CyberShield Professional Security Report
+CyberShield Security Reporting System Page 7 2026-08-30 19:22 UTC
+6. Detailed Findings
+● Finding #1 — AWS Access Key [Critical]
+File cybershield/backend/app/data/glossary.py
+Line 405
+Type AWS Access Key
+OWASP -
+CWE -
+Recommendation: Review and remediate this issue
+● Finding #2 — Hardcoded API Key Assignment [High]
+File cybershield/backend/app/data/glossary.py
+Line 405
+Type Hardcoded API Key Assignment
+OWASP -
+CWE -
+Recommendation: Review and remediate this issue
+● Finding #3 — Python eval() [Critical]
+File cybershield/backend/app/routes/github_routes.py
+Line 373
+Type Python eval()
+OWASP -
+CWE -
+Recommendation: Review and remediate this issue
+● Finding #4 — Hardcoded Password [High]
+File cybershield/backend/app/routes/scan_routes.py
+Line 362
+Type Hardcoded Password
+OWASP -
+CWE -
+Recommendation: Review and remediate this issue
+CyberShield Professional Security Report
+CyberShield Security Reporting System Page 8 2026-08-30 19:22 UTC
+● Finding #5 — Python eval() [Critical]
+File cybershield/backend/app/routes/scan_routes.py
+Line 384
+Type Python eval()
+OWASP -
+CWE -
+Recommendation: Review and remediate this issue
+● Finding #6 — Python eval() [Critical]
+File cybershield/backend/app/scanner/engine/confidence_engine.py
+Line 26
+Type Python eval()
+OWASP -
+CWE -
+Recommendation: Review and remediate this issue
+● Finding #7 — Python exec() [Critical]
+File cybershield/backend/app/scanner/engine/confidence_engine.py
+Line 27
+Type Python exec()
+OWASP -
+CWE -
+Recommendation: Review and remediate this issue
+● Finding #8 — Shell Execution [Critical]
+File cybershield/backend/app/services/ai_feedback.py
+Line 245
+Type Shell Execution
+OWASP -
+CWE -
+Recommendation: Review and remediate this issue
+CyberShield Professional Security Report
+CyberShield Security Reporting System Page 9 2026-08-30 19:22 UTC
+● Finding #9 — Shell Execution [Critical]
+File cybershield/backend/app/services/defense_validator.py
+Line 173
+Type Shell Execution
+OWASP -
+CWE -
+Recommendation: Review and remediate this issue
+● Finding #10 — Python eval() [Critical]
+File cybershield/backend/app/services/security_patterns.py
+Line 28
+Type Python eval()
+OWASP -
+CWE -
+Recommendation: Review and remediate this issue
+● Finding #11 — Hardcoded Password [High]
+File cybershield/backend/create_test_user.py
+Line 17
+Type Hardcoded Password
+OWASP -
+CWE -
+Recommendation: Review and remediate this issue
+● Finding #12 — AWS Access Key [Critical]
+File cybershield/backend/test_all_modules.py
+Line 17
+Type AWS Access Key
+OWASP -
+CWE -
+Recommendation: Review and remediate this issue
+CyberShield Professional Security Report
+CyberShield Security Reporting System Page 10 2026-08-30 19:22 UTC
+● Finding #13 — Hardcoded Password [High]
+File cybershield/backend/test_all_modules.py
+Line 21
+Type Hardcoded Password
+OWASP -
+CWE -
+Recommendation: Review and remediate this issue
+● Finding #14 — Private Key Block [Critical]
+File cybershield/backend/test_all_modules.py
+Line 23
+Type Private Key Block
+OWASP -
+CWE -
+Recommendation: Review and remediate this issue
+● Finding #15 — AWS Access Key [Critical]
+File cybershield/backend/test_context_scanner.py
+Line 124
+Type AWS Access Key
+OWASP -
+CWE -
+Recommendation: Review and remediate this issue
+● Finding #16 — Hardcoded API Key Assignment [High]
+File cybershield/backend/test_context_scanner.py
+Line 124
+Type Hardcoded API Key Assignment
+OWASP -
+CWE -
+Recommendation: Review and remediate this issue
+CyberShield Professional Security Report
+CyberShield Security Reporting System Page 11 2026-08-30 19:22 UTC
+● Finding #17 — MongoDB URI [Critical]
+File cybershield/backend/test_context_scanner.py
+Line 125
+Type MongoDB URI
+OWASP -
+CWE -
+Recommendation: Review and remediate this issue
+● Finding #18 — JWT Secret Assignment [High]
+File cybershield/backend/test_context_scanner.py
+Line 126
+Type JWT Secret Assignment
+OWASP -
+CWE -
+Recommendation: Review and remediate this issue
+● Finding #19 — Shell Execution [Critical]
+File cybershield/backend/test_context_scanner.py
+Line 37
+Type Shell Execution
+OWASP -
+CWE -
+Recommendation: Review and remediate this issue
+● Finding #20 — Subprocess Shell [High]
+File cybershield/backend/test_context_scanner.py
+Line 113
+Type Subprocess Shell
+OWASP -
+CWE -
+Recommendation: Review and remediate this issue
+CyberShield Professional Security Report
+CyberShield Security Reporting System Page 12 2026-08-30 19:22 UTC
+● Finding #21 — Hardcoded Password [High]
+File cybershield/backend/test_scanner_end2end.py
+Line 14
+Type Hardcoded Password
+OWASP -
+CWE -
+Recommendation: Review and remediate this issue
+CyberShield Professional Security Report
+CyberShield Security Reporting System Page 13 2026-08-30 19:22 UTC
+7. Compliance Mapping
+OWASP Top 10 References
+OWASP Reference Finding Types Count
+-
+JWT Secret Assignment, Hardcoded Password, Python
+eval(), Shell Execution, Hardcoded API Key Assignment,
+Private Key Block, Python exec(), MongoDB URI, AWS
+Access Key, Subprocess Shell
+21
+CWE References
+CWE ID Finding Types Count
+-
+JWT Secret Assignment, Hardcoded Password, Python
+eval(), Shell Execution, Hardcoded API Key Assignment,
+Private Key Block, Python exec(), MongoDB URI, AWS
+Access Key, Subprocess Shell
+21
+CyberShield Professional Security Report
+CyberShield Security Reporting System Page 14 2026-08-30 19:22 UTC
+8. Appendix
+Report Metadata
+Report ID dff2a556-fa0c-45f4-b6ee-8dd6e08280ec
+Scan ID N/A
+Repository Hanzala-Dhukka/Final-Year-Project
+Branch main
+Report Version 1.0
+Scanner Version CyberShield Scanner v1.0
+Security Score 0/100
+Risk Level CRITICAL
+Total Findings 21
+Files Scanned 11
+Generated At 2026-08-30 19:22:17 UTC
+Integrity Hash N/A
+Integrity Verification
+Report integrity hash (SHA-256): N/A
+This report was generated by the CyberShield Professional Security Reporting System. The integrity hash can be used to verify that
+the report has not been tampered with.

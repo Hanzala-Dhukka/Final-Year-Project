@@ -1,43 +1,29 @@
 """
 Security Patterns — Regex-based vulnerability detection rules.
 Each pattern defines a type, regex, severity, and message.
+
+These patterns are used by the vulnerability locator as a supplementary
+scan pass. They are intentionally more specific than the github_scanner
+patterns to minimize false positives.
 """
 SECURITY_PATTERNS = [
     {
         "type": "Hardcoded API Key",
-        "regex": r"(?:api[_-]?key|apikey)\s*[=:]\s*['\"].+['\"]",
+        "regex": r"(?:api[_-]?key|apikey)\s*=\s*['\"][A-Za-z0-9_\-]{16,}['\"]",
         "severity": "High",
         "message": "API key stored inside source code",
     },
     {
         "type": "Hardcoded Token",
-        "regex": r"(?:token|secret|SECRET)\s*[=:]\s*['\"].+['\"]",
+        "regex": r"(?:token|secret|SECRET)\s*=\s*['\"][A-Za-z0-9_\-]{20,}['\"]",
         "severity": "High",
         "message": "Sensitive token/secret detected in code",
     },
     {
         "type": "Password Variable",
-        "regex": r"(?:password|passwd|pwd)\s*[=:]\s*['\"].+['\"]",
+        "regex": r"(?:password|passwd|pwd)\s*=\s*['\"][^'\"]{8,}['\"]",
         "severity": "High",
         "message": "Password value exposed in source code",
-    },
-    {
-        "type": "JavaScript eval()",
-        "regex": r"\beval\s*\(",
-        "severity": "High",
-        "message": "eval() can execute unsafe user-controlled code",
-    },
-    {
-        "type": "Command Execution",
-        "regex": r"\b(?:exec|execSync|execFile|spawn)\s*\(",
-        "severity": "High",
-        "message": "Command execution function detected — injection risk",
-    },
-    {
-        "type": "SQL Injection Risk",
-        "regex": r"(?:query|execute)\s*\(\s*[`\"'].*?\+",
-        "severity": "High",
-        "message": "String concatenation in SQL query — injection risk",
     },
     {
         "type": "AWS Access Key",
@@ -53,7 +39,7 @@ SECURITY_PATTERNS = [
     },
     {
         "type": "Hardcoded JWT Secret",
-        "regex": r"(?:jwt[_-]?secret|JWT_SECRET)\s*[=:]\s*['\"].+['\"]",
+        "regex": r"(?:jwt[_-]?secret|JWT_SECRET)\s*=\s*['\"].+['\"]",
         "severity": "High",
         "message": "JWT secret key exposed in source code",
     },

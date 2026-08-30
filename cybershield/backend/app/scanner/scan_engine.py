@@ -91,7 +91,7 @@ async def scan_single_file(file_path: str, repo_name: str, branch: str) -> dict 
                 return None
 
             content = response.text
-            findings = scan_file_content(content) + scan_dangerous_code(content, file_path)
+            findings = scan_file_content(content, file_path) + scan_dangerous_code(content, file_path)
             if findings:
                 return {"file": file_path, "issues": findings}
         except Exception:

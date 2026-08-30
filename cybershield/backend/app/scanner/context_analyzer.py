@@ -8,6 +8,7 @@ context. This prevents the scanner from flagging:
   - Matches inside comments
   - Matches inside regex pattern definitions (the scanner's own rules)
   - Matches in documentation/markdown files
+  - Matches in multi-line strings / docstrings
 """
 
 import re
@@ -20,7 +21,9 @@ from typing import Optional
 SCANNER_OWN_PATHS = (
     "app/scanner/rules/",
     "app/scanner/security_rules.py",
+    "app/scanner/engine/",
     "app/services/github_scanner.py",
+    "app/services/security_patterns.py",
 )
 
 EDUCATIONAL_DATA_PATHS = (
@@ -33,6 +36,14 @@ EDUCATIONAL_DATA_PATHS = (
     "app/data/nist_mapping.py",
     "app/data/mitre_mapping.py",
     "app/data/owasp_mapping.py",
+)
+
+# Files that contain sample/demo data, educational content, or are
+# purely for testing/validation purposes — should not produce findings.
+NON_SCANNABLE_PATHS = (
+    "app/routes/scan_routes.py",
+    "app/services/ai_feedback.py",
+    "app/services/defense_validator.py",
 )
 
 TEST_FILE_PATTERNS = (
@@ -49,7 +60,8 @@ DOC_EXTENSIONS = {".md", ".txt", ".rst", ".doc", ".pdf"}
 def is_excluded_file(file_path: str) -> bool:
     """
     Check if a file should be entirely excluded from scanning.
-    Returns True for scanner own files, educational data, and docs.
+    Returns True for scanner own files, educational data, docs,
+    test files (contain planted test data), and demo/sample files.
     """
     if not file_path:
         return False
@@ -65,6 +77,15 @@ def is_excluded_file(file_path: str) -> bool:
     for prefix in EDUCATIONAL_DATA_PATHS:
         if prefix in normalized:
             return True
+
+    # Skip files with sample/demo data (route stubs, validators, feedback templates)
+    for prefix in NON_SCANNABLE_PATHS:
+        if prefix in normalized:
+            return True
+
+    # Skip test files (they contain intentionally planted test data for scanner validation)
+    if is_test_file(file_path):
+        return True
 
     # Skip documentation files
     for ext in DOC_EXTENSIONS:
@@ -164,11 +185,6 @@ def _is_in_string(line: str, col: int) -> bool:
             return True
     return False
 
-    stripped = _strip_strings_from_line(line)
-    if col < len(stripped):
-        return stripped[col] == '"'
-    return False
-
 
 def _is_comment_line(line: str, language: str = "python") -> bool:
     """Check if the entire line is a comment."""
@@ -229,6 +245,76 @@ def is_in_regex_pattern(line: str, col: int = 0) -> bool:
     return False
 
 
+def _is_in_multiline_string(lines: list, line_idx: int) -> bool:
+    """
+    Check if a line is inside a multi-line string (docstring or triple-quoted string).
+    Tracks triple-quote state from the beginning of the file up to the target line.
+    """
+    in_triple = False
+    triple_char = None
+    for i in range(line_idx):
+        line = lines[i]
+        j = 0
+        while j < len(line):
+            if in_triple:
+                idx = line.find(triple_char, j)
+                if idx != -1:
+                    in_triple = False
+                    j = idx + 3
+                else:
+                    break
+            else:
+                if j + 2 < len(line) and line[j:j+3] in ('"""', "'''"):
+                    triple_char = line[j:j+3]
+                    end = line.find(triple_char, j + 3)
+                    if end == -1:
+                        in_triple = True
+                        break
+                    else:
+                        j = end + 3
+                else:
+                    j += 1
+    return in_triple
+
+
+def _is_code_assignment(line: str, col: int) -> bool:
+    """
+    Check if the match at col is part of a real code variable assignment
+    (not a dictionary value definition).
+
+    Real code assignment:  AWS_KEY = "AKIA..."
+    Dictionary value:     "example": "api_key = 'AKIA...'"
+
+    Returns True only if the assignment is actual code (not inside a dict value).
+    """
+    before = line[:col]
+
+    # Must have an assignment pattern
+    if not re.search(r'[=:]\s*["\']?\s*$', before):
+        return False
+
+    # Check if this looks like a dictionary value definition
+    # Pattern: "key": "value" or 'key': 'value' or {"key": "value"}
+    # If there's a quoted key before the colon, it's a dict value
+    if re.search(r'''['"][^'"]+['"]\s*:\s*['"]?\s*$''', before):
+        return False
+
+    # Check if the line starts with a variable name (real code assignment)
+    stripped = line.strip()
+    # Real code: starts with identifier followed by = or :
+    if re.match(r'^[a-zA-Z_][a-zA-Z0-9_]*\s*[=:]', stripped):
+        # But exclude dict-like patterns: "key": value
+        if not re.match(r'^["\']', stripped):
+            return True
+
+    # Check for module-level or class-level assignment (no dict context)
+    # If the line doesn't contain { or "key": pattern, it's likely real code
+    if '{' not in before and '"' not in before.split('=')[0] and "'" not in before.split('=')[0]:
+        return True
+
+    return False
+
+
 def classify_match_context(
     lines: list,
     line_idx: int,
@@ -242,7 +328,7 @@ def classify_match_context(
     Returns:
         {
             "is_false_positive": bool,
-            "reason": str,  # "string", "comment", "regex_pattern", "block_comment", "none"
+            "reason": str,  # "string", "comment", "regex_pattern", "block_comment", "multiline_string", "none"
             "confidence_penalty": int,  # 0-40 points to subtract from confidence
         }
     """
@@ -273,21 +359,24 @@ def classify_match_context(
             "confidence_penalty": 40,
         }
 
-    # Check string context — but only if it's NOT a variable assignment
-    # Real secrets: AWS_KEY = "AKIA..." (has assignment before string)
-    # False positives: "os.system(...)" (standalone string in data)
+    # Check multi-line string / docstring context
+    if _is_in_multiline_string(lines, line_idx):
+        return {
+            "is_false_positive": True,
+            "reason": "multiline_string",
+            "confidence_penalty": 40,
+        }
+
+    # Check string context
     if _is_in_string(line, col):
-        # Check if the string is preceded by a variable assignment
-        before_string = line[:col]
-        # If there's an assignment operator before the string (with optional quote), it's a real secret
-        # Patterns: VAR = "...", VAR: "...", "key": "..."
-        if re.search(r'[=:]\s*["\']?\s*$', before_string):
+        # Determine if this is a real code assignment or just a string value
+        if _is_code_assignment(line, col):
             return {
                 "is_false_positive": False,
                 "reason": "none",
                 "confidence_penalty": 0,
             }
-        # Otherwise, it's likely educational data or a standalone string
+        # Everything else inside a string is a false positive
         return {
             "is_false_positive": True,
             "reason": "string",

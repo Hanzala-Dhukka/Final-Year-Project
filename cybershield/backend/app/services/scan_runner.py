@@ -36,6 +36,7 @@ from app.services.dependency_scanner import scan_dependencies
 from app.services.error_log_service import fire_and_forget_log
 from app.services.scan_progress import update_scan, complete_scan
 from app.services.history_service import save_scan
+from app.scanner.context_analyzer import is_excluded_file
 
 github_client = Github(settings.GITHUB_TOKEN) if settings.GITHUB_TOKEN else Github()
 
@@ -73,6 +74,10 @@ def _scan_single_file(repo_full_name, branch, file_path):
     """Fetch raw content and scan a single file."""
     import requests
     try:
+        # Skip excluded files entirely (scanner own rules, educational data, docs)
+        if is_excluded_file(file_path):
+            return None
+
         raw_url = f"https://raw.githubusercontent.com/{repo_full_name}/{branch}/{file_path}"
         response = requests.get(raw_url, timeout=10)
         if response.status_code != 200:
@@ -80,7 +85,7 @@ def _scan_single_file(repo_full_name, branch, file_path):
         if len(response.content) > 1_000_000:
             return None
         decoded_content = response.text
-        secret_findings = scan_file_content(decoded_content)
+        secret_findings = scan_file_content(decoded_content, file_path)
         code_findings = scan_dangerous_code(decoded_content, file_path)
         result = secret_findings + code_findings
         if result:
